@@ -52,18 +52,6 @@ public class DebtResourceIT {
     private static final DebtStatus DEFAULT_STATUS = DebtStatus.OPEN;
     private static final DebtStatus UPDATED_STATUS = DebtStatus.COLLECTED;
 
-    private static final Instant DEFAULT_CREATED_DATE = Instant.ofEpochMilli(0L);
-    private static final Instant UPDATED_CREATED_DATE = Instant.now().truncatedTo(ChronoUnit.MILLIS);
-
-    private static final String DEFAULT_CREATED_BY = "AAAAAAAAAA";
-    private static final String UPDATED_CREATED_BY = "BBBBBBBBBB";
-
-    private static final Instant DEFAULT_LAST_MODIFIED_DATE = Instant.ofEpochMilli(0L);
-    private static final Instant UPDATED_LAST_MODIFIED_DATE = Instant.now().truncatedTo(ChronoUnit.MILLIS);
-
-    private static final String DEFAULT_LAST_MODIFIED_BY = "AAAAAAAAAA";
-    private static final String UPDATED_LAST_MODIFIED_BY = "BBBBBBBBBB";
-
     @Autowired
     private DebtRepository debtRepository;
 
@@ -115,11 +103,7 @@ public class DebtResourceIT {
             .receiptId(DEFAULT_RECEIPT_ID)
             .eventAttendeeId(DEFAULT_EVENT_ATTENDEE_ID)
             .amount(DEFAULT_AMOUNT)
-            .status(DEFAULT_STATUS)
-            .createdDate(DEFAULT_CREATED_DATE)
-            .createdBy(DEFAULT_CREATED_BY)
-            .lastModifiedDate(DEFAULT_LAST_MODIFIED_DATE)
-            .lastModifiedBy(DEFAULT_LAST_MODIFIED_BY);
+            .status(DEFAULT_STATUS);
         return debt;
     }
     /**
@@ -133,11 +117,7 @@ public class DebtResourceIT {
             .receiptId(UPDATED_RECEIPT_ID)
             .eventAttendeeId(UPDATED_EVENT_ATTENDEE_ID)
             .amount(UPDATED_AMOUNT)
-            .status(UPDATED_STATUS)
-            .createdDate(UPDATED_CREATED_DATE)
-            .createdBy(UPDATED_CREATED_BY)
-            .lastModifiedDate(UPDATED_LAST_MODIFIED_DATE)
-            .lastModifiedBy(UPDATED_LAST_MODIFIED_BY);
+            .status(UPDATED_STATUS);
         return debt;
     }
 
@@ -166,10 +146,6 @@ public class DebtResourceIT {
         assertThat(testDebt.getEventAttendeeId()).isEqualTo(DEFAULT_EVENT_ATTENDEE_ID);
         assertThat(testDebt.getAmount()).isEqualTo(DEFAULT_AMOUNT);
         assertThat(testDebt.getStatus()).isEqualTo(DEFAULT_STATUS);
-        assertThat(testDebt.getCreatedDate()).isEqualTo(DEFAULT_CREATED_DATE);
-        assertThat(testDebt.getCreatedBy()).isEqualTo(DEFAULT_CREATED_BY);
-        assertThat(testDebt.getLastModifiedDate()).isEqualTo(DEFAULT_LAST_MODIFIED_DATE);
-        assertThat(testDebt.getLastModifiedBy()).isEqualTo(DEFAULT_LAST_MODIFIED_BY);
     }
 
     @Test
@@ -207,11 +183,7 @@ public class DebtResourceIT {
             .andExpect(jsonPath("$.[*].receiptId").value(hasItem(DEFAULT_RECEIPT_ID.intValue())))
             .andExpect(jsonPath("$.[*].eventAttendeeId").value(hasItem(DEFAULT_EVENT_ATTENDEE_ID.intValue())))
             .andExpect(jsonPath("$.[*].amount").value(hasItem(DEFAULT_AMOUNT.intValue())))
-            .andExpect(jsonPath("$.[*].status").value(hasItem(DEFAULT_STATUS.toString())))
-            .andExpect(jsonPath("$.[*].createdDate").value(hasItem(DEFAULT_CREATED_DATE.toString())))
-            .andExpect(jsonPath("$.[*].createdBy").value(hasItem(DEFAULT_CREATED_BY.toString())))
-            .andExpect(jsonPath("$.[*].lastModifiedDate").value(hasItem(DEFAULT_LAST_MODIFIED_DATE.toString())))
-            .andExpect(jsonPath("$.[*].lastModifiedBy").value(hasItem(DEFAULT_LAST_MODIFIED_BY.toString())));
+            .andExpect(jsonPath("$.[*].status").value(hasItem(DEFAULT_STATUS.toString())));
     }
     
     @Test
@@ -228,11 +200,7 @@ public class DebtResourceIT {
             .andExpect(jsonPath("$.receiptId").value(DEFAULT_RECEIPT_ID.intValue()))
             .andExpect(jsonPath("$.eventAttendeeId").value(DEFAULT_EVENT_ATTENDEE_ID.intValue()))
             .andExpect(jsonPath("$.amount").value(DEFAULT_AMOUNT.intValue()))
-            .andExpect(jsonPath("$.status").value(DEFAULT_STATUS.toString()))
-            .andExpect(jsonPath("$.createdDate").value(DEFAULT_CREATED_DATE.toString()))
-            .andExpect(jsonPath("$.createdBy").value(DEFAULT_CREATED_BY.toString()))
-            .andExpect(jsonPath("$.lastModifiedDate").value(DEFAULT_LAST_MODIFIED_DATE.toString()))
-            .andExpect(jsonPath("$.lastModifiedBy").value(DEFAULT_LAST_MODIFIED_BY.toString()));
+            .andExpect(jsonPath("$.status").value(DEFAULT_STATUS.toString()));
     }
 
     @Test
@@ -259,11 +227,7 @@ public class DebtResourceIT {
             .receiptId(UPDATED_RECEIPT_ID)
             .eventAttendeeId(UPDATED_EVENT_ATTENDEE_ID)
             .amount(UPDATED_AMOUNT)
-            .status(UPDATED_STATUS)
-            .createdDate(UPDATED_CREATED_DATE)
-            .createdBy(UPDATED_CREATED_BY)
-            .lastModifiedDate(UPDATED_LAST_MODIFIED_DATE)
-            .lastModifiedBy(UPDATED_LAST_MODIFIED_BY);
+            .status(UPDATED_STATUS);
         DebtDTO debtDTO = debtMapper.toDto(updatedDebt);
 
         restDebtMockMvc.perform(put("/api/debts")
@@ -279,10 +243,6 @@ public class DebtResourceIT {
         assertThat(testDebt.getEventAttendeeId()).isEqualTo(UPDATED_EVENT_ATTENDEE_ID);
         assertThat(testDebt.getAmount()).isEqualTo(UPDATED_AMOUNT);
         assertThat(testDebt.getStatus()).isEqualTo(UPDATED_STATUS);
-        assertThat(testDebt.getCreatedDate()).isEqualTo(UPDATED_CREATED_DATE);
-        assertThat(testDebt.getCreatedBy()).isEqualTo(UPDATED_CREATED_BY);
-        assertThat(testDebt.getLastModifiedDate()).isEqualTo(UPDATED_LAST_MODIFIED_DATE);
-        assertThat(testDebt.getLastModifiedBy()).isEqualTo(UPDATED_LAST_MODIFIED_BY);
     }
 
     @Test

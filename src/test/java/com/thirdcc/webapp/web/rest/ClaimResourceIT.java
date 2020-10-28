@@ -52,18 +52,6 @@ public class ClaimResourceIT {
     private static final ClaimStatus DEFAULT_STATUS = ClaimStatus.OPEN;
     private static final ClaimStatus UPDATED_STATUS = ClaimStatus.CLAIMED;
 
-    private static final Instant DEFAULT_CREATED_DATE = Instant.ofEpochMilli(0L);
-    private static final Instant UPDATED_CREATED_DATE = Instant.now().truncatedTo(ChronoUnit.MILLIS);
-
-    private static final String DEFAULT_CREATED_BY = "AAAAAAAAAA";
-    private static final String UPDATED_CREATED_BY = "BBBBBBBBBB";
-
-    private static final Instant DEFAULT_LAST_MODIFIED_DATE = Instant.ofEpochMilli(0L);
-    private static final Instant UPDATED_LAST_MODIFIED_DATE = Instant.now().truncatedTo(ChronoUnit.MILLIS);
-
-    private static final String DEFAULT_LAST_MODIFIED_BY = "AAAAAAAAAA";
-    private static final String UPDATED_LAST_MODIFIED_BY = "BBBBBBBBBB";
-
     @Autowired
     private ClaimRepository claimRepository;
 
@@ -115,11 +103,7 @@ public class ClaimResourceIT {
             .receiptId(DEFAULT_RECEIPT_ID)
             .transactionId(DEFAULT_TRANSACTION_ID)
             .amount(DEFAULT_AMOUNT)
-            .status(DEFAULT_STATUS)
-            .createdDate(DEFAULT_CREATED_DATE)
-            .createdBy(DEFAULT_CREATED_BY)
-            .lastModifiedDate(DEFAULT_LAST_MODIFIED_DATE)
-            .lastModifiedBy(DEFAULT_LAST_MODIFIED_BY);
+            .status(DEFAULT_STATUS);
         return claim;
     }
     /**
@@ -133,11 +117,7 @@ public class ClaimResourceIT {
             .receiptId(UPDATED_RECEIPT_ID)
             .transactionId(UPDATED_TRANSACTION_ID)
             .amount(UPDATED_AMOUNT)
-            .status(UPDATED_STATUS)
-            .createdDate(UPDATED_CREATED_DATE)
-            .createdBy(UPDATED_CREATED_BY)
-            .lastModifiedDate(UPDATED_LAST_MODIFIED_DATE)
-            .lastModifiedBy(UPDATED_LAST_MODIFIED_BY);
+            .status(UPDATED_STATUS);
         return claim;
     }
 
@@ -166,10 +146,6 @@ public class ClaimResourceIT {
         assertThat(testClaim.getTransactionId()).isEqualTo(DEFAULT_TRANSACTION_ID);
         assertThat(testClaim.getAmount()).isEqualTo(DEFAULT_AMOUNT);
         assertThat(testClaim.getStatus()).isEqualTo(DEFAULT_STATUS);
-        assertThat(testClaim.getCreatedDate()).isEqualTo(DEFAULT_CREATED_DATE);
-        assertThat(testClaim.getCreatedBy()).isEqualTo(DEFAULT_CREATED_BY);
-        assertThat(testClaim.getLastModifiedDate()).isEqualTo(DEFAULT_LAST_MODIFIED_DATE);
-        assertThat(testClaim.getLastModifiedBy()).isEqualTo(DEFAULT_LAST_MODIFIED_BY);
     }
 
     @Test
@@ -207,11 +183,7 @@ public class ClaimResourceIT {
             .andExpect(jsonPath("$.[*].receiptId").value(hasItem(DEFAULT_RECEIPT_ID.intValue())))
             .andExpect(jsonPath("$.[*].transactionId").value(hasItem(DEFAULT_TRANSACTION_ID.intValue())))
             .andExpect(jsonPath("$.[*].amount").value(hasItem(DEFAULT_AMOUNT.intValue())))
-            .andExpect(jsonPath("$.[*].status").value(hasItem(DEFAULT_STATUS.toString())))
-            .andExpect(jsonPath("$.[*].createdDate").value(hasItem(DEFAULT_CREATED_DATE.toString())))
-            .andExpect(jsonPath("$.[*].createdBy").value(hasItem(DEFAULT_CREATED_BY.toString())))
-            .andExpect(jsonPath("$.[*].lastModifiedDate").value(hasItem(DEFAULT_LAST_MODIFIED_DATE.toString())))
-            .andExpect(jsonPath("$.[*].lastModifiedBy").value(hasItem(DEFAULT_LAST_MODIFIED_BY.toString())));
+            .andExpect(jsonPath("$.[*].status").value(hasItem(DEFAULT_STATUS.toString())));
     }
     
     @Test
@@ -228,11 +200,7 @@ public class ClaimResourceIT {
             .andExpect(jsonPath("$.receiptId").value(DEFAULT_RECEIPT_ID.intValue()))
             .andExpect(jsonPath("$.transactionId").value(DEFAULT_TRANSACTION_ID.intValue()))
             .andExpect(jsonPath("$.amount").value(DEFAULT_AMOUNT.intValue()))
-            .andExpect(jsonPath("$.status").value(DEFAULT_STATUS.toString()))
-            .andExpect(jsonPath("$.createdDate").value(DEFAULT_CREATED_DATE.toString()))
-            .andExpect(jsonPath("$.createdBy").value(DEFAULT_CREATED_BY.toString()))
-            .andExpect(jsonPath("$.lastModifiedDate").value(DEFAULT_LAST_MODIFIED_DATE.toString()))
-            .andExpect(jsonPath("$.lastModifiedBy").value(DEFAULT_LAST_MODIFIED_BY.toString()));
+            .andExpect(jsonPath("$.status").value(DEFAULT_STATUS.toString()));
     }
 
     @Test
@@ -259,11 +227,7 @@ public class ClaimResourceIT {
             .receiptId(UPDATED_RECEIPT_ID)
             .transactionId(UPDATED_TRANSACTION_ID)
             .amount(UPDATED_AMOUNT)
-            .status(UPDATED_STATUS)
-            .createdDate(UPDATED_CREATED_DATE)
-            .createdBy(UPDATED_CREATED_BY)
-            .lastModifiedDate(UPDATED_LAST_MODIFIED_DATE)
-            .lastModifiedBy(UPDATED_LAST_MODIFIED_BY);
+            .status(UPDATED_STATUS);
         ClaimDTO claimDTO = claimMapper.toDto(updatedClaim);
 
         restClaimMockMvc.perform(put("/api/claims")
@@ -279,10 +243,6 @@ public class ClaimResourceIT {
         assertThat(testClaim.getTransactionId()).isEqualTo(UPDATED_TRANSACTION_ID);
         assertThat(testClaim.getAmount()).isEqualTo(UPDATED_AMOUNT);
         assertThat(testClaim.getStatus()).isEqualTo(UPDATED_STATUS);
-        assertThat(testClaim.getCreatedDate()).isEqualTo(UPDATED_CREATED_DATE);
-        assertThat(testClaim.getCreatedBy()).isEqualTo(UPDATED_CREATED_BY);
-        assertThat(testClaim.getLastModifiedDate()).isEqualTo(UPDATED_LAST_MODIFIED_DATE);
-        assertThat(testClaim.getLastModifiedBy()).isEqualTo(UPDATED_LAST_MODIFIED_BY);
     }
 
     @Test

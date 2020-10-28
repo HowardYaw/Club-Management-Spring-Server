@@ -55,17 +55,6 @@ public class TransactionResourceIT {
     private static final String DEFAULT_DETAILS = "AAAAAAAAAA";
     private static final String UPDATED_DETAILS = "BBBBBBBBBB";
 
-    private static final String DEFAULT_CREATED_BY = "AAAAAAAAAA";
-    private static final String UPDATED_CREATED_BY = "BBBBBBBBBB";
-
-    private static final Instant DEFAULT_CREATED_DATE = Instant.ofEpochMilli(0L);
-    private static final Instant UPDATED_CREATED_DATE = Instant.now().truncatedTo(ChronoUnit.MILLIS);
-
-    private static final String DEFAULT_LAST_MODIFIED_BY = "AAAAAAAAAA";
-    private static final String UPDATED_LAST_MODIFIED_BY = "BBBBBBBBBB";
-
-    private static final Instant DEFAULT_LAST_MODIFIED_DATE = Instant.ofEpochMilli(0L);
-    private static final Instant UPDATED_LAST_MODIFIED_DATE = Instant.now().truncatedTo(ChronoUnit.MILLIS);
 
     @Autowired
     private TransactionRepository transactionRepository;
@@ -119,11 +108,7 @@ public class TransactionResourceIT {
             .receiptId(DEFAULT_RECEIPT_ID)
             .type(DEFAULT_TYPE)
             .amount(DEFAULT_AMOUNT)
-            .details(DEFAULT_DETAILS)
-            .createdBy(DEFAULT_CREATED_BY)
-            .createdDate(DEFAULT_CREATED_DATE)
-            .lastModifiedBy(DEFAULT_LAST_MODIFIED_BY)
-            .lastModifiedDate(DEFAULT_LAST_MODIFIED_DATE);
+            .details(DEFAULT_DETAILS);
         return transaction;
     }
     /**
@@ -138,11 +123,7 @@ public class TransactionResourceIT {
             .receiptId(UPDATED_RECEIPT_ID)
             .type(UPDATED_TYPE)
             .amount(UPDATED_AMOUNT)
-            .details(UPDATED_DETAILS)
-            .createdBy(UPDATED_CREATED_BY)
-            .createdDate(UPDATED_CREATED_DATE)
-            .lastModifiedBy(UPDATED_LAST_MODIFIED_BY)
-            .lastModifiedDate(UPDATED_LAST_MODIFIED_DATE);
+            .details(UPDATED_DETAILS);
         return transaction;
     }
 
@@ -172,10 +153,6 @@ public class TransactionResourceIT {
         assertThat(testTransaction.getType()).isEqualTo(DEFAULT_TYPE);
         assertThat(testTransaction.getAmount()).isEqualTo(DEFAULT_AMOUNT);
         assertThat(testTransaction.getDetails()).isEqualTo(DEFAULT_DETAILS);
-        assertThat(testTransaction.getCreatedBy()).isEqualTo(DEFAULT_CREATED_BY);
-        assertThat(testTransaction.getCreatedDate()).isEqualTo(DEFAULT_CREATED_DATE);
-        assertThat(testTransaction.getLastModifiedBy()).isEqualTo(DEFAULT_LAST_MODIFIED_BY);
-        assertThat(testTransaction.getLastModifiedDate()).isEqualTo(DEFAULT_LAST_MODIFIED_DATE);
     }
 
     @Test
@@ -214,11 +191,7 @@ public class TransactionResourceIT {
             .andExpect(jsonPath("$.[*].receiptId").value(hasItem(DEFAULT_RECEIPT_ID.intValue())))
             .andExpect(jsonPath("$.[*].type").value(hasItem(DEFAULT_TYPE.toString())))
             .andExpect(jsonPath("$.[*].amount").value(hasItem(DEFAULT_AMOUNT.intValue())))
-            .andExpect(jsonPath("$.[*].details").value(hasItem(DEFAULT_DETAILS.toString())))
-            .andExpect(jsonPath("$.[*].createdBy").value(hasItem(DEFAULT_CREATED_BY.toString())))
-            .andExpect(jsonPath("$.[*].createdDate").value(hasItem(DEFAULT_CREATED_DATE.toString())))
-            .andExpect(jsonPath("$.[*].lastModifiedBy").value(hasItem(DEFAULT_LAST_MODIFIED_BY.toString())))
-            .andExpect(jsonPath("$.[*].lastModifiedDate").value(hasItem(DEFAULT_LAST_MODIFIED_DATE.toString())));
+            .andExpect(jsonPath("$.[*].details").value(hasItem(DEFAULT_DETAILS.toString())));
     }
     
     @Test
@@ -236,11 +209,7 @@ public class TransactionResourceIT {
             .andExpect(jsonPath("$.receiptId").value(DEFAULT_RECEIPT_ID.intValue()))
             .andExpect(jsonPath("$.type").value(DEFAULT_TYPE.toString()))
             .andExpect(jsonPath("$.amount").value(DEFAULT_AMOUNT.intValue()))
-            .andExpect(jsonPath("$.details").value(DEFAULT_DETAILS.toString()))
-            .andExpect(jsonPath("$.createdBy").value(DEFAULT_CREATED_BY.toString()))
-            .andExpect(jsonPath("$.createdDate").value(DEFAULT_CREATED_DATE.toString()))
-            .andExpect(jsonPath("$.lastModifiedBy").value(DEFAULT_LAST_MODIFIED_BY.toString()))
-            .andExpect(jsonPath("$.lastModifiedDate").value(DEFAULT_LAST_MODIFIED_DATE.toString()));
+            .andExpect(jsonPath("$.details").value(DEFAULT_DETAILS.toString()));
     }
 
     @Test
@@ -268,11 +237,7 @@ public class TransactionResourceIT {
             .receiptId(UPDATED_RECEIPT_ID)
             .type(UPDATED_TYPE)
             .amount(UPDATED_AMOUNT)
-            .details(UPDATED_DETAILS)
-            .createdBy(UPDATED_CREATED_BY)
-            .createdDate(UPDATED_CREATED_DATE)
-            .lastModifiedBy(UPDATED_LAST_MODIFIED_BY)
-            .lastModifiedDate(UPDATED_LAST_MODIFIED_DATE);
+            .details(UPDATED_DETAILS);
         TransactionDTO transactionDTO = transactionMapper.toDto(updatedTransaction);
 
         restTransactionMockMvc.perform(put("/api/transactions")
@@ -289,10 +254,6 @@ public class TransactionResourceIT {
         assertThat(testTransaction.getType()).isEqualTo(UPDATED_TYPE);
         assertThat(testTransaction.getAmount()).isEqualTo(UPDATED_AMOUNT);
         assertThat(testTransaction.getDetails()).isEqualTo(UPDATED_DETAILS);
-        assertThat(testTransaction.getCreatedBy()).isEqualTo(UPDATED_CREATED_BY);
-        assertThat(testTransaction.getCreatedDate()).isEqualTo(UPDATED_CREATED_DATE);
-        assertThat(testTransaction.getLastModifiedBy()).isEqualTo(UPDATED_LAST_MODIFIED_BY);
-        assertThat(testTransaction.getLastModifiedDate()).isEqualTo(UPDATED_LAST_MODIFIED_DATE);
     }
 
     @Test
