@@ -1,0 +1,230 @@
+entity Event {
+    id Long
+    name String
+    description TextBlob
+    remarks String
+    venue String
+    startDate Instant
+    endDate Instant
+    fee BigDecimal
+    requiredTransport Boolean
+    status EventStatus
+}
+
+
+enum EventStatus {
+    OPEN, CLOSED, POSTPONED, CANCELLED
+}
+
+
+entity EventCrew {
+    id Long
+    userId Long
+    eventId Long
+    role EventCrewRole
+}
+
+
+enum EventCrewRole {
+    HEAD
+}
+
+
+entity EventAttendee {
+    id Long
+    userId Long
+    evenId Long
+    provideTransport Boolean
+}
+
+
+entity ImageStorage {
+    id Long
+    imageUrl String
+    fileName String
+    fileType String
+}
+
+entity EventImage {
+    id Long
+    eventId Long
+    imageStorageId Long
+}
+
+
+entity Budget {
+    id Long
+    eventId Long
+    amount BigDecimal
+    type TransactionType 
+    name String
+    details TextBlob
+}
+
+
+
+entity EventActivity {
+    id Long
+    eventId Long
+    startDate Instant
+    durationInDay BigDecimal
+    name String
+    description TextBlob
+}
+
+
+entity Checklist {
+    id Long
+    eventId Long
+    name String
+    description TextBlob
+    status ChecklistStatus
+    type ChecklistType
+}
+
+
+enum ChecklistStatus {
+    OPEN, IN_PROGRESS, FINISHED
+}
+
+
+enum ChecklistType {
+    PREPARATION, PURCHASE
+}
+
+
+entity Transaction {
+    id Long
+    eventId Long
+    receiptId Long
+    type TransactionType
+    amount BigDecimal
+    details String
+    createdBy String
+    createdDate Instant
+    lastModifiedBy String
+    lastModifiedDate Instant
+}
+
+
+enum TransactionType {
+    INCOME, EXPENSE
+}
+
+
+entity Claim {
+    id Long
+    receiptId Long
+    transactionId Long
+    amount BigDecimal
+    status ClaimStatus
+    createdDate Instant
+    createdBy String
+    lastModifiedDate Instant
+    lastModifiedBy String
+}
+
+
+enum ClaimStatus {
+    OPEN, CLAIMED, SUSPENDED, EXPIRED
+}
+
+
+entity Debt {
+    id Long
+    receiptId Long
+    eventAttendeeId Long
+    amount BigDecimal
+    status DebtStatus
+    createdDate Instant
+    createdBy String
+    lastModifiedDate Instant
+    lastModifiedBy String
+}
+
+
+enum DebtStatus {
+    OPEN, COLLECTED, UNREACHABLE
+}
+
+
+entity Receipt {
+    id Long
+    receiptUrl String
+    fileName String
+    fileType String
+}
+
+
+entity Administrator {
+    id Long
+    userId Long
+    yearSession String
+    role AdministratorRole
+    status AdministratorStatus
+}
+
+
+enum AdministratorRole {
+    CC_HEAD, VICE_CC_HEAD, SECRETARY, TEASURER
+}
+
+
+enum AdministratorStatus {
+    ACTIVE, DEACTIVATE, PENDING
+}
+
+
+entity ClubFamily {
+    id Long
+    name String
+    slogan TextBlob
+}
+
+
+entity UserCCInfo {
+    id Long
+    userId Long
+    clubFamilyId Long
+    familyRole ClubFamilyRole
+    yearSession String
+}
+
+
+enum ClubFamilyRole {
+    FATHER, MOTHER
+}
+
+
+entity UserUniInfo {
+    id Long
+    userId Long
+    faculty String
+    program String
+    yearSession String
+    intakeSemester Integer
+    yearOfStudy BigDecimal
+    stayIn String
+    status UserUniStatus
+}
+
+
+enum UserUniStatus {
+    GRADUATED, STUDYING, EXTENDED, TRANSFERRED
+}
+
+
+entity YearSession {
+    value String
+}
+
+
+entity Faculty {
+    name String
+    shortName String
+}
+
+
+dto * with mapstruct except Faculty, YearSession
+service * with serviceImpl
+paginate Transaction, Debt, Claim, EventAttendee, Event, EventActivity, Checklist with pagination

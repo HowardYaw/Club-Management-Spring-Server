@@ -1,4 +1,5 @@
-# clubmanagement
+# Club-Management-Spring-Server
+Server Side for Full Stack Club Management System
 
 This application was generated using JHipster 6.1.2, you can find documentation and help at [https://www.jhipster.tech/documentation-archive/v6.1.2](https://www.jhipster.tech/documentation-archive/v6.1.2).
 
