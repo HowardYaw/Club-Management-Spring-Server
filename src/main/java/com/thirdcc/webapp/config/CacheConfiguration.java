@@ -46,6 +46,24 @@ public class CacheConfiguration {
             createCache(cm, com.thirdcc.webapp.domain.User.class.getName());
             createCache(cm, com.thirdcc.webapp.domain.Authority.class.getName());
             createCache(cm, com.thirdcc.webapp.domain.User.class.getName() + ".authorities");
+            createCache(cm, com.thirdcc.webapp.domain.Event.class.getName());
+            createCache(cm, com.thirdcc.webapp.domain.EventCrew.class.getName());
+            createCache(cm, com.thirdcc.webapp.domain.EventAttendee.class.getName());
+            createCache(cm, com.thirdcc.webapp.domain.ImageStorage.class.getName());
+            createCache(cm, com.thirdcc.webapp.domain.EventImage.class.getName());
+            createCache(cm, com.thirdcc.webapp.domain.Budget.class.getName());
+            createCache(cm, com.thirdcc.webapp.domain.EventActivity.class.getName());
+            createCache(cm, com.thirdcc.webapp.domain.Checklist.class.getName());
+            createCache(cm, com.thirdcc.webapp.domain.Transaction.class.getName());
+            createCache(cm, com.thirdcc.webapp.domain.Claim.class.getName());
+            createCache(cm, com.thirdcc.webapp.domain.Debt.class.getName());
+            createCache(cm, com.thirdcc.webapp.domain.Receipt.class.getName());
+            createCache(cm, com.thirdcc.webapp.domain.Administrator.class.getName());
+            createCache(cm, com.thirdcc.webapp.domain.ClubFamily.class.getName());
+            createCache(cm, com.thirdcc.webapp.domain.UserCCInfo.class.getName());
+            createCache(cm, com.thirdcc.webapp.domain.UserUniInfo.class.getName());
+            createCache(cm, com.thirdcc.webapp.domain.YearSession.class.getName());
+            createCache(cm, com.thirdcc.webapp.domain.Faculty.class.getName());
             // jhipster-needle-ehcache-add-entry
         };
     }

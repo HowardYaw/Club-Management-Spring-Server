@@ -1,0 +1,11 @@
+id;event_id;name;description;status;type
+1;90535;black;../data/blob/hipster.txt;OPEN;PURCHASE
+2;68300;Handcrafted Plastic Shirt quantifying;../data/blob/hipster.txt;IN_PROGRESS;PURCHASE
+3;11816;Rupiah Personal Loan Account HTTP;../data/blob/hipster.txt;FINISHED;PURCHASE
+4;99050;infrastructures incentivize quantify;../data/blob/hipster.txt;OPEN;PREPARATION
+5;75087;compress Fantastic Global;../data/blob/hipster.txt;IN_PROGRESS;PURCHASE
+6;38920;Industrial;../data/blob/hipster.txt;FINISHED;PREPARATION
+7;44844;methodical;../data/blob/hipster.txt;FINISHED;PURCHASE
+8;79157;back-end Unbranded Cambridgeshire;../data/blob/hipster.txt;OPEN;PREPARATION
+9;88770;cross-media Frozen;../data/blob/hipster.txt;OPEN;PREPARATION
+10;70096;Fantastic Fresh Salad;../data/blob/hipster.txt;IN_PROGRESS;PREPARATION

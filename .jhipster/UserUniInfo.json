@@ -1,0 +1,48 @@
+{
+    "name": "UserUniInfo",
+    "fields": [
+        {
+            "fieldName": "userId",
+            "fieldType": "Long"
+        },
+        {
+            "fieldName": "faculty",
+            "fieldType": "String"
+        },
+        {
+            "fieldName": "program",
+            "fieldType": "String"
+        },
+        {
+            "fieldName": "yearSession",
+            "fieldType": "String"
+        },
+        {
+            "fieldName": "intakeSemester",
+            "fieldType": "Integer"
+        },
+        {
+            "fieldName": "yearOfStudy",
+            "fieldType": "BigDecimal"
+        },
+        {
+            "fieldName": "stayIn",
+            "fieldType": "String"
+        },
+        {
+            "fieldName": "status",
+            "fieldType": "UserUniStatus",
+            "fieldValues": "GRADUATED,STUDYING,EXTENDED,TRANSFERRED"
+        }
+    ],
+    "relationships": [],
+    "changelogDate": "20201028013344",
+    "entityTableName": "user_uni_info",
+    "dto": "mapstruct",
+    "pagination": "no",
+    "service": "serviceImpl",
+    "jpaMetamodelFiltering": false,
+    "fluentMethods": true,
+    "clientRootFolder": "",
+    "applications": "*"
+}

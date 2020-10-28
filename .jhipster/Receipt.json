@@ -1,0 +1,27 @@
+{
+    "name": "Receipt",
+    "fields": [
+        {
+            "fieldName": "receiptUrl",
+            "fieldType": "String"
+        },
+        {
+            "fieldName": "fileName",
+            "fieldType": "String"
+        },
+        {
+            "fieldName": "fileType",
+            "fieldType": "String"
+        }
+    ],
+    "relationships": [],
+    "changelogDate": "20201028013340",
+    "entityTableName": "receipt",
+    "dto": "mapstruct",
+    "pagination": "no",
+    "service": "serviceImpl",
+    "jpaMetamodelFiltering": false,
+    "fluentMethods": true,
+    "clientRootFolder": "",
+    "applications": "*"
+}

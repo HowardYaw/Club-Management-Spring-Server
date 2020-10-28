@@ -1,0 +1,23 @@
+{
+    "name": "EventImage",
+    "fields": [
+        {
+            "fieldName": "eventId",
+            "fieldType": "Long"
+        },
+        {
+            "fieldName": "imageStorageId",
+            "fieldType": "Long"
+        }
+    ],
+    "relationships": [],
+    "changelogDate": "20201028013333",
+    "entityTableName": "event_image",
+    "dto": "mapstruct",
+    "pagination": "no",
+    "service": "serviceImpl",
+    "jpaMetamodelFiltering": false,
+    "fluentMethods": true,
+    "clientRootFolder": "",
+    "applications": "*"
+}

@@ -1,0 +1,23 @@
+{
+    "name": "Faculty",
+    "fields": [
+        {
+            "fieldName": "name",
+            "fieldType": "String"
+        },
+        {
+            "fieldName": "shortName",
+            "fieldType": "String"
+        }
+    ],
+    "relationships": [],
+    "changelogDate": "20201028013346",
+    "entityTableName": "faculty",
+    "dto": "no",
+    "pagination": "no",
+    "service": "serviceImpl",
+    "jpaMetamodelFiltering": false,
+    "fluentMethods": true,
+    "clientRootFolder": "",
+    "applications": "*"
+}
