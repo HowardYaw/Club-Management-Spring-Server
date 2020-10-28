@@ -1,0 +1,28 @@
+{
+    "name": "EventCrew",
+    "fields": [
+        {
+            "fieldName": "userId",
+            "fieldType": "Long"
+        },
+        {
+            "fieldName": "eventId",
+            "fieldType": "Long"
+        },
+        {
+            "fieldName": "role",
+            "fieldType": "EventCrewRole",
+            "fieldValues": "HEAD"
+        }
+    ],
+    "relationships": [],
+    "changelogDate": "20201028013330",
+    "entityTableName": "event_crew",
+    "dto": "mapstruct",
+    "pagination": "no",
+    "service": "serviceImpl",
+    "jpaMetamodelFiltering": false,
+    "fluentMethods": true,
+    "clientRootFolder": "",
+    "applications": "*"
+}

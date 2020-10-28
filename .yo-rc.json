@@ -1,0 +1,41 @@
+{
+  "generator-jhipster": {
+    "promptValues": {
+      "packageName": "com.thirdcc.webapp",
+      "nativeLanguage": "en"
+    },
+    "jhipsterVersion": "6.1.2",
+    "applicationType": "monolith",
+    "baseName": "clubmanagement",
+    "packageName": "com.thirdcc.webapp",
+    "packageFolder": "com/thirdcc/webapp",
+    "serverPort": "8080",
+    "authenticationType": "jwt",
+    "cacheProvider": "ehcache",
+    "enableHibernateCache": true,
+    "websocket": false,
+    "databaseType": "sql",
+    "devDatabaseType": "mysql",
+    "prodDatabaseType": "mysql",
+    "searchEngine": false,
+    "messageBroker": false,
+    "serviceDiscoveryType": "eureka",
+    "buildTool": "maven",
+    "enableSwaggerCodegen": false,
+    "jwtSecretKey": "NDUxNDEzMWM5MDRiZDgxNDAwNTU2NzZlNTk2YTJhMzRhNmI0YTc5Njg2NjZlZTBhZTYzZTM0MjU5OGJkMzQ1Mjk2ZDg4MTAxMGQ4YmUwYWY4ZmVmOWZjMmQ0ZTdhNGIyZmFhYTBhZTMyM2FhMWIzYjQ3MGU1YmM2MmEwYTA3ODM=",
+    "useSass": true,
+    "clientPackageManager": "npm",
+    "skipClient": true,
+    "testFrameworks": [],
+    "jhiPrefix": "jhi",
+    "entitySuffix": "",
+    "dtoSuffix": "DTO",
+    "otherModules": [],
+    "enableTranslation": true,
+    "nativeLanguage": "en",
+    "languages": [
+      "en",
+      "zh-cn"
+    ]
+  }
+}

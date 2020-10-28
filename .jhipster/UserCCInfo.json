@@ -1,0 +1,32 @@
+{
+    "name": "UserCCInfo",
+    "fields": [
+        {
+            "fieldName": "userId",
+            "fieldType": "Long"
+        },
+        {
+            "fieldName": "clubFamilyId",
+            "fieldType": "Long"
+        },
+        {
+            "fieldName": "familyRole",
+            "fieldType": "ClubFamilyRole",
+            "fieldValues": "FATHER,MOTHER"
+        },
+        {
+            "fieldName": "yearSession",
+            "fieldType": "String"
+        }
+    ],
+    "relationships": [],
+    "changelogDate": "20201028013343",
+    "entityTableName": "user_cc_info",
+    "dto": "mapstruct",
+    "pagination": "no",
+    "service": "serviceImpl",
+    "jpaMetamodelFiltering": false,
+    "fluentMethods": true,
+    "clientRootFolder": "",
+    "applications": "*"
+}

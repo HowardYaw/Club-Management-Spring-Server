@@ -1,0 +1,27 @@
+{
+    "name": "EventAttendee",
+    "fields": [
+        {
+            "fieldName": "userId",
+            "fieldType": "Long"
+        },
+        {
+            "fieldName": "evenId",
+            "fieldType": "Long"
+        },
+        {
+            "fieldName": "provideTransport",
+            "fieldType": "Boolean"
+        }
+    ],
+    "relationships": [],
+    "changelogDate": "20201028013331",
+    "entityTableName": "event_attendee",
+    "dto": "mapstruct",
+    "pagination": "pagination",
+    "service": "serviceImpl",
+    "jpaMetamodelFiltering": false,
+    "fluentMethods": true,
+    "clientRootFolder": "",
+    "applications": "*"
+}
