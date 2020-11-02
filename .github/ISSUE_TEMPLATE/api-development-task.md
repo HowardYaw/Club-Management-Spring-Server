@@ -12,7 +12,6 @@ assignees: ''
 - API Logic: 
     - do 1
     - do 2
-
----
-- [ ] development
-- [ ] integration Test
+- Progress
+    - [ ] development
+    - [ ] integration Test
