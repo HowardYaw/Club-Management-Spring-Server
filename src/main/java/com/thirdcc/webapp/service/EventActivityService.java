@@ -30,6 +30,8 @@ public interface EventActivityService {
      */
     Page<EventActivityDTO> findAll(Pageable pageable);
 
+    Page<EventActivityDTO> findAllByEventId(Pageable pageable, Long eventId);
+
 
     /**
      * Get the "id" eventActivity.

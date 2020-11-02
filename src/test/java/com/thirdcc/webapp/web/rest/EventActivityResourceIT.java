@@ -360,6 +360,24 @@ public class EventActivityResourceIT {
     }
 
     @Test
+    public void getAllEventActivitiesByEventId() throws Exception {
+        // Initialize the database
+        Event savedEvent = initEventDB();
+        EventActivity savedEventActivity = initEventActivityDB(savedEvent);
+
+        // Get all the eventActivityList
+        restEventActivityMockMvc.perform(get("/api/event-activities/event/{eventId}?sort=id,desc", savedEvent.getId()))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
+            .andExpect(jsonPath("$.[*].id").value(hasItem(savedEventActivity.getId().intValue())))
+            .andExpect(jsonPath("$.[*].eventId").value(hasItem(savedEvent.getId().intValue())))
+            .andExpect(jsonPath("$.[*].startDate").value(hasItem(DEFAULT_START_DATE.toString())))
+            .andExpect(jsonPath("$.[*].durationInDay").value(hasItem(DEFAULT_DURATION_IN_DAY.doubleValue())))
+            .andExpect(jsonPath("$.[*].name").value(hasItem(DEFAULT_NAME.toString())))
+            .andExpect(jsonPath("$.[*].description").value(hasItem(DEFAULT_DESCRIPTION.toString())));
+    }
+
+    @Test
     public void getEventActivity() throws Exception {
         // Initialize the database
         Event savedEvent = initEventDB();

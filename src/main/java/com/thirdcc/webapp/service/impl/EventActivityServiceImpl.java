@@ -122,6 +122,13 @@ public class EventActivityServiceImpl implements EventActivityService {
             .map(eventActivityMapper::toDto);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public Page<EventActivityDTO> findAllByEventId(Pageable pageable, Long eventId) {
+        return eventActivityRepository.findAllByEventId(pageable, eventId)
+            .map(eventActivityMapper::toDto);
+    }
+
 
     /**
      * Get one eventActivity by id.

@@ -101,6 +101,14 @@ public class EventActivityResource {
         return ResponseEntity.ok().headers(headers).body(page.getContent());
     }
 
+    @GetMapping("/event-activities/event/{eventId}")
+    public ResponseEntity<List<EventActivityDTO>> getAllEventActivitiesByEventId(Pageable pageable, @PathVariable Long eventId, @RequestParam MultiValueMap<String, String> queryParams, UriComponentsBuilder uriBuilder) {
+        log.debug("REST request to get a page of EventActivities");
+        Page<EventActivityDTO> page = eventActivityService.findAllByEventId(pageable, eventId);
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(uriBuilder.queryParams(queryParams), page);
+        return ResponseEntity.ok().headers(headers).body(page.getContent());
+    }
+
     /**
      * {@code GET  /event-activities/:id} : get the "id" eventActivity.
      *
