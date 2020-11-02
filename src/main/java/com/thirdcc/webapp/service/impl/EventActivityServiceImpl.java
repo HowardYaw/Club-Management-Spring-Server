@@ -1,5 +1,9 @@
 package com.thirdcc.webapp.service.impl;
 
+import com.thirdcc.webapp.domain.Event;
+import com.thirdcc.webapp.domain.enumeration.EventStatus;
+import com.thirdcc.webapp.exception.BadRequestException;
+import com.thirdcc.webapp.repository.EventRepository;
 import com.thirdcc.webapp.service.EventActivityService;
 import com.thirdcc.webapp.domain.EventActivity;
 import com.thirdcc.webapp.repository.EventActivityRepository;
@@ -13,7 +17,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
+import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Service Implementation for managing {@link EventActivity}.
@@ -26,10 +33,13 @@ public class EventActivityServiceImpl implements EventActivityService {
 
     private final EventActivityRepository eventActivityRepository;
 
+    private final EventRepository eventRepository;
+
     private final EventActivityMapper eventActivityMapper;
 
-    public EventActivityServiceImpl(EventActivityRepository eventActivityRepository, EventActivityMapper eventActivityMapper) {
+    public EventActivityServiceImpl(EventActivityRepository eventActivityRepository, EventRepository eventRepository, EventActivityMapper eventActivityMapper) {
         this.eventActivityRepository = eventActivityRepository;
+        this.eventRepository = eventRepository;
         this.eventActivityMapper = eventActivityMapper;
     }
 
@@ -42,6 +52,25 @@ public class EventActivityServiceImpl implements EventActivityService {
     @Override
     public EventActivityDTO save(EventActivityDTO eventActivityDTO) {
         log.debug("Request to save EventActivity : {}", eventActivityDTO);
+        Set<EventStatus> eventStatuses = new HashSet<EventStatus>() {{
+            add(EventStatus.OPEN);
+            add(EventStatus.POSTPONED);
+        }};
+        Event event = eventRepository
+            .findOneByIdAndStatusIn(eventActivityDTO.getEventId(), eventStatuses)
+            .orElseThrow(() -> new BadRequestException("This event does not exists or it is not happening"));
+        if (event.getEndDate().isBefore(Instant.now())) {
+            throw new BadRequestException("cannot save eventActivity for ended event");
+        }
+        if (eventActivityDTO.getStartDate().isBefore(Instant.now())) {
+            throw new BadRequestException("event activity start date cannot be earlier than today");
+        }
+        if (eventActivityDTO.getStartDate().isBefore(event.getStartDate())) {
+            throw new BadRequestException("event activity start date cannot be earlier than event start date");
+        }
+        if (eventActivityDTO.getStartDate().isAfter(event.getEndDate())) {
+            throw new BadRequestException("event activity start date cannot be later than event end date");
+        }
         EventActivity eventActivity = eventActivityMapper.toEntity(eventActivityDTO);
         eventActivity = eventActivityRepository.save(eventActivity);
         return eventActivityMapper.toDto(eventActivity);
