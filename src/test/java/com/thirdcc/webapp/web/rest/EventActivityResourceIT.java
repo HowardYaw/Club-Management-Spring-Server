@@ -48,7 +48,7 @@ public class EventActivityResourceIT {
     private static final Long UPDATED_EVENT_ID = 2L;
 
     private static final Instant DEFAULT_START_DATE = Instant.now().plus(1, ChronoUnit.DAYS).truncatedTo(ChronoUnit.MILLIS);
-    private static final Instant UPDATED_START_DATE = Instant.now().truncatedTo(ChronoUnit.MILLIS);
+    private static final Instant UPDATED_START_DATE = Instant.now().plus(2, ChronoUnit.DAYS).truncatedTo(ChronoUnit.MILLIS);
 
     private static final BigDecimal DEFAULT_DURATION_IN_DAY = new BigDecimal(1);
     private static final BigDecimal UPDATED_DURATION_IN_DAY = new BigDecimal(2);
@@ -144,6 +144,16 @@ public class EventActivityResourceIT {
         eventActivityDTO.setDurationInDay(DEFAULT_DURATION_IN_DAY);
         eventActivityDTO.setName(DEFAULT_NAME);
         eventActivityDTO.setStartDate(DEFAULT_START_DATE);
+        return eventActivityDTO;
+    }
+
+    public static EventActivityDTO createUpdateEventActivityDTO() {
+        EventActivityDTO eventActivityDTO = new EventActivityDTO();
+        eventActivityDTO.setEventId(Long.MAX_VALUE);
+        eventActivityDTO.setDescription(UPDATED_DESCRIPTION);
+        eventActivityDTO.setDurationInDay(UPDATED_DURATION_IN_DAY);
+        eventActivityDTO.setName(UPDATED_NAME);
+        eventActivityDTO.setStartDate(UPDATED_START_DATE);
         return eventActivityDTO;
     }
 
@@ -334,16 +344,17 @@ public class EventActivityResourceIT {
     @Test
     public void getAllEventActivities() throws Exception {
         // Initialize the database
-        eventActivityRepository.saveAndFlush(eventActivity);
+        Event savedEvent = initEventDB();
+        EventActivity savedEventActivity = initEventActivityDB(savedEvent);
 
         // Get all the eventActivityList
         restEventActivityMockMvc.perform(get("/api/event-activities?sort=id,desc"))
             .andExpect(status().isOk())
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
-            .andExpect(jsonPath("$.[*].id").value(hasItem(eventActivity.getId().intValue())))
-            .andExpect(jsonPath("$.[*].eventId").value(hasItem(DEFAULT_EVENT_ID.intValue())))
+            .andExpect(jsonPath("$.[*].id").value(hasItem(savedEventActivity.getId().intValue())))
+            .andExpect(jsonPath("$.[*].eventId").value(hasItem(savedEvent.getId().intValue())))
             .andExpect(jsonPath("$.[*].startDate").value(hasItem(DEFAULT_START_DATE.toString())))
-            .andExpect(jsonPath("$.[*].durationInDay").value(hasItem(DEFAULT_DURATION_IN_DAY.intValue())))
+            .andExpect(jsonPath("$.[*].durationInDay").value(hasItem(DEFAULT_DURATION_IN_DAY.doubleValue())))
             .andExpect(jsonPath("$.[*].name").value(hasItem(DEFAULT_NAME.toString())))
             .andExpect(jsonPath("$.[*].description").value(hasItem(DEFAULT_DESCRIPTION.toString())));
     }
@@ -351,14 +362,15 @@ public class EventActivityResourceIT {
     @Test
     public void getEventActivity() throws Exception {
         // Initialize the database
-        eventActivityRepository.saveAndFlush(eventActivity);
+        Event savedEvent = initEventDB();
+        EventActivity savedEventActivity = initEventActivityDB(savedEvent);
 
         // Get the eventActivity
         restEventActivityMockMvc.perform(get("/api/event-activities/{id}", eventActivity.getId()))
             .andExpect(status().isOk())
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
-            .andExpect(jsonPath("$.id").value(eventActivity.getId().intValue()))
-            .andExpect(jsonPath("$.eventId").value(DEFAULT_EVENT_ID.intValue()))
+            .andExpect(jsonPath("$.id").value(savedEventActivity.getId().intValue()))
+            .andExpect(jsonPath("$.eventId").value(savedEvent.getId().intValue()))
             .andExpect(jsonPath("$.startDate").value(DEFAULT_START_DATE.toString()))
             .andExpect(jsonPath("$.durationInDay").value(DEFAULT_DURATION_IN_DAY.intValue()))
             .andExpect(jsonPath("$.name").value(DEFAULT_NAME.toString()))
@@ -374,22 +386,13 @@ public class EventActivityResourceIT {
 
     @Test
     public void updateEventActivity() throws Exception {
-        // Initialize the database
-        eventActivityRepository.saveAndFlush(eventActivity);
+        Event savedEvent = initEventDB();
+        EventActivity savedEventActivity = initEventActivityDB(savedEvent);
 
         int databaseSizeBeforeUpdate = eventActivityRepository.findAll().size();
 
-        // Update the eventActivity
-        EventActivity updatedEventActivity = eventActivityRepository.findById(eventActivity.getId()).get();
-        // Disconnect from session so that the updates on updatedEventActivity are not directly saved in db
-        em.detach(updatedEventActivity);
-        updatedEventActivity
-            .eventId(UPDATED_EVENT_ID)
-            .startDate(UPDATED_START_DATE)
-            .durationInDay(UPDATED_DURATION_IN_DAY)
-            .name(UPDATED_NAME)
-            .description(UPDATED_DESCRIPTION);
-        EventActivityDTO eventActivityDTO = eventActivityMapper.toDto(updatedEventActivity);
+        EventActivityDTO eventActivityDTO = createUpdateEventActivityDTO();
+        eventActivityDTO.setId(savedEventActivity.getId());
 
         restEventActivityMockMvc.perform(put("/api/event-activities")
             .contentType(TestUtil.APPLICATION_JSON_UTF8)
@@ -400,19 +403,20 @@ public class EventActivityResourceIT {
         List<EventActivity> eventActivityList = eventActivityRepository.findAll();
         assertThat(eventActivityList).hasSize(databaseSizeBeforeUpdate);
         EventActivity testEventActivity = eventActivityList.get(eventActivityList.size() - 1);
-        assertThat(testEventActivity.getEventId()).isEqualTo(UPDATED_EVENT_ID);
+        assertThat(testEventActivity.getId()).isEqualTo(savedEventActivity.getId());
+        assertThat(testEventActivity.getEventId()).isEqualTo(savedEvent.getId());
         assertThat(testEventActivity.getStartDate()).isEqualTo(UPDATED_START_DATE);
-        assertThat(testEventActivity.getDurationInDay()).isEqualTo(UPDATED_DURATION_IN_DAY);
+        assertThat(testEventActivity.getDurationInDay()).isEqualTo(UPDATED_DURATION_IN_DAY.setScale(2));
         assertThat(testEventActivity.getName()).isEqualTo(UPDATED_NAME);
         assertThat(testEventActivity.getDescription()).isEqualTo(UPDATED_DESCRIPTION);
     }
 
     @Test
-    public void updateNonExistingEventActivity() throws Exception {
+    public void updateEventActivity_WithEventActivityNotExist_ShouldThrow400() throws Exception {
         int databaseSizeBeforeUpdate = eventActivityRepository.findAll().size();
 
-        // Create the EventActivity
-        EventActivityDTO eventActivityDTO = eventActivityMapper.toDto(eventActivity);
+        EventActivityDTO eventActivityDTO = createUpdateEventActivityDTO();
+        eventActivityDTO.setId(null);
 
         // If the entity doesn't have an ID, it will throw BadRequestAlertException
         restEventActivityMockMvc.perform(put("/api/event-activities")
@@ -426,9 +430,139 @@ public class EventActivityResourceIT {
     }
 
     @Test
+    public void updateEventActivity_WithEventEnded_ShouldThrow400() throws Exception {
+        event.setEndDate(Instant.now().minus(1, ChronoUnit.DAYS));
+        Event savedEvent = initEventDB();
+        EventActivity savedEventActivity = initEventActivityDB(savedEvent);
+
+        int databaseSizeBeforeUpdate = eventActivityRepository.findAll().size();
+
+        EventActivityDTO eventActivityDTO = createUpdateEventActivityDTO();
+        eventActivityDTO.setId(savedEventActivity.getId());
+
+        restEventActivityMockMvc.perform(put("/api/event-activities")
+            .contentType(TestUtil.APPLICATION_JSON_UTF8)
+            .content(TestUtil.convertObjectToJsonBytes(eventActivityDTO)))
+            .andExpect(status().isBadRequest());
+
+        List<EventActivity> eventActivityList = eventActivityRepository.findAll();
+        assertThat(eventActivityList).hasSize(databaseSizeBeforeUpdate);
+    }
+
+    @Test
+    public void updateEventActivity_WithEventClosed_ShouldThrow400() throws Exception {
+        event.setStatus(EventStatus.CLOSED);
+        Event savedEvent = initEventDB();
+        EventActivity savedEventActivity = initEventActivityDB(savedEvent);
+
+        int databaseSizeBeforeUpdate = eventActivityRepository.findAll().size();
+
+        EventActivityDTO eventActivityDTO = createUpdateEventActivityDTO();
+        eventActivityDTO.setId(savedEventActivity.getId());
+
+        restEventActivityMockMvc.perform(put("/api/event-activities")
+            .contentType(TestUtil.APPLICATION_JSON_UTF8)
+            .content(TestUtil.convertObjectToJsonBytes(eventActivityDTO)))
+            .andExpect(status().isBadRequest());
+
+        List<EventActivity> eventActivityList = eventActivityRepository.findAll();
+        assertThat(eventActivityList).hasSize(databaseSizeBeforeUpdate);
+    }
+
+    @Test
+    public void updateEventActivity_WithEventCancelled_ShouldThrow400() throws Exception {
+        event.setStatus(EventStatus.CANCELLED);
+        Event savedEvent = initEventDB();
+        EventActivity savedEventActivity = initEventActivityDB(savedEvent);
+
+        int databaseSizeBeforeUpdate = eventActivityRepository.findAll().size();
+
+        EventActivityDTO eventActivityDTO = createUpdateEventActivityDTO();
+        eventActivityDTO.setId(savedEventActivity.getId());
+
+        restEventActivityMockMvc.perform(put("/api/event-activities")
+            .contentType(TestUtil.APPLICATION_JSON_UTF8)
+            .content(TestUtil.convertObjectToJsonBytes(eventActivityDTO)))
+            .andExpect(status().isBadRequest());
+
+        List<EventActivity> eventActivityList = eventActivityRepository.findAll();
+        assertThat(eventActivityList).hasSize(databaseSizeBeforeUpdate);
+    }
+
+    @Test
+    public void updateEventActivity_WithEventEarlierThanToday_ShouldThrow400() throws Exception {
+        Event savedEvent = initEventDB();
+        EventActivity savedEventActivity = initEventActivityDB(savedEvent);
+
+        int databaseSizeBeforeUpdate = eventActivityRepository.findAll().size();
+
+        EventActivityDTO eventActivityDTO = createUpdateEventActivityDTO();
+        eventActivityDTO.setId(savedEventActivity.getId());
+        eventActivityDTO.setStartDate(Instant.now().minus(1, ChronoUnit.SECONDS));
+
+        assertThat(eventActivityDTO.getStartDate()).isBefore(Instant.now());
+
+        restEventActivityMockMvc.perform(put("/api/event-activities")
+            .contentType(TestUtil.APPLICATION_JSON_UTF8)
+            .content(TestUtil.convertObjectToJsonBytes(eventActivityDTO)))
+            .andExpect(status().isBadRequest());
+
+        List<EventActivity> eventActivityList = eventActivityRepository.findAll();
+        assertThat(eventActivityList).hasSize(databaseSizeBeforeUpdate);
+    }
+
+    @Test
+    public void updateEventActivity_WithStartDateEarlierThanEventStartDate_ShouldThrow400() throws Exception {
+        event.setStartDate(Instant.now().plus(1, ChronoUnit.DAYS));
+        Event savedEvent = initEventDB();
+        EventActivity savedEventActivity = initEventActivityDB(savedEvent);
+
+        int databaseSizeBeforeCreate = eventActivityRepository.findAll().size();
+
+        EventActivityDTO eventActivityDTO = createUpdateEventActivityDTO();
+        eventActivityDTO.setId(savedEventActivity.getId());
+        eventActivityDTO.setStartDate(savedEvent.getStartDate().minus(1, ChronoUnit.SECONDS));
+
+        assertThat(savedEvent.getStartDate()).isAfter(Instant.now()); //for more accurate testing
+        assertThat(eventActivityDTO.getStartDate()).isBefore(savedEvent.getStartDate());
+
+        restEventActivityMockMvc.perform(put("/api/event-activities")
+            .contentType(TestUtil.APPLICATION_JSON_UTF8)
+            .content(TestUtil.convertObjectToJsonBytes(eventActivityDTO)))
+            .andExpect(status().isBadRequest());
+
+        List<EventActivity> eventActivityList = eventActivityRepository.findAll();
+        assertThat(eventActivityList).hasSize(databaseSizeBeforeCreate);
+    }
+
+    @Test
+    public void updateEventActivity_WithStartDateLaterThanEventEndDate_ShouldThrow400() throws Exception {
+        Event savedEvent = initEventDB();
+        EventActivity savedEventActivity = initEventActivityDB(savedEvent);
+
+        int databaseSizeBeforeCreate = eventActivityRepository.findAll().size();
+
+        EventActivityDTO eventActivityDTO = createUpdateEventActivityDTO();
+        eventActivityDTO.setId(savedEventActivity.getId());
+        eventActivityDTO.setStartDate(savedEvent.getEndDate().plus(1, ChronoUnit.SECONDS));
+
+        assertThat(eventActivityDTO.getStartDate()).isAfter(savedEvent.getEndDate());
+
+        restEventActivityMockMvc.perform(put("/api/event-activities")
+            .contentType(TestUtil.APPLICATION_JSON_UTF8)
+            .content(TestUtil.convertObjectToJsonBytes(eventActivityDTO)))
+            .andExpect(status().isBadRequest());
+
+        List<EventActivity> eventActivityList = eventActivityRepository.findAll();
+        assertThat(eventActivityList).hasSize(databaseSizeBeforeCreate);
+    }
+
+
+    @Test
     public void deleteEventActivity() throws Exception {
         // Initialize the database
-        eventActivityRepository.saveAndFlush(eventActivity);
+        Event savedEvent = initEventDB();
+        EventActivity savedEventActivity = initEventActivityDB(savedEvent);
 
         int databaseSizeBeforeDelete = eventActivityRepository.findAll().size();
 

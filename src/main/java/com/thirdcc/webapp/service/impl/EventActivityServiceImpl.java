@@ -76,6 +76,38 @@ public class EventActivityServiceImpl implements EventActivityService {
         return eventActivityMapper.toDto(eventActivity);
     }
 
+    @Override
+    public EventActivityDTO update(EventActivityDTO eventActivityDTO) {
+        EventActivity eventActivity = eventActivityRepository
+            .findById(eventActivityDTO.getId())
+            .orElseThrow(() -> new BadRequestException("eventActivity does not exist"));
+        Set<EventStatus> eventStatuses = new HashSet<EventStatus>() {{
+            add(EventStatus.OPEN);
+            add(EventStatus.POSTPONED);
+        }};
+        Event event = eventRepository
+            .findOneByIdAndStatusIn(eventActivity.getEventId(), eventStatuses)
+            .orElseThrow(() -> new BadRequestException("This event does not exists or it is not happening"));
+        if (event.getEndDate().isBefore(Instant.now())) {
+            throw new BadRequestException("cannot save eventActivity for ended event");
+        }
+        if (eventActivityDTO.getStartDate().isBefore(Instant.now())) {
+            throw new BadRequestException("event activity start date cannot be earlier than today");
+        }
+        if (eventActivityDTO.getStartDate().isBefore(event.getStartDate())) {
+            throw new BadRequestException("event activity start date cannot be earlier than event start date");
+        }
+        if (eventActivityDTO.getStartDate().isAfter(event.getEndDate())) {
+            throw new BadRequestException("event activity start date cannot be later than event end date");
+        }
+        eventActivity.setName(eventActivityDTO.getName());
+        eventActivity.setDescription(eventActivityDTO.getDescription());
+        eventActivity.setStartDate(eventActivityDTO.getStartDate());
+        eventActivity.setDurationInDay(eventActivityDTO.getDurationInDay());
+        eventActivity = eventActivityRepository.save(eventActivity);
+        return eventActivityMapper.toDto(eventActivity);
+    }
+
     /**
      * Get all the eventActivities.
      *

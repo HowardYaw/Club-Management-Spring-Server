@@ -79,7 +79,7 @@ public class EventActivityResource {
         if (eventActivityDTO.getId() == null) {
             throw new BadRequestAlertException("Invalid id", ENTITY_NAME, "idnull");
         }
-        EventActivityDTO result = eventActivityService.save(eventActivityDTO);
+        EventActivityDTO result = eventActivityService.update(eventActivityDTO);
         return ResponseEntity.ok()
             .headers(HeaderUtil.createEntityUpdateAlert(applicationName, true, ENTITY_NAME, eventActivityDTO.getId().toString()))
             .body(result);

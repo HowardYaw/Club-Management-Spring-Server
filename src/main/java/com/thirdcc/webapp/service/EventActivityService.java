@@ -20,6 +20,8 @@ public interface EventActivityService {
      */
     EventActivityDTO save(EventActivityDTO eventActivityDTO);
 
+    EventActivityDTO update(EventActivityDTO eventActivityDTO);
+
     /**
      * Get all the eventActivities.
      *
