@@ -152,6 +152,19 @@ public class EventActivityServiceImpl implements EventActivityService {
     @Override
     public void delete(Long id) {
         log.debug("Request to delete EventActivity : {}", id);
+        EventActivity eventActivity = eventActivityRepository
+            .findById(id)
+            .orElseThrow(() -> new BadRequestException("eventActivity does not exist"));
+        Set<EventStatus> eventStatuses = new HashSet<EventStatus>() {{
+            add(EventStatus.OPEN);
+            add(EventStatus.POSTPONED);
+        }};
+        Event event = eventRepository
+            .findOneByIdAndStatusIn(eventActivity.getEventId(), eventStatuses)
+            .orElseThrow(() -> new BadRequestException("This event does not exists or it is not happening"));
+        if (event.getEndDate().isAfter(Instant.now())) {
+            throw new BadRequestException("cannot delete eventActivity for ended event");
+        }
         eventActivityRepository.deleteById(id);
     }
 }

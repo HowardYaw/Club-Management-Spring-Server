@@ -578,20 +578,84 @@ public class EventActivityResourceIT {
 
     @Test
     public void deleteEventActivity() throws Exception {
-        // Initialize the database
+        event.setEndDate(Instant.now().minus(1, ChronoUnit.DAYS));
         Event savedEvent = initEventDB();
         EventActivity savedEventActivity = initEventActivityDB(savedEvent);
 
         int databaseSizeBeforeDelete = eventActivityRepository.findAll().size();
 
-        // Delete the eventActivity
         restEventActivityMockMvc.perform(delete("/api/event-activities/{id}", eventActivity.getId())
             .accept(TestUtil.APPLICATION_JSON_UTF8))
             .andExpect(status().isNoContent());
 
-        // Validate the database contains one less item
         List<EventActivity> eventActivityList = eventActivityRepository.findAll();
         assertThat(eventActivityList).hasSize(databaseSizeBeforeDelete - 1);
+    }
+
+    @Test
+    public void deleteEventActivity_WithEventActivityNotExist_ShouldThrow400() throws Exception {
+
+        int databaseSizeBeforeDelete = eventActivityRepository.findAll().size();
+
+        restEventActivityMockMvc.perform(delete("/api/event-activities/{id}", Long.MAX_VALUE)
+            .accept(TestUtil.APPLICATION_JSON_UTF8))
+            .andExpect(status().isBadRequest());
+
+        List<EventActivity> eventActivityList = eventActivityRepository.findAll();
+        assertThat(eventActivityList).hasSize(databaseSizeBeforeDelete);
+    }
+
+    @Test
+    public void deleteEventActivity_WithEventIsCancelled_ShouldThrow400() throws Exception {
+        event.setStatus(EventStatus.CANCELLED);
+        Event savedEvent = initEventDB();
+        EventActivity savedEventActivity = initEventActivityDB(savedEvent);
+
+        int databaseSizeBeforeDelete = eventActivityRepository.findAll().size();
+
+        assertThat(savedEvent.getStatus()).isEqualByComparingTo(EventStatus.CANCELLED);
+
+        restEventActivityMockMvc.perform(delete("/api/event-activities/{id}", savedEventActivity.getId())
+            .accept(TestUtil.APPLICATION_JSON_UTF8))
+            .andExpect(status().isBadRequest());
+
+        List<EventActivity> eventActivityList = eventActivityRepository.findAll();
+        assertThat(eventActivityList).hasSize(databaseSizeBeforeDelete);
+    }
+
+    @Test
+    public void deleteEventActivity_WithEventIsClosed_ShouldThrow400() throws Exception {
+        event.setStatus(EventStatus.CLOSED);
+        Event savedEvent = initEventDB();
+        EventActivity savedEventActivity = initEventActivityDB(savedEvent);
+
+        int databaseSizeBeforeDelete = eventActivityRepository.findAll().size();
+
+        assertThat(savedEvent.getStatus()).isEqualByComparingTo(EventStatus.CLOSED);
+
+        restEventActivityMockMvc.perform(delete("/api/event-activities/{id}", savedEventActivity.getId())
+            .accept(TestUtil.APPLICATION_JSON_UTF8))
+            .andExpect(status().isBadRequest());
+
+        List<EventActivity> eventActivityList = eventActivityRepository.findAll();
+        assertThat(eventActivityList).hasSize(databaseSizeBeforeDelete);
+    }
+
+    @Test
+    public void deleteEventActivity_WithEventIsEnded_ShouldThrow400() throws Exception {
+        Event savedEvent = initEventDB();
+        EventActivity savedEventActivity = initEventActivityDB(savedEvent);
+
+        int databaseSizeBeforeDelete = eventActivityRepository.findAll().size();
+
+        assertThat(savedEvent.getEndDate()).isAfter(Instant.now());
+
+        restEventActivityMockMvc.perform(delete("/api/event-activities/{id}", savedEventActivity.getId())
+            .accept(TestUtil.APPLICATION_JSON_UTF8))
+            .andExpect(status().isBadRequest());
+
+        List<EventActivity> eventActivityList = eventActivityRepository.findAll();
+        assertThat(eventActivityList).hasSize(databaseSizeBeforeDelete);
     }
 
     @Test
