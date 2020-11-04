@@ -2,13 +2,15 @@ package com.thirdcc.webapp.service.dto;
 import java.io.Serializable;
 import java.util.Objects;
 import javax.persistence.Lob;
-import com.thirdcc.webapp.domain.enumeration.ChecklistStatus;
-import com.thirdcc.webapp.domain.enumeration.ChecklistType;
+
+import com.thirdcc.webapp.domain.EventChecklist;
+import com.thirdcc.webapp.domain.enumeration.EventChecklistStatus;
+import com.thirdcc.webapp.domain.enumeration.EventChecklistType;
 
 /**
- * A DTO for the {@link com.thirdcc.webapp.domain.Checklist} entity.
+ * A DTO for the {@link EventChecklist} entity.
  */
-public class ChecklistDTO implements Serializable {
+public class EventChecklistDTO implements Serializable {
 
     private Long id;
 
@@ -19,9 +21,9 @@ public class ChecklistDTO implements Serializable {
     @Lob
     private String description;
 
-    private ChecklistStatus status;
+    private EventChecklistStatus status;
 
-    private ChecklistType type;
+    private EventChecklistType type;
 
 
     public Long getId() {
@@ -56,19 +58,19 @@ public class ChecklistDTO implements Serializable {
         this.description = description;
     }
 
-    public ChecklistStatus getStatus() {
+    public EventChecklistStatus getStatus() {
         return status;
     }
 
-    public void setStatus(ChecklistStatus status) {
+    public void setStatus(EventChecklistStatus status) {
         this.status = status;
     }
 
-    public ChecklistType getType() {
+    public EventChecklistType getType() {
         return type;
     }
 
-    public void setType(ChecklistType type) {
+    public void setType(EventChecklistType type) {
         this.type = type;
     }
 
@@ -81,7 +83,7 @@ public class ChecklistDTO implements Serializable {
             return false;
         }
 
-        ChecklistDTO checklistDTO = (ChecklistDTO) o;
+        EventChecklistDTO checklistDTO = (EventChecklistDTO) o;
         if (checklistDTO.getId() == null || getId() == null) {
             return false;
         }

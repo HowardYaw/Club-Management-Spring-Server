@@ -11,9 +11,6 @@ import io.github.jhipster.config.JHipsterProperties;
 import org.springframework.boot.autoconfigure.cache.JCacheManagerCustomizer;
 import org.springframework.boot.autoconfigure.orm.jpa.HibernatePropertiesCustomizer;
 import org.springframework.cache.annotation.EnableCaching;
-import org.springframework.cloud.client.ServiceInstance;
-import org.springframework.cloud.client.discovery.DiscoveryClient;
-import org.springframework.cloud.client.serviceregistry.Registration;
 import org.springframework.context.annotation.*;
 
 @Configuration
@@ -53,7 +50,7 @@ public class CacheConfiguration {
             createCache(cm, com.thirdcc.webapp.domain.EventImage.class.getName());
             createCache(cm, com.thirdcc.webapp.domain.Budget.class.getName());
             createCache(cm, com.thirdcc.webapp.domain.EventActivity.class.getName());
-            createCache(cm, com.thirdcc.webapp.domain.Checklist.class.getName());
+            createCache(cm, com.thirdcc.webapp.domain.EventChecklist.class.getName());
             createCache(cm, com.thirdcc.webapp.domain.Transaction.class.getName());
             createCache(cm, com.thirdcc.webapp.domain.Claim.class.getName());
             createCache(cm, com.thirdcc.webapp.domain.Debt.class.getName());
