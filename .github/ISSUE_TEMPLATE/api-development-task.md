@@ -9,4 +9,9 @@ assignees: ''
 
 - Endpoint URI: */event*
 - Http Method: *POST*
-- API Logic: *Create an event ...*
+- API Logic: 
+    - do 1
+    - do 2
+- Progress
+    - [ ] development
+    - [ ] integration Test
