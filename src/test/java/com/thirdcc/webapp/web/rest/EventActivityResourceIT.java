@@ -257,7 +257,7 @@ public class EventActivityResourceIT {
     }
 
     @Test
-    public void createEventActivity_WithStartDateEarlierThanToday_ShouldThrow400() throws Exception {
+    public void createEventActivity_WithEventActivityStartDateEarlierThanToday_ShouldThrow400() throws Exception {
         Event savedEvent = initEventDB();
 
         int databaseSizeBeforeCreate = eventActivityRepository.findAll().size();
@@ -278,7 +278,7 @@ public class EventActivityResourceIT {
     }
 
     @Test
-    public void createEventActivity_WithStartDateLaterThanEventEndDate_ShouldThrow400() throws Exception {
+    public void createEventActivity_WithEventActivityStartDateLaterThanEventEndDate_ShouldThrow400() throws Exception {
         Event savedEvent = initEventDB();
 
         int databaseSizeBeforeCreate = eventActivityRepository.findAll().size();
@@ -485,7 +485,7 @@ public class EventActivityResourceIT {
     }
 
     @Test
-    public void updateEventActivity_WithEventEarlierThanToday_ShouldThrow400() throws Exception {
+    public void updateEventActivity_WithEventActivityStartDateEarlierThanToday_ShouldThrow400() throws Exception {
         Event savedEvent = initEventDB();
         EventActivity savedEventActivity = initEventActivityDB(savedEvent);
 
@@ -507,7 +507,7 @@ public class EventActivityResourceIT {
     }
 
     @Test
-    public void updateEventActivity_WithStartDateLaterThanEventEndDate_ShouldThrow400() throws Exception {
+    public void updateEventActivity_WithEventActivityStartDateLaterThanEventEndDate_ShouldThrow400() throws Exception {
         Event savedEvent = initEventDB();
         EventActivity savedEventActivity = initEventActivityDB(savedEvent);
 
