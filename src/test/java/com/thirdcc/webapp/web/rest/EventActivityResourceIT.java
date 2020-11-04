@@ -278,29 +278,6 @@ public class EventActivityResourceIT {
     }
 
     @Test
-    public void createEventActivity_WithStartDateEarlierThanEventStartDate_ShouldThrow400() throws Exception {
-        event.setStartDate(Instant.now().plus(1, ChronoUnit.DAYS));
-        Event savedEvent = initEventDB();
-
-        int databaseSizeBeforeCreate = eventActivityRepository.findAll().size();
-
-        EventActivityDTO eventActivityDTO = createDefaultEventActivityDTO();
-        eventActivityDTO.setEventId(savedEvent.getId());
-        eventActivityDTO.setStartDate(savedEvent.getStartDate().minus(1, ChronoUnit.SECONDS));
-
-        assertThat(savedEvent.getStartDate()).isAfter(Instant.now()); //for more accurate testing
-        assertThat(eventActivityDTO.getStartDate()).isBefore(savedEvent.getStartDate());
-
-        restEventActivityMockMvc.perform(post("/api/event-activities")
-            .contentType(TestUtil.APPLICATION_JSON_UTF8)
-            .content(TestUtil.convertObjectToJsonBytes(eventActivityDTO)))
-            .andExpect(status().isBadRequest());
-
-        List<EventActivity> eventActivityList = eventActivityRepository.findAll();
-        assertThat(eventActivityList).hasSize(databaseSizeBeforeCreate);
-    }
-
-    @Test
     public void createEventActivity_WithStartDateLaterThanEventEndDate_ShouldThrow400() throws Exception {
         Event savedEvent = initEventDB();
 
@@ -527,30 +504,6 @@ public class EventActivityResourceIT {
 
         List<EventActivity> eventActivityList = eventActivityRepository.findAll();
         assertThat(eventActivityList).hasSize(databaseSizeBeforeUpdate);
-    }
-
-    @Test
-    public void updateEventActivity_WithStartDateEarlierThanEventStartDate_ShouldThrow400() throws Exception {
-        event.setStartDate(Instant.now().plus(1, ChronoUnit.DAYS));
-        Event savedEvent = initEventDB();
-        EventActivity savedEventActivity = initEventActivityDB(savedEvent);
-
-        int databaseSizeBeforeCreate = eventActivityRepository.findAll().size();
-
-        EventActivityDTO eventActivityDTO = createUpdateEventActivityDTO();
-        eventActivityDTO.setId(savedEventActivity.getId());
-        eventActivityDTO.setStartDate(savedEvent.getStartDate().minus(1, ChronoUnit.SECONDS));
-
-        assertThat(savedEvent.getStartDate()).isAfter(Instant.now()); //for more accurate testing
-        assertThat(eventActivityDTO.getStartDate()).isBefore(savedEvent.getStartDate());
-
-        restEventActivityMockMvc.perform(put("/api/event-activities")
-            .contentType(TestUtil.APPLICATION_JSON_UTF8)
-            .content(TestUtil.convertObjectToJsonBytes(eventActivityDTO)))
-            .andExpect(status().isBadRequest());
-
-        List<EventActivity> eventActivityList = eventActivityRepository.findAll();
-        assertThat(eventActivityList).hasSize(databaseSizeBeforeCreate);
     }
 
     @Test

@@ -65,9 +65,6 @@ public class EventActivityServiceImpl implements EventActivityService {
         if (eventActivityDTO.getStartDate().isBefore(Instant.now())) {
             throw new BadRequestException("event activity start date cannot be earlier than today");
         }
-        if (eventActivityDTO.getStartDate().isBefore(event.getStartDate())) {
-            throw new BadRequestException("event activity start date cannot be earlier than event start date");
-        }
         if (eventActivityDTO.getStartDate().isAfter(event.getEndDate())) {
             throw new BadRequestException("event activity start date cannot be later than event end date");
         }
@@ -93,9 +90,6 @@ public class EventActivityServiceImpl implements EventActivityService {
         }
         if (eventActivityDTO.getStartDate().isBefore(Instant.now())) {
             throw new BadRequestException("event activity start date cannot be earlier than today");
-        }
-        if (eventActivityDTO.getStartDate().isBefore(event.getStartDate())) {
-            throw new BadRequestException("event activity start date cannot be earlier than event start date");
         }
         if (eventActivityDTO.getStartDate().isAfter(event.getEndDate())) {
             throw new BadRequestException("event activity start date cannot be later than event end date");
