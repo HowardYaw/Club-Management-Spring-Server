@@ -1,6 +1,10 @@
 package com.thirdcc.webapp.service.impl;
 
+import com.thirdcc.webapp.domain.Event;
 import com.thirdcc.webapp.domain.EventChecklist;
+import com.thirdcc.webapp.domain.enumeration.EventChecklistStatus;
+import com.thirdcc.webapp.exception.BadRequestException;
+import com.thirdcc.webapp.repository.EventRepository;
 import com.thirdcc.webapp.service.EventChecklistService;
 import com.thirdcc.webapp.repository.EventChecklistRepository;
 import com.thirdcc.webapp.service.dto.EventChecklistDTO;
@@ -13,6 +17,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.Optional;
 
 /**
@@ -28,23 +33,38 @@ public class EventChecklistServiceImpl implements EventChecklistService {
 
     private final EventChecklistMapper checklistMapper;
 
-    public EventChecklistServiceImpl(EventChecklistRepository checklistRepository, EventChecklistMapper checklistMapper) {
+    private final EventRepository eventRepository;
+
+    public EventChecklistServiceImpl(
+        EventChecklistRepository checklistRepository,
+        EventChecklistMapper checklistMapper,
+        EventRepository eventRepository
+    ) {
         this.checklistRepository = checklistRepository;
         this.checklistMapper = checklistMapper;
+        this.eventRepository = eventRepository;
     }
 
     /**
      * Save a checklist.
      *
-     * @param checklistDTO the entity to save.
+     * @param eventChecklistDTO the entity to save.
      * @return the persisted entity.
      */
     @Override
-    public EventChecklistDTO save(EventChecklistDTO checklistDTO) {
-        log.debug("Request to save Checklist : {}", checklistDTO);
-        EventChecklist checklist = checklistMapper.toEntity(checklistDTO);
-        checklist = checklistRepository.save(checklist);
-        return checklistMapper.toDto(checklist);
+    public EventChecklistDTO save(EventChecklistDTO eventChecklistDTO) {
+        log.debug("Request to save Checklist : {}", eventChecklistDTO);
+        // TODO: change to eventService done by KC
+        Event event = eventRepository
+            .findById(eventChecklistDTO.getEventId())
+            .orElseThrow(() -> new BadRequestException("Event not found"));
+        if (event.getStartDate().isBefore(Instant.now())) {
+            throw new BadRequestException("Event is started, cannot create checklist for this event");
+        }
+        EventChecklist eventChecklist = checklistMapper.toEntity(eventChecklistDTO);
+        eventChecklist.setStatus(EventChecklistStatus.OPEN);
+        eventChecklist = checklistRepository.save(eventChecklist);
+        return checklistMapper.toDto(eventChecklist);
     }
 
     /**
