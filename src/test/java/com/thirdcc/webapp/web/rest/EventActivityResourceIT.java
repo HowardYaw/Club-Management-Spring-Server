@@ -531,7 +531,6 @@ public class EventActivityResourceIT {
 
     @Test
     public void deleteEventActivity() throws Exception {
-        event.setEndDate(Instant.now().minus(1, ChronoUnit.DAYS));
         Event savedEvent = initEventDB();
         EventActivity savedEventActivity = initEventActivityDB(savedEvent);
 
@@ -596,12 +595,13 @@ public class EventActivityResourceIT {
 
     @Test
     public void deleteEventActivity_WithEventIsEnded_ShouldThrow400() throws Exception {
+        event.setEndDate(Instant.now().minus(1, ChronoUnit.DAYS));
         Event savedEvent = initEventDB();
         EventActivity savedEventActivity = initEventActivityDB(savedEvent);
 
         int databaseSizeBeforeDelete = eventActivityRepository.findAll().size();
 
-        assertThat(savedEvent.getEndDate()).isAfter(Instant.now());
+        assertThat(savedEvent.getEndDate()).isBefore(Instant.now());
 
         restEventActivityMockMvc.perform(delete("/api/event-activities/{id}", savedEventActivity.getId())
             .accept(TestUtil.APPLICATION_JSON_UTF8))

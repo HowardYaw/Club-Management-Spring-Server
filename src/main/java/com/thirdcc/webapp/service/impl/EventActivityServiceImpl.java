@@ -156,7 +156,7 @@ public class EventActivityServiceImpl implements EventActivityService {
         Event event = eventRepository
             .findOneByIdAndStatusIn(eventActivity.getEventId(), eventStatuses)
             .orElseThrow(() -> new BadRequestException("This event does not exists or it is not happening"));
-        if (event.getEndDate().isAfter(Instant.now())) {
+        if (event.getEndDate().isBefore(Instant.now())) {
             throw new BadRequestException("cannot delete eventActivity for ended event");
         }
         eventActivityRepository.deleteById(id);
