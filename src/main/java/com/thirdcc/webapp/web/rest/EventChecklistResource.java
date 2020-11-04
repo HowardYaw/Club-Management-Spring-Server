@@ -1,8 +1,9 @@
 package com.thirdcc.webapp.web.rest;
 
-import com.thirdcc.webapp.service.ChecklistService;
+import com.thirdcc.webapp.domain.EventChecklist;
+import com.thirdcc.webapp.service.EventChecklistService;
+import com.thirdcc.webapp.service.dto.EventChecklistDTO;
 import com.thirdcc.webapp.web.rest.errors.BadRequestAlertException;
-import com.thirdcc.webapp.service.dto.ChecklistDTO;
 
 import io.github.jhipster.web.util.HeaderUtil;
 import io.github.jhipster.web.util.PaginationUtil;
@@ -13,7 +14,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.springframework.http.ResponseEntity;
@@ -26,22 +26,22 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * REST controller for managing {@link com.thirdcc.webapp.domain.Checklist}.
+ * REST controller for managing {@link EventChecklist}.
  */
 @RestController
 @RequestMapping("/api")
-public class ChecklistResource {
+public class EventChecklistResource {
 
-    private final Logger log = LoggerFactory.getLogger(ChecklistResource.class);
+    private final Logger log = LoggerFactory.getLogger(EventChecklistResource.class);
 
     private static final String ENTITY_NAME = "checklist";
 
     @Value("${jhipster.clientApp.name}")
     private String applicationName;
 
-    private final ChecklistService checklistService;
+    private final EventChecklistService checklistService;
 
-    public ChecklistResource(ChecklistService checklistService) {
+    public EventChecklistResource(EventChecklistService checklistService) {
         this.checklistService = checklistService;
     }
 
@@ -53,12 +53,12 @@ public class ChecklistResource {
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
     @PostMapping("/checklists")
-    public ResponseEntity<ChecklistDTO> createChecklist(@RequestBody ChecklistDTO checklistDTO) throws URISyntaxException {
+    public ResponseEntity<EventChecklistDTO> createChecklist(@RequestBody EventChecklistDTO checklistDTO) throws URISyntaxException {
         log.debug("REST request to save Checklist : {}", checklistDTO);
         if (checklistDTO.getId() != null) {
             throw new BadRequestAlertException("A new checklist cannot already have an ID", ENTITY_NAME, "idexists");
         }
-        ChecklistDTO result = checklistService.save(checklistDTO);
+        EventChecklistDTO result = checklistService.save(checklistDTO);
         return ResponseEntity.created(new URI("/api/checklists/" + result.getId()))
             .headers(HeaderUtil.createEntityCreationAlert(applicationName, true, ENTITY_NAME, result.getId().toString()))
             .body(result);
@@ -74,12 +74,12 @@ public class ChecklistResource {
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
     @PutMapping("/checklists")
-    public ResponseEntity<ChecklistDTO> updateChecklist(@RequestBody ChecklistDTO checklistDTO) throws URISyntaxException {
+    public ResponseEntity<EventChecklistDTO> updateChecklist(@RequestBody EventChecklistDTO checklistDTO) throws URISyntaxException {
         log.debug("REST request to update Checklist : {}", checklistDTO);
         if (checklistDTO.getId() == null) {
             throw new BadRequestAlertException("Invalid id", ENTITY_NAME, "idnull");
         }
-        ChecklistDTO result = checklistService.save(checklistDTO);
+        EventChecklistDTO result = checklistService.save(checklistDTO);
         return ResponseEntity.ok()
             .headers(HeaderUtil.createEntityUpdateAlert(applicationName, true, ENTITY_NAME, checklistDTO.getId().toString()))
             .body(result);
@@ -94,9 +94,9 @@ public class ChecklistResource {
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the list of checklists in body.
      */
     @GetMapping("/checklists")
-    public ResponseEntity<List<ChecklistDTO>> getAllChecklists(Pageable pageable, @RequestParam MultiValueMap<String, String> queryParams, UriComponentsBuilder uriBuilder) {
+    public ResponseEntity<List<EventChecklistDTO>> getAllChecklists(Pageable pageable, @RequestParam MultiValueMap<String, String> queryParams, UriComponentsBuilder uriBuilder) {
         log.debug("REST request to get a page of Checklists");
-        Page<ChecklistDTO> page = checklistService.findAll(pageable);
+        Page<EventChecklistDTO> page = checklistService.findAll(pageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(uriBuilder.queryParams(queryParams), page);
         return ResponseEntity.ok().headers(headers).body(page.getContent());
     }
@@ -108,9 +108,9 @@ public class ChecklistResource {
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the checklistDTO, or with status {@code 404 (Not Found)}.
      */
     @GetMapping("/checklists/{id}")
-    public ResponseEntity<ChecklistDTO> getChecklist(@PathVariable Long id) {
+    public ResponseEntity<EventChecklistDTO> getChecklist(@PathVariable Long id) {
         log.debug("REST request to get Checklist : {}", id);
-        Optional<ChecklistDTO> checklistDTO = checklistService.findOne(id);
+        Optional<EventChecklistDTO> checklistDTO = checklistService.findOne(id);
         return ResponseUtil.wrapOrNotFound(checklistDTO);
     }
 

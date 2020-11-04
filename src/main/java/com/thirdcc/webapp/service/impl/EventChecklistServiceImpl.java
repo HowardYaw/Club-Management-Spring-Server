@@ -1,10 +1,10 @@
 package com.thirdcc.webapp.service.impl;
 
-import com.thirdcc.webapp.service.ChecklistService;
-import com.thirdcc.webapp.domain.Checklist;
-import com.thirdcc.webapp.repository.ChecklistRepository;
-import com.thirdcc.webapp.service.dto.ChecklistDTO;
-import com.thirdcc.webapp.service.mapper.ChecklistMapper;
+import com.thirdcc.webapp.domain.EventChecklist;
+import com.thirdcc.webapp.service.EventChecklistService;
+import com.thirdcc.webapp.repository.EventChecklistRepository;
+import com.thirdcc.webapp.service.dto.EventChecklistDTO;
+import com.thirdcc.webapp.service.mapper.EventChecklistMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,19 +16,19 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Optional;
 
 /**
- * Service Implementation for managing {@link Checklist}.
+ * Service Implementation for managing {@link EventChecklist}.
  */
 @Service
 @Transactional
-public class ChecklistServiceImpl implements ChecklistService {
+public class EventChecklistServiceImpl implements EventChecklistService {
 
-    private final Logger log = LoggerFactory.getLogger(ChecklistServiceImpl.class);
+    private final Logger log = LoggerFactory.getLogger(EventChecklistServiceImpl.class);
 
-    private final ChecklistRepository checklistRepository;
+    private final EventChecklistRepository checklistRepository;
 
-    private final ChecklistMapper checklistMapper;
+    private final EventChecklistMapper checklistMapper;
 
-    public ChecklistServiceImpl(ChecklistRepository checklistRepository, ChecklistMapper checklistMapper) {
+    public EventChecklistServiceImpl(EventChecklistRepository checklistRepository, EventChecklistMapper checklistMapper) {
         this.checklistRepository = checklistRepository;
         this.checklistMapper = checklistMapper;
     }
@@ -40,9 +40,9 @@ public class ChecklistServiceImpl implements ChecklistService {
      * @return the persisted entity.
      */
     @Override
-    public ChecklistDTO save(ChecklistDTO checklistDTO) {
+    public EventChecklistDTO save(EventChecklistDTO checklistDTO) {
         log.debug("Request to save Checklist : {}", checklistDTO);
-        Checklist checklist = checklistMapper.toEntity(checklistDTO);
+        EventChecklist checklist = checklistMapper.toEntity(checklistDTO);
         checklist = checklistRepository.save(checklist);
         return checklistMapper.toDto(checklist);
     }
@@ -55,7 +55,7 @@ public class ChecklistServiceImpl implements ChecklistService {
      */
     @Override
     @Transactional(readOnly = true)
-    public Page<ChecklistDTO> findAll(Pageable pageable) {
+    public Page<EventChecklistDTO> findAll(Pageable pageable) {
         log.debug("Request to get all Checklists");
         return checklistRepository.findAll(pageable)
             .map(checklistMapper::toDto);
@@ -70,7 +70,7 @@ public class ChecklistServiceImpl implements ChecklistService {
      */
     @Override
     @Transactional(readOnly = true)
-    public Optional<ChecklistDTO> findOne(Long id) {
+    public Optional<EventChecklistDTO> findOne(Long id) {
         log.debug("Request to get Checklist : {}", id);
         return checklistRepository.findById(id)
             .map(checklistMapper::toDto);

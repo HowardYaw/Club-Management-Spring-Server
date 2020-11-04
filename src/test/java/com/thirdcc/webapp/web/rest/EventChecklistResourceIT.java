@@ -1,11 +1,13 @@
 package com.thirdcc.webapp.web.rest;
 
 import com.thirdcc.webapp.ClubmanagementApp;
-import com.thirdcc.webapp.domain.Checklist;
-import com.thirdcc.webapp.repository.ChecklistRepository;
-import com.thirdcc.webapp.service.ChecklistService;
-import com.thirdcc.webapp.service.dto.ChecklistDTO;
-import com.thirdcc.webapp.service.mapper.ChecklistMapper;
+import com.thirdcc.webapp.domain.EventChecklist;
+import com.thirdcc.webapp.domain.enumeration.EventChecklistStatus;
+import com.thirdcc.webapp.domain.enumeration.EventChecklistType;
+import com.thirdcc.webapp.repository.EventChecklistRepository;
+import com.thirdcc.webapp.service.EventChecklistService;
+import com.thirdcc.webapp.service.dto.EventChecklistDTO;
+import com.thirdcc.webapp.service.mapper.EventChecklistMapper;
 import com.thirdcc.webapp.web.rest.errors.ExceptionTranslator;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -19,7 +21,6 @@ import org.springframework.http.converter.json.MappingJackson2HttpMessageConvert
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.Base64Utils;
 import org.springframework.validation.Validator;
 
 import javax.persistence.EntityManager;
@@ -31,13 +32,11 @@ import static org.hamcrest.Matchers.hasItem;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-import com.thirdcc.webapp.domain.enumeration.ChecklistStatus;
-import com.thirdcc.webapp.domain.enumeration.ChecklistType;
 /**
  * Integration tests for the {@Link ChecklistResource} REST controller.
  */
 @SpringBootTest(classes = ClubmanagementApp.class)
-public class ChecklistResourceIT {
+public class EventChecklistResourceIT {
 
     private static final Long DEFAULT_EVENT_ID = 1L;
     private static final Long UPDATED_EVENT_ID = 2L;
@@ -48,20 +47,20 @@ public class ChecklistResourceIT {
     private static final String DEFAULT_DESCRIPTION = "AAAAAAAAAA";
     private static final String UPDATED_DESCRIPTION = "BBBBBBBBBB";
 
-    private static final ChecklistStatus DEFAULT_STATUS = ChecklistStatus.OPEN;
-    private static final ChecklistStatus UPDATED_STATUS = ChecklistStatus.IN_PROGRESS;
+    private static final EventChecklistStatus DEFAULT_STATUS = EventChecklistStatus.OPEN;
+    private static final EventChecklistStatus UPDATED_STATUS = EventChecklistStatus.IN_PROGRESS;
 
-    private static final ChecklistType DEFAULT_TYPE = ChecklistType.PREPARATION;
-    private static final ChecklistType UPDATED_TYPE = ChecklistType.PURCHASE;
-
-    @Autowired
-    private ChecklistRepository checklistRepository;
+    private static final EventChecklistType DEFAULT_TYPE = EventChecklistType.PREPARATION;
+    private static final EventChecklistType UPDATED_TYPE = EventChecklistType.PURCHASE;
 
     @Autowired
-    private ChecklistMapper checklistMapper;
+    private EventChecklistRepository checklistRepository;
 
     @Autowired
-    private ChecklistService checklistService;
+    private EventChecklistMapper checklistMapper;
+
+    @Autowired
+    private EventChecklistService checklistService;
 
     @Autowired
     private MappingJackson2HttpMessageConverter jacksonMessageConverter;
@@ -80,13 +79,13 @@ public class ChecklistResourceIT {
 
     private MockMvc restChecklistMockMvc;
 
-    private Checklist checklist;
+    private EventChecklist checklist;
 
     @BeforeEach
     public void setup() {
         MockitoAnnotations.initMocks(this);
-        final ChecklistResource checklistResource = new ChecklistResource(checklistService);
-        this.restChecklistMockMvc = MockMvcBuilders.standaloneSetup(checklistResource)
+        final EventChecklistResource eventChecklistResource = new EventChecklistResource(checklistService);
+        this.restChecklistMockMvc = MockMvcBuilders.standaloneSetup(eventChecklistResource)
             .setCustomArgumentResolvers(pageableArgumentResolver)
             .setControllerAdvice(exceptionTranslator)
             .setConversionService(createFormattingConversionService())
@@ -100,8 +99,8 @@ public class ChecklistResourceIT {
      * This is a static method, as tests for other entities might also need it,
      * if they test an entity which requires the current entity.
      */
-    public static Checklist createEntity(EntityManager em) {
-        Checklist checklist = new Checklist()
+    public static EventChecklist createEntity(EntityManager em) {
+        EventChecklist checklist = new EventChecklist()
             .eventId(DEFAULT_EVENT_ID)
             .name(DEFAULT_NAME)
             .description(DEFAULT_DESCRIPTION)
@@ -115,8 +114,8 @@ public class ChecklistResourceIT {
      * This is a static method, as tests for other entities might also need it,
      * if they test an entity which requires the current entity.
      */
-    public static Checklist createUpdatedEntity(EntityManager em) {
-        Checklist checklist = new Checklist()
+    public static EventChecklist createUpdatedEntity(EntityManager em) {
+        EventChecklist checklist = new EventChecklist()
             .eventId(UPDATED_EVENT_ID)
             .name(UPDATED_NAME)
             .description(UPDATED_DESCRIPTION)
@@ -136,16 +135,16 @@ public class ChecklistResourceIT {
         int databaseSizeBeforeCreate = checklistRepository.findAll().size();
 
         // Create the Checklist
-        ChecklistDTO checklistDTO = checklistMapper.toDto(checklist);
+        EventChecklistDTO checklistDTO = checklistMapper.toDto(checklist);
         restChecklistMockMvc.perform(post("/api/checklists")
             .contentType(TestUtil.APPLICATION_JSON_UTF8)
             .content(TestUtil.convertObjectToJsonBytes(checklistDTO)))
             .andExpect(status().isCreated());
 
         // Validate the Checklist in the database
-        List<Checklist> checklistList = checklistRepository.findAll();
+        List<EventChecklist> checklistList = checklistRepository.findAll();
         assertThat(checklistList).hasSize(databaseSizeBeforeCreate + 1);
-        Checklist testChecklist = checklistList.get(checklistList.size() - 1);
+        EventChecklist testChecklist = checklistList.get(checklistList.size() - 1);
         assertThat(testChecklist.getEventId()).isEqualTo(DEFAULT_EVENT_ID);
         assertThat(testChecklist.getName()).isEqualTo(DEFAULT_NAME);
         assertThat(testChecklist.getDescription()).isEqualTo(DEFAULT_DESCRIPTION);
@@ -160,7 +159,7 @@ public class ChecklistResourceIT {
 
         // Create the Checklist with an existing ID
         checklist.setId(1L);
-        ChecklistDTO checklistDTO = checklistMapper.toDto(checklist);
+        EventChecklistDTO checklistDTO = checklistMapper.toDto(checklist);
 
         // An entity with an existing ID cannot be created, so this API call must fail
         restChecklistMockMvc.perform(post("/api/checklists")
@@ -169,7 +168,7 @@ public class ChecklistResourceIT {
             .andExpect(status().isBadRequest());
 
         // Validate the Checklist in the database
-        List<Checklist> checklistList = checklistRepository.findAll();
+        List<EventChecklist> checklistList = checklistRepository.findAll();
         assertThat(checklistList).hasSize(databaseSizeBeforeCreate);
     }
 
@@ -227,7 +226,7 @@ public class ChecklistResourceIT {
         int databaseSizeBeforeUpdate = checklistRepository.findAll().size();
 
         // Update the checklist
-        Checklist updatedChecklist = checklistRepository.findById(checklist.getId()).get();
+        EventChecklist updatedChecklist = checklistRepository.findById(checklist.getId()).get();
         // Disconnect from session so that the updates on updatedChecklist are not directly saved in db
         em.detach(updatedChecklist);
         updatedChecklist
@@ -236,7 +235,7 @@ public class ChecklistResourceIT {
             .description(UPDATED_DESCRIPTION)
             .status(UPDATED_STATUS)
             .type(UPDATED_TYPE);
-        ChecklistDTO checklistDTO = checklistMapper.toDto(updatedChecklist);
+        EventChecklistDTO checklistDTO = checklistMapper.toDto(updatedChecklist);
 
         restChecklistMockMvc.perform(put("/api/checklists")
             .contentType(TestUtil.APPLICATION_JSON_UTF8)
@@ -244,9 +243,9 @@ public class ChecklistResourceIT {
             .andExpect(status().isOk());
 
         // Validate the Checklist in the database
-        List<Checklist> checklistList = checklistRepository.findAll();
+        List<EventChecklist> checklistList = checklistRepository.findAll();
         assertThat(checklistList).hasSize(databaseSizeBeforeUpdate);
-        Checklist testChecklist = checklistList.get(checklistList.size() - 1);
+        EventChecklist testChecklist = checklistList.get(checklistList.size() - 1);
         assertThat(testChecklist.getEventId()).isEqualTo(UPDATED_EVENT_ID);
         assertThat(testChecklist.getName()).isEqualTo(UPDATED_NAME);
         assertThat(testChecklist.getDescription()).isEqualTo(UPDATED_DESCRIPTION);
@@ -260,7 +259,7 @@ public class ChecklistResourceIT {
         int databaseSizeBeforeUpdate = checklistRepository.findAll().size();
 
         // Create the Checklist
-        ChecklistDTO checklistDTO = checklistMapper.toDto(checklist);
+        EventChecklistDTO checklistDTO = checklistMapper.toDto(checklist);
 
         // If the entity doesn't have an ID, it will throw BadRequestAlertException
         restChecklistMockMvc.perform(put("/api/checklists")
@@ -269,7 +268,7 @@ public class ChecklistResourceIT {
             .andExpect(status().isBadRequest());
 
         // Validate the Checklist in the database
-        List<Checklist> checklistList = checklistRepository.findAll();
+        List<EventChecklist> checklistList = checklistRepository.findAll();
         assertThat(checklistList).hasSize(databaseSizeBeforeUpdate);
     }
 
@@ -287,17 +286,17 @@ public class ChecklistResourceIT {
             .andExpect(status().isNoContent());
 
         // Validate the database contains one less item
-        List<Checklist> checklistList = checklistRepository.findAll();
+        List<EventChecklist> checklistList = checklistRepository.findAll();
         assertThat(checklistList).hasSize(databaseSizeBeforeDelete - 1);
     }
 
     @Test
     @Transactional
     public void equalsVerifier() throws Exception {
-        TestUtil.equalsVerifier(Checklist.class);
-        Checklist checklist1 = new Checklist();
+        TestUtil.equalsVerifier(EventChecklist.class);
+        EventChecklist checklist1 = new EventChecklist();
         checklist1.setId(1L);
-        Checklist checklist2 = new Checklist();
+        EventChecklist checklist2 = new EventChecklist();
         checklist2.setId(checklist1.getId());
         assertThat(checklist1).isEqualTo(checklist2);
         checklist2.setId(2L);
@@ -309,10 +308,10 @@ public class ChecklistResourceIT {
     @Test
     @Transactional
     public void dtoEqualsVerifier() throws Exception {
-        TestUtil.equalsVerifier(ChecklistDTO.class);
-        ChecklistDTO checklistDTO1 = new ChecklistDTO();
+        TestUtil.equalsVerifier(EventChecklistDTO.class);
+        EventChecklistDTO checklistDTO1 = new EventChecklistDTO();
         checklistDTO1.setId(1L);
-        ChecklistDTO checklistDTO2 = new ChecklistDTO();
+        EventChecklistDTO checklistDTO2 = new EventChecklistDTO();
         assertThat(checklistDTO1).isNotEqualTo(checklistDTO2);
         checklistDTO2.setId(checklistDTO1.getId());
         assertThat(checklistDTO1).isEqualTo(checklistDTO2);
