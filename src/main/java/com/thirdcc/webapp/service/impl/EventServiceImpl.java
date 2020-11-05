@@ -1,5 +1,7 @@
 package com.thirdcc.webapp.service.impl;
 
+import com.thirdcc.webapp.domain.enumeration.EventStatus;
+import com.thirdcc.webapp.exception.BadRequestException;
 import com.thirdcc.webapp.service.EventService;
 import com.thirdcc.webapp.domain.Event;
 import com.thirdcc.webapp.repository.EventRepository;
@@ -13,7 +15,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Service Implementation for managing {@link Event}.
@@ -85,5 +89,15 @@ public class EventServiceImpl implements EventService {
     public void delete(Long id) {
         log.debug("Request to delete Event : {}", id);
         eventRepository.deleteById(id);
+    }
+
+    @Override
+    public Event findEventByIdAndNotCancelledStatus(Long id) {
+        Set<EventStatus> eventStatuses = new HashSet<EventStatus>() {{
+            add(EventStatus.OPEN);
+            add(EventStatus.POSTPONED);
+        }};
+        return eventRepository.findByIdAndStatusIn(id, eventStatuses)
+            .orElseThrow(() -> new BadRequestException("Event not found, might be cancelled or not exist"));
     }
 }

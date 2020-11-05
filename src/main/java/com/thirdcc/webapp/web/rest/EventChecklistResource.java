@@ -46,13 +46,13 @@ public class EventChecklistResource {
     }
 
     /**
-     * {@code POST  /checklists} : Create a new checklist.
+     * {@code POST  /event-checklists} : Create a new checklist.
      *
      * @param checklistDTO the checklistDTO to create.
      * @return the {@link ResponseEntity} with status {@code 201 (Created)} and with body the new checklistDTO, or with status {@code 400 (Bad Request)} if the checklist has already an ID.
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
-    @PostMapping("/checklists")
+    @PostMapping("/event-checklists")
     public ResponseEntity<EventChecklistDTO> createChecklist(@RequestBody EventChecklistDTO checklistDTO) throws URISyntaxException {
         log.debug("REST request to save Checklist : {}", checklistDTO);
         if (checklistDTO.getId() != null) {
@@ -65,7 +65,7 @@ public class EventChecklistResource {
     }
 
     /**
-     * {@code PUT  /checklists} : Updates an existing checklist.
+     * {@code PUT  /event-checklists} : Updates an existing checklist.
      *
      * @param checklistDTO the checklistDTO to update.
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the updated checklistDTO,
@@ -73,27 +73,27 @@ public class EventChecklistResource {
      * or with status {@code 500 (Internal Server Error)} if the checklistDTO couldn't be updated.
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
-    @PutMapping("/checklists")
+    @PutMapping("/event-checklists")
     public ResponseEntity<EventChecklistDTO> updateChecklist(@RequestBody EventChecklistDTO checklistDTO) throws URISyntaxException {
         log.debug("REST request to update Checklist : {}", checklistDTO);
         if (checklistDTO.getId() == null) {
             throw new BadRequestAlertException("Invalid id", ENTITY_NAME, "idnull");
         }
-        EventChecklistDTO result = checklistService.save(checklistDTO);
+        EventChecklistDTO result = checklistService.update(checklistDTO);
         return ResponseEntity.ok()
             .headers(HeaderUtil.createEntityUpdateAlert(applicationName, true, ENTITY_NAME, checklistDTO.getId().toString()))
             .body(result);
     }
 
     /**
-     * {@code GET  /checklists} : get all the checklists.
+     * {@code GET  /event-checklists} : get all the checklists.
      *
      * @param pageable the pagination information.
      * @param queryParams a {@link MultiValueMap} query parameters.
      * @param uriBuilder a {@link UriComponentsBuilder} URI builder.
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the list of checklists in body.
      */
-    @GetMapping("/checklists")
+    @GetMapping("/event-checklists")
     public ResponseEntity<List<EventChecklistDTO>> getAllChecklists(Pageable pageable, @RequestParam MultiValueMap<String, String> queryParams, UriComponentsBuilder uriBuilder) {
         log.debug("REST request to get a page of Checklists");
         Page<EventChecklistDTO> page = checklistService.findAll(pageable);
@@ -107,7 +107,7 @@ public class EventChecklistResource {
      * @param id the id of the checklistDTO to retrieve.
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the checklistDTO, or with status {@code 404 (Not Found)}.
      */
-    @GetMapping("/checklists/{id}")
+    @GetMapping("/event-checklists/{id}")
     public ResponseEntity<EventChecklistDTO> getChecklist(@PathVariable Long id) {
         log.debug("REST request to get Checklist : {}", id);
         Optional<EventChecklistDTO> checklistDTO = checklistService.findOne(id);
@@ -120,7 +120,7 @@ public class EventChecklistResource {
      * @param id the id of the checklistDTO to delete.
      * @return the {@link ResponseEntity} with status {@code 204 (NO_CONTENT)}.
      */
-    @DeleteMapping("/checklists/{id}")
+    @DeleteMapping("/event-checklists/{id}")
     public ResponseEntity<Void> deleteChecklist(@PathVariable Long id) {
         log.debug("REST request to delete Checklist : {}", id);
         checklistService.delete(id);
