@@ -4,9 +4,9 @@ import com.thirdcc.webapp.domain.Event;
 import com.thirdcc.webapp.domain.EventChecklist;
 import com.thirdcc.webapp.domain.enumeration.EventChecklistStatus;
 import com.thirdcc.webapp.exception.BadRequestException;
-import com.thirdcc.webapp.repository.EventRepository;
 import com.thirdcc.webapp.service.EventChecklistService;
 import com.thirdcc.webapp.repository.EventChecklistRepository;
+import com.thirdcc.webapp.service.EventService;
 import com.thirdcc.webapp.service.dto.EventChecklistDTO;
 import com.thirdcc.webapp.service.mapper.EventChecklistMapper;
 import org.slf4j.Logger;
@@ -33,16 +33,16 @@ public class EventChecklistServiceImpl implements EventChecklistService {
 
     private final EventChecklistMapper checklistMapper;
 
-    private final EventRepository eventRepository;
+    private final EventService eventService;
 
     public EventChecklistServiceImpl(
         EventChecklistRepository checklistRepository,
         EventChecklistMapper checklistMapper,
-        EventRepository eventRepository
+        EventService eventService
     ) {
         this.checklistRepository = checklistRepository;
         this.checklistMapper = checklistMapper;
-        this.eventRepository = eventRepository;
+        this.eventService = eventService;
     }
 
     /**
@@ -54,10 +54,8 @@ public class EventChecklistServiceImpl implements EventChecklistService {
     @Override
     public EventChecklistDTO save(EventChecklistDTO eventChecklistDTO) {
         log.debug("Request to save Checklist : {}", eventChecklistDTO);
-        // TODO: change to eventService done by KC
-        Event event = eventRepository
-            .findById(eventChecklistDTO.getEventId())
-            .orElseThrow(() -> new BadRequestException("Event not found"));
+        Event event = eventService
+            .findEventByIdAndNotCancelledStatus(eventChecklistDTO.getEventId());
         if (event.getStartDate().isBefore(Instant.now())) {
             throw new BadRequestException("Event is started, cannot create checklist for this event");
         }
@@ -65,6 +63,27 @@ public class EventChecklistServiceImpl implements EventChecklistService {
         eventChecklist.setStatus(EventChecklistStatus.OPEN);
         eventChecklist = checklistRepository.save(eventChecklist);
         return checklistMapper.toDto(eventChecklist);
+    }
+
+    @Override
+    public EventChecklistDTO update(EventChecklistDTO eventChecklistDTO) {
+        log.debug("Request to update Event Checklist: {}", eventChecklistDTO);
+        EventChecklist eventChecklist = checklistRepository.findById(eventChecklistDTO.getId())
+            .orElseThrow(() -> new BadRequestException("Event Checklist not found"));
+        Event event = eventService
+            .findEventByIdAndNotCancelledStatus(eventChecklistDTO.getEventId());
+        if (event.getStartDate().isBefore(Instant.now())) {
+            throw new BadRequestException("Event is started, cannot create checklist for this event");
+        }
+        if (eventChecklist.getStatus().equals(EventChecklistStatus.FINISHED)) {
+            throw new BadRequestException("Event Checklist is completed, not allow to update");
+        }
+        eventChecklist.setName(eventChecklistDTO.getName());
+        eventChecklist.setDescription(eventChecklistDTO.getDescription());
+        eventChecklist.setType(eventChecklistDTO.getType());
+        return checklistMapper.toDto(
+            checklistRepository.save(eventChecklist)
+        );
     }
 
     /**

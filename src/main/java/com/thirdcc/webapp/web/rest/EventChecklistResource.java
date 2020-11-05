@@ -79,7 +79,7 @@ public class EventChecklistResource {
         if (checklistDTO.getId() == null) {
             throw new BadRequestAlertException("Invalid id", ENTITY_NAME, "idnull");
         }
-        EventChecklistDTO result = checklistService.save(checklistDTO);
+        EventChecklistDTO result = checklistService.update(checklistDTO);
         return ResponseEntity.ok()
             .headers(HeaderUtil.createEntityUpdateAlert(applicationName, true, ENTITY_NAME, checklistDTO.getId().toString()))
             .body(result);

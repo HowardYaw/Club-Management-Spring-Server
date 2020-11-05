@@ -21,6 +21,8 @@ public interface EventChecklistService {
      */
     EventChecklistDTO save(EventChecklistDTO checklistDTO);
 
+    EventChecklistDTO update(EventChecklistDTO eventChecklistDTO);
+
     /**
      * Get all the checklists.
      *
