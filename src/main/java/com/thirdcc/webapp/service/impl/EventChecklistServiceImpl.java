@@ -71,7 +71,7 @@ public class EventChecklistServiceImpl implements EventChecklistService {
         EventChecklist eventChecklist = checklistRepository.findById(eventChecklistDTO.getId())
             .orElseThrow(() -> new BadRequestException("Event Checklist not found"));
         Event event = eventService
-            .findEventByIdAndNotCancelledStatus(eventChecklistDTO.getEventId());
+            .findEventByIdAndNotCancelledStatus(eventChecklist.getEventId());
         if (event.getStartDate().isBefore(Instant.now())) {
             throw new BadRequestException("Event is started, cannot create checklist for this event");
         }
