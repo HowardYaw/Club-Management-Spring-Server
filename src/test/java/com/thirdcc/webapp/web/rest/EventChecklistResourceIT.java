@@ -173,7 +173,6 @@ public class EventChecklistResourceIT {
     }
 
     @Test
-    @Transactional
     public void createChecklist() throws Exception {
         initEventDB();
 
@@ -199,7 +198,6 @@ public class EventChecklistResourceIT {
     }
 
     @Test
-    @Transactional
     public void createChecklist_WithExistingId_ShouldThrow400() throws Exception {
         initEventDB();
         initEventChecklistDB();
@@ -224,7 +222,6 @@ public class EventChecklistResourceIT {
     }
 
     @Test
-    @Transactional
     public void createChecklist_WithEventStarted_ShouldThrow400() throws Exception {
         event.setStartDate(Instant.now().minus(1, ChronoUnit.DAYS));
         initEventDB();
@@ -245,7 +242,6 @@ public class EventChecklistResourceIT {
     }
 
     @Test
-    @Transactional
     public void createChecklist_WithEventCancelled_ShouldThrow400() throws Exception {
         event.setStatus(EventStatus.CANCELLED);
         initEventDB();
@@ -267,7 +263,6 @@ public class EventChecklistResourceIT {
 
 
     @Test
-    @Transactional
     public void getAllChecklists() throws Exception {
         // Initialize the database
         eventChecklistRepository.saveAndFlush(eventChecklist);
@@ -285,7 +280,6 @@ public class EventChecklistResourceIT {
     }
     
     @Test
-    @Transactional
     public void getChecklist() throws Exception {
         // Initialize the database
         eventChecklistRepository.saveAndFlush(eventChecklist);
@@ -303,7 +297,6 @@ public class EventChecklistResourceIT {
     }
 
     @Test
-    @Transactional
     public void getNonExistingChecklist() throws Exception {
         // Get the eventChecklist
         restChecklistMockMvc.perform(get("/api/event-checklists/{id}", Long.MAX_VALUE))
@@ -311,7 +304,6 @@ public class EventChecklistResourceIT {
     }
 
     @Test
-    @Transactional
     public void updateChecklist() throws Exception {
         initEventDB();
         eventChecklist.setEventId(event.getId());
@@ -347,7 +339,6 @@ public class EventChecklistResourceIT {
     }
 
     @Test
-    @Transactional
     public void updateChecklist_NonExisting_ShouldThrow400() throws Exception {
         initEventDB();
 
@@ -369,7 +360,6 @@ public class EventChecklistResourceIT {
     }
 
     @Test
-    @Transactional
     public void updateChecklist_WithEventStarted_ShouldThrow400() throws Exception {
         event.setStartDate(Instant.now().minus(1, ChronoUnit.DAYS));
         initEventDB();
@@ -394,7 +384,6 @@ public class EventChecklistResourceIT {
     }
 
     @Test
-    @Transactional
     public void updateChecklist_WithEventCancelled_ShouldThrow400() throws Exception {
         event.setStatus(EventStatus.CANCELLED);
         initEventDB();
@@ -428,7 +417,6 @@ public class EventChecklistResourceIT {
     }
 
     @Test
-    @Transactional
     public void updateChecklist_WithEventChecklistFinished_ShouldThrow400() throws Exception {
         initEventDB();
         eventChecklist.setEventId(event.getId());
@@ -462,7 +450,6 @@ public class EventChecklistResourceIT {
     }
 
     @Test
-    @Transactional
     public void deleteChecklist() throws Exception {
         // Initialize the database
         eventChecklistRepository.saveAndFlush(eventChecklist);
@@ -480,7 +467,6 @@ public class EventChecklistResourceIT {
     }
 
     @Test
-    @Transactional
     public void equalsVerifier() throws Exception {
         TestUtil.equalsVerifier(EventChecklist.class);
         EventChecklist eventChecklist1 = new EventChecklist();
@@ -495,7 +481,6 @@ public class EventChecklistResourceIT {
     }
 
     @Test
-    @Transactional
     public void dtoEqualsVerifier() throws Exception {
         TestUtil.equalsVerifier(EventChecklistDTO.class);
         EventChecklistDTO eventChecklistDTO1 = new EventChecklistDTO();
@@ -511,7 +496,6 @@ public class EventChecklistResourceIT {
     }
 
     @Test
-    @Transactional
     public void testEntityFromId() {
         assertThat(eventChecklistMapper.fromId(42L).getId()).isEqualTo(42);
         assertThat(eventChecklistMapper.fromId(null)).isNull();
