@@ -1,9 +1,6 @@
 package com.thirdcc.webapp.authorization;
 
-import com.thirdcc.webapp.domain.Administrator;
-import com.thirdcc.webapp.domain.EventCrew;
-import com.thirdcc.webapp.domain.User;
-import com.thirdcc.webapp.domain.YearSession;
+import com.thirdcc.webapp.domain.*;
 import com.thirdcc.webapp.domain.enumeration.AdministratorRole;
 import com.thirdcc.webapp.domain.enumeration.EventCrewRole;
 import com.thirdcc.webapp.exception.BadRequestException;
@@ -14,17 +11,17 @@ import com.thirdcc.webapp.repository.YearSessionRepository;
 import com.thirdcc.webapp.security.AuthoritiesConstants;
 import com.thirdcc.webapp.security.SecurityUtils;
 import com.thirdcc.webapp.security.jwt.TokenProvider;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jws;
+import com.thirdcc.webapp.service.UserService;
 import org.springframework.stereotype.Service;
 
-import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
 public class ManagementTeamSecurityExpression {
     private final TokenProvider tokenProvider;
+    private final UserService userService;
     private final UserRepository userRepository;
     private final EventCrewRepository eventCrewRepository;
     private final AdministratorRepository administratorRepository;
@@ -33,12 +30,14 @@ public class ManagementTeamSecurityExpression {
 
     public ManagementTeamSecurityExpression(
         TokenProvider tokenProvider,
+        UserService userService,
         UserRepository userRepository,
         EventCrewRepository eventCrewRepository,
         AdministratorRepository administratorRepository,
         YearSessionRepository yearSessionRepository
     ) {
         this.tokenProvider = tokenProvider;
+        this.userService = userService;
         this.userRepository = userRepository;
         this.eventCrewRepository = eventCrewRepository;
         this.administratorRepository = administratorRepository;
@@ -49,10 +48,9 @@ public class ManagementTeamSecurityExpression {
         User currentUser = getCurrentUserWithLogin();
         YearSession currentYearSession = yearSessionRepository.findFirstByOrderByIdDesc()
             .orElseThrow(() -> new BadRequestException("Year Session not found"));
-        Administrator administrator = administratorRepository
+        return administratorRepository
             .findByUserIdAndYearSessionAndRole(currentUser.getId(), currentYearSession, AdministratorRole.CC_HEAD)
-            .orElse(null);
-        return administrator != null;
+            .isPresent();
     }
 
     public boolean hasRoleAdminOrIsEventCrew(Long eventId) {
@@ -65,10 +63,9 @@ public class ManagementTeamSecurityExpression {
 
     public boolean isEventCrew(Long eventId) {
         User currentUser = getCurrentUserWithLogin();
-        EventCrew eventCrew = eventCrewRepository
+        return eventCrewRepository
             .findByUserIdAndAndEventId(currentUser.getId(), eventId)
-            .orElse(null);
-        return eventCrew != null;
+            .isPresent();
     }
 
     public boolean isEventHead(Long eventId) {
@@ -80,14 +77,11 @@ public class ManagementTeamSecurityExpression {
     }
 
     private List<String> getUserAuthRole() {
-        String currentUserJWT = SecurityUtils
-            .getCurrentUserJWT()
+        User currentUser = userService.getUserWithAuthorities()
             .orElseThrow(() -> new BadRequestException("User is not login"));
-        Jws<Claims> claimsJws = tokenProvider
-            .getJWT()
-            .parseClaimsJws(currentUserJWT);
-        return Arrays
-            .stream(claimsJws.getBody().get("auth").toString().split(","))
+        return currentUser.getAuthorities()
+            .stream()
+            .map(Authority::getName)
             .collect(Collectors.toList());
     }
 
