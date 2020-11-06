@@ -97,7 +97,7 @@ public class EventServiceImpl implements EventService {
             add(EventStatus.OPEN);
             add(EventStatus.POSTPONED);
         }};
-        return eventRepository.findByIdAndStatusIn(id, eventStatuses)
+        return eventRepository.findOneByIdAndStatusIn(id, eventStatuses)
             .orElseThrow(() -> new BadRequestException("Event not found, might be cancelled or not exist"));
     }
 }
