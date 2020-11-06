@@ -1,5 +1,6 @@
 package com.thirdcc.webapp.service;
 
+import com.thirdcc.webapp.domain.Event;
 import com.thirdcc.webapp.service.dto.EventDTO;
 
 import org.springframework.data.domain.Page;
@@ -43,4 +44,6 @@ public interface EventService {
      * @param id the id of the entity.
      */
     void delete(Long id);
+
+    Event findEventByIdAndNotCancelledStatus(Long eventId);
 }

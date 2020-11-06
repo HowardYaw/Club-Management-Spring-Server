@@ -1,6 +1,7 @@
 package com.thirdcc.webapp.service;
 
-import com.thirdcc.webapp.service.dto.ChecklistDTO;
+import com.thirdcc.webapp.domain.EventChecklist;
+import com.thirdcc.webapp.service.dto.EventChecklistDTO;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -8,9 +9,9 @@ import org.springframework.data.domain.Pageable;
 import java.util.Optional;
 
 /**
- * Service Interface for managing {@link com.thirdcc.webapp.domain.Checklist}.
+ * Service Interface for managing {@link EventChecklist}.
  */
-public interface ChecklistService {
+public interface EventChecklistService {
 
     /**
      * Save a checklist.
@@ -18,7 +19,9 @@ public interface ChecklistService {
      * @param checklistDTO the entity to save.
      * @return the persisted entity.
      */
-    ChecklistDTO save(ChecklistDTO checklistDTO);
+    EventChecklistDTO save(EventChecklistDTO checklistDTO);
+
+    EventChecklistDTO update(EventChecklistDTO eventChecklistDTO);
 
     /**
      * Get all the checklists.
@@ -26,7 +29,7 @@ public interface ChecklistService {
      * @param pageable the pagination information.
      * @return the list of entities.
      */
-    Page<ChecklistDTO> findAll(Pageable pageable);
+    Page<EventChecklistDTO> findAll(Pageable pageable);
 
 
     /**
@@ -35,7 +38,7 @@ public interface ChecklistService {
      * @param id the id of the entity.
      * @return the entity.
      */
-    Optional<ChecklistDTO> findOne(Long id);
+    Optional<EventChecklistDTO> findOne(Long id);
 
     /**
      * Delete the "id" checklist.
