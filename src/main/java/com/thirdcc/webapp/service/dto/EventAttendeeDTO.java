@@ -11,7 +11,7 @@ public class EventAttendeeDTO implements Serializable {
 
     private Long userId;
 
-    private Long evenId;
+    private Long eventId;
 
     private Boolean provideTransport;
 
@@ -32,12 +32,12 @@ public class EventAttendeeDTO implements Serializable {
         this.userId = userId;
     }
 
-    public Long getEvenId() {
-        return evenId;
+    public Long getEventId() {
+        return eventId;
     }
 
-    public void setEvenId(Long evenId) {
-        this.evenId = evenId;
+    public void setEventId(Long eventId) {
+        this.eventId = eventId;
     }
 
     public Boolean isProvideTransport() {
@@ -74,7 +74,7 @@ public class EventAttendeeDTO implements Serializable {
         return "EventAttendeeDTO{" +
             "id=" + getId() +
             ", userId=" + getUserId() +
-            ", evenId=" + getEvenId() +
+            ", eventId=" + getEventId() +
             ", provideTransport='" + isProvideTransport() + "'" +
             "}";
     }

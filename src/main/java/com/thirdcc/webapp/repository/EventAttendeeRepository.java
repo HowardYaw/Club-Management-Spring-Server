@@ -1,8 +1,13 @@
 package com.thirdcc.webapp.repository;
 
+import com.thirdcc.webapp.domain.Event;
 import com.thirdcc.webapp.domain.EventAttendee;
+import com.thirdcc.webapp.domain.enumeration.EventStatus;
 import org.springframework.data.jpa.repository.*;
 import org.springframework.stereotype.Repository;
+
+import java.util.Optional;
+import java.util.Set;
 
 
 /**
@@ -12,4 +17,5 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface EventAttendeeRepository extends JpaRepository<EventAttendee, Long> {
 
+    Optional<Event> findOneByIdAndStatusIn(Long id, Set<EventStatus> eventStatus);
 }
