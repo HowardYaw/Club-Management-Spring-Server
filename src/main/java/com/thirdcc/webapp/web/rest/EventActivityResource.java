@@ -79,7 +79,7 @@ public class EventActivityResource {
         if (eventActivityDTO.getId() == null) {
             throw new BadRequestAlertException("Invalid id", ENTITY_NAME, "idnull");
         }
-        EventActivityDTO result = eventActivityService.save(eventActivityDTO);
+        EventActivityDTO result = eventActivityService.update(eventActivityDTO);
         return ResponseEntity.ok()
             .headers(HeaderUtil.createEntityUpdateAlert(applicationName, true, ENTITY_NAME, eventActivityDTO.getId().toString()))
             .body(result);
@@ -97,6 +97,14 @@ public class EventActivityResource {
     public ResponseEntity<List<EventActivityDTO>> getAllEventActivities(Pageable pageable, @RequestParam MultiValueMap<String, String> queryParams, UriComponentsBuilder uriBuilder) {
         log.debug("REST request to get a page of EventActivities");
         Page<EventActivityDTO> page = eventActivityService.findAll(pageable);
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(uriBuilder.queryParams(queryParams), page);
+        return ResponseEntity.ok().headers(headers).body(page.getContent());
+    }
+
+    @GetMapping("/event-activities/event/{eventId}")
+    public ResponseEntity<List<EventActivityDTO>> getAllEventActivitiesByEventId(Pageable pageable, @PathVariable Long eventId, @RequestParam MultiValueMap<String, String> queryParams, UriComponentsBuilder uriBuilder) {
+        log.debug("REST request to get a page of EventActivities");
+        Page<EventActivityDTO> page = eventActivityService.findAllByEventId(pageable, eventId);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(uriBuilder.queryParams(queryParams), page);
         return ResponseEntity.ok().headers(headers).body(page.getContent());
     }
