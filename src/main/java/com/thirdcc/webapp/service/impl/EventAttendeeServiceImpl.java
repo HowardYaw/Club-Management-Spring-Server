@@ -17,6 +17,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
@@ -59,15 +60,15 @@ public class EventAttendeeServiceImpl implements EventAttendeeService {
 
         Event event = eventRepository
             .findOneByIdAndStatusIn(eventAttendeeDTO.getEventId(), eventStatuses)
-            .get();
+            .orElseThrow(()-> new BadRequestException("This event does not exists or it is not happening"));
 
-        if(event != null){
-            EventAttendee eventAttendee = eventAttendeeMapper.toEntity(eventAttendeeDTO);
-            eventAttendee = eventAttendeeRepository.save(eventAttendee);
-            return eventAttendeeMapper.toDto(eventAttendee);
-        } else {
-            return new BadRequestException("This event does not exists or it is not happening"));
+        if(event.getEndDate().isBefore(Instant.now())){
+            throw new BadRequestException("Cannot add attendee to ended event");
         }
+
+        EventAttendee eventAttendee = eventAttendeeMapper.toEntity(eventAttendeeDTO);
+        eventAttendee = eventAttendeeRepository.save(eventAttendee);
+        return eventAttendeeMapper.toDto(eventAttendee);
     }
 
     /**

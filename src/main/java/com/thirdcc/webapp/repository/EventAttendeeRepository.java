@@ -17,5 +17,4 @@ import java.util.Set;
 @Repository
 public interface EventAttendeeRepository extends JpaRepository<EventAttendee, Long> {
 
-    Optional<Event> findOneByIdAndStatusIn(Long id, Set<EventStatus> eventStatus);
 }

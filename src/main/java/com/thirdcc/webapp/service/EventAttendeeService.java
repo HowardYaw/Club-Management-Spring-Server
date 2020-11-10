@@ -15,7 +15,7 @@ public interface EventAttendeeService {
     /**
      * Save a eventAttendee.
      *
-     * @param eventAttendeeDTO the entity to save.
+     * @param eventAttendeeventeDTO the entity to save.
      * @return the persisted entity.
      */
     EventAttendeeDTO save(EventAttendeeDTO eventAttendeeDTO);
