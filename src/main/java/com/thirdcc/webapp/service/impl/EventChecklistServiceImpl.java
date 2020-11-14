@@ -123,6 +123,15 @@ public class EventChecklistServiceImpl implements EventChecklistService {
     @Override
     public void delete(Long id) {
         log.debug("Request to delete Checklist : {}", id);
+        EventChecklist eventChecklist = checklistRepository.findById(id)
+            .orElseThrow(() -> new BadRequestException("Event Checklist not found: "+id));
+        Event event = eventService.findEventByIdAndNotCancelledStatus(eventChecklist.getEventId());
+        if (event.getStartDate().isBefore(Instant.now())) {
+            throw new BadRequestException("Cannot delete a event checklist for event that had been start");
+        }
+        if (eventChecklist.getStatus() != EventChecklistStatus.OPEN) {
+            throw new BadRequestException("Cannot delete a event Checklist that is not open status");
+        }
         checklistRepository.deleteById(id);
     }
 }
