@@ -1,5 +1,9 @@
 package com.thirdcc.webapp.service.impl;
 
+import com.thirdcc.webapp.domain.Event;
+import com.thirdcc.webapp.exception.BadRequestException;
+import com.thirdcc.webapp.repository.EventRepository;
+import com.thirdcc.webapp.service.EventService;
 import com.thirdcc.webapp.service.TransactionService;
 import com.thirdcc.webapp.domain.Transaction;
 import com.thirdcc.webapp.repository.TransactionRepository;
@@ -28,9 +32,20 @@ public class TransactionServiceImpl implements TransactionService {
 
     private final TransactionMapper transactionMapper;
 
-    public TransactionServiceImpl(TransactionRepository transactionRepository, TransactionMapper transactionMapper) {
+    private final EventRepository eventRepository;
+
+    private final EventService eventService;
+
+    public TransactionServiceImpl(
+        TransactionRepository transactionRepository,
+        TransactionMapper transactionMapper,
+        EventRepository eventRepository,
+        EventService eventService
+    ) {
         this.transactionRepository = transactionRepository;
         this.transactionMapper = transactionMapper;
+        this.eventRepository = eventRepository;
+        this.eventService = eventService;
     }
 
     /**
@@ -58,7 +73,8 @@ public class TransactionServiceImpl implements TransactionService {
     public Page<TransactionDTO> findAll(Pageable pageable) {
         log.debug("Request to get all Transactions");
         return transactionRepository.findAll(pageable)
-            .map(transactionMapper::toDto);
+            .map(transactionMapper::toDto)
+            .map(this::mapEventName);
     }
 
 
@@ -85,5 +101,20 @@ public class TransactionServiceImpl implements TransactionService {
     public void delete(Long id) {
         log.debug("Request to delete Transaction : {}", id);
         transactionRepository.deleteById(id);
+    }
+
+    @Override
+    public Page<TransactionDTO> findAllByEventId(Long eventId, Pageable pageable) {
+        log.debug("Request to find all Transaction of event: {]", eventId);
+        eventService.findEventByIdAndNotCancelledStatus(eventId);
+        return transactionRepository.findAllByEventId(eventId, pageable)
+            .map(transactionMapper::toDto);
+    }
+
+    private TransactionDTO mapEventName(TransactionDTO transactionDTO) {
+        Event event = eventRepository.findById(transactionDTO.getEventId())
+            .orElseThrow(() -> new BadRequestException("Event Not Found "+ transactionDTO.getEventId()));
+        transactionDTO.setEventName(event.getName());
+        return transactionDTO;
     }
 }
