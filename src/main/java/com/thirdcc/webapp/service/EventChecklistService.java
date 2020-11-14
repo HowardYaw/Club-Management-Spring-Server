@@ -49,4 +49,6 @@ public interface EventChecklistService {
     void delete(Long id);
 
     EventChecklistDTO updateStatus(Long id, EventChecklistStatus eventChecklistStatus);
+
+    Page<EventChecklistDTO> findAllByEventId(Long eventId, Pageable pageable);
 }

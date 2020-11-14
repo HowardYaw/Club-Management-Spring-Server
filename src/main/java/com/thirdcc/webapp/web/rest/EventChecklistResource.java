@@ -111,6 +111,14 @@ public class EventChecklistResource {
         return ResponseEntity.ok().headers(headers).body(page.getContent());
     }
 
+    @GetMapping("/event-checklists/event/{eventId}")
+    public ResponseEntity<List<EventChecklistDTO>> getAllEventChecklistsByEventId(@PathVariable long eventId, Pageable pageable, @RequestParam MultiValueMap<String, String> queryParams, UriComponentsBuilder uriBuilder) {
+        log.debug("REST request to get a page of Event Checklists with eventId: {}", eventId);
+        Page<EventChecklistDTO> page = checklistService.findAllByEventId(eventId, pageable);
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(uriBuilder.queryParams(queryParams), page);
+        return ResponseEntity.ok().headers(headers).body(page.getContent());
+    }
+
     /**
      * {@code GET  /checklists/:id} : get the "id" checklist.
      *

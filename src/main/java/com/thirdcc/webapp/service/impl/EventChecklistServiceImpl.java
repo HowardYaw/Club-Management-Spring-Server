@@ -146,4 +146,11 @@ public class EventChecklistServiceImpl implements EventChecklistService {
             checklistRepository.save(eventChecklist)
         );
     }
+
+    @Override
+    public Page<EventChecklistDTO> findAllByEventId(Long eventId, Pageable pageable) {
+        eventService.findEventByIdAndNotCancelledStatus(eventId);
+        return checklistRepository.findAllByEventId(eventId, pageable)
+            .map(checklistMapper::toDto);
+    }
 }

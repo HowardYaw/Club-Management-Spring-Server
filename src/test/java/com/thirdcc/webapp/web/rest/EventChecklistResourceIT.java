@@ -36,6 +36,7 @@ import java.util.List;
 import static com.thirdcc.webapp.web.rest.TestUtil.createFormattingConversionService;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -265,18 +266,66 @@ public class EventChecklistResourceIT {
     @Test
     public void getAllChecklists() throws Exception {
         // Initialize the database
-        eventChecklistRepository.saveAndFlush(eventChecklist);
+        initEventDB();
+        eventChecklist.setEventId(event.getId());
+        initEventChecklistDB();
 
         // Get all the eventChecklistList
         restChecklistMockMvc.perform(get("/api/event-checklists?sort=id,desc"))
             .andExpect(status().isOk())
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
             .andExpect(jsonPath("$.[*].id").value(hasItem(eventChecklist.getId().intValue())))
-            .andExpect(jsonPath("$.[*].eventId").value(hasItem(DEFAULT_EVENT_ID.intValue())))
+            .andExpect(jsonPath("$.[*].eventId").value(hasItem(event.getId().intValue())))
             .andExpect(jsonPath("$.[*].name").value(hasItem(DEFAULT_NAME.toString())))
             .andExpect(jsonPath("$.[*].description").value(hasItem(DEFAULT_DESCRIPTION.toString())))
             .andExpect(jsonPath("$.[*].status").value(hasItem(DEFAULT_STATUS.toString())))
             .andExpect(jsonPath("$.[*].type").value(hasItem(DEFAULT_TYPE.toString())));
+    }
+
+    @Test
+    public void getAllEventChecklistsByEventId() throws Exception {
+        // Initialize the database
+        initEventDB();
+        eventChecklist.setEventId(event.getId());
+        initEventChecklistDB();
+
+        // Get all the eventChecklistList
+        restChecklistMockMvc.perform(get("/api/event-checklists/event/{eventId}?sort=id,desc", event.getId()))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
+            .andExpect(jsonPath("$.[*].id").value(hasItem(eventChecklist.getId().intValue())))
+            .andExpect(jsonPath("$.[*].eventId").value(hasItem(eventChecklist.getEventId().intValue())))
+            .andExpect(jsonPath("$.[*].name").value(hasItem(DEFAULT_NAME)))
+            .andExpect(jsonPath("$.[*].description").value(hasItem(DEFAULT_DESCRIPTION)))
+            .andExpect(jsonPath("$.[*].status").value(hasItem(DEFAULT_STATUS.toString())))
+            .andExpect(jsonPath("$.[*].type").value(hasItem(DEFAULT_TYPE.toString())));
+    }
+
+    @Test
+    public void getAllEventChecklistsByEventId_EventIsCancelled_ShouldThrow400() throws Exception {
+        // Initialize the database
+        event.setStatus(EventStatus.CANCELLED);
+        initEventDB();
+        eventChecklist.setEventId(event.getId());
+        initEventChecklistDB();
+
+        // Get all the eventChecklistList
+        restChecklistMockMvc.perform(get("/api/event-checklists/event/{eventId}?sort=id,desc", eventChecklist.getEventId()))
+            .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    public void getAllEventChecklistsByEventId_NoEventChecklistsWithEventId_ShouldReturnEmptyList() throws Exception {
+        // Initialize the database
+        initEventDB();
+        eventChecklist.setEventId(Long.MAX_VALUE);
+        initEventChecklistDB();
+
+        // Get all the eventChecklistList
+        restChecklistMockMvc.perform(get("/api/event-checklists/event/{eventId}?sort=id,desc", event.getId()))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
+            .andExpect(jsonPath("$", hasSize(0)));
     }
     
     @Test
