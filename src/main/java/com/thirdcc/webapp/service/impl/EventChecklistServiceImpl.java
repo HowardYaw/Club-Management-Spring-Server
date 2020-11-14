@@ -112,7 +112,8 @@ public class EventChecklistServiceImpl implements EventChecklistService {
     public Optional<EventChecklistDTO> findOne(Long id) {
         log.debug("Request to get Checklist : {}", id);
         return checklistRepository.findById(id)
-            .map(checklistMapper::toDto);
+            .map(checklistMapper::toDto)
+            .map(this::mapEventName);
     }
 
     /**
@@ -152,5 +153,11 @@ public class EventChecklistServiceImpl implements EventChecklistService {
         eventService.findEventByIdAndNotCancelledStatus(eventId);
         return checklistRepository.findAllByEventId(eventId, pageable)
             .map(checklistMapper::toDto);
+    }
+
+    private EventChecklistDTO mapEventName(EventChecklistDTO eventChecklistDTO) {
+        Event event = eventService.findEventByIdAndNotCancelledStatus(eventChecklistDTO.getEventId());
+        eventChecklistDTO.setEventName(event.getName());
+        return eventChecklistDTO;
     }
 }

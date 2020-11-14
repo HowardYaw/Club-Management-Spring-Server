@@ -331,18 +331,21 @@ public class EventChecklistResourceIT {
     @Test
     public void getChecklist() throws Exception {
         // Initialize the database
-        eventChecklistRepository.saveAndFlush(eventChecklist);
+        initEventDB();
+        eventChecklist.setEventId(event.getId());
+        initEventChecklistDB();
 
         // Get the eventChecklist
         restChecklistMockMvc.perform(get("/api/event-checklists/{id}", eventChecklist.getId()))
             .andExpect(status().isOk())
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
             .andExpect(jsonPath("$.id").value(eventChecklist.getId().intValue()))
-            .andExpect(jsonPath("$.eventId").value(DEFAULT_EVENT_ID.intValue()))
-            .andExpect(jsonPath("$.name").value(DEFAULT_NAME.toString()))
-            .andExpect(jsonPath("$.description").value(DEFAULT_DESCRIPTION.toString()))
+            .andExpect(jsonPath("$.eventId").value(event.getId().intValue()))
+            .andExpect(jsonPath("$.name").value(DEFAULT_NAME))
+            .andExpect(jsonPath("$.description").value(DEFAULT_DESCRIPTION))
             .andExpect(jsonPath("$.status").value(DEFAULT_STATUS.toString()))
-            .andExpect(jsonPath("$.type").value(DEFAULT_TYPE.toString()));
+            .andExpect(jsonPath("$.type").value(DEFAULT_TYPE.toString()))
+            .andExpect(jsonPath("$.eventName").value(event.getName()));
     }
 
     @Test
