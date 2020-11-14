@@ -548,6 +548,64 @@ public class EventChecklistResourceIT {
     }
 
     @Test
+    public void updateEventChecklistStatus() throws Exception {
+        initEventDB();
+        eventChecklist.setEventId(event.getId());
+        initEventChecklistDB();
+
+        int databaseSizeBeforeUpdate = eventChecklistRepository.findAll().size();
+
+        restChecklistMockMvc.perform(put("/api/event-checklists/{id}/status/{eventChecklistStatus}", eventChecklist.getId(), UPDATED_STATUS)
+            .contentType(TestUtil.APPLICATION_JSON_UTF8))
+            .andExpect(status().isOk());
+
+        // Validate the Checklist in the database
+        List<EventChecklist> eventChecklistList = eventChecklistRepository.findAll();
+        assertThat(eventChecklistList).hasSize(databaseSizeBeforeUpdate);
+        EventChecklist testChecklist = eventChecklistList.get(eventChecklistList.size() - 1);
+        assertThat(testChecklist.getName()).isEqualTo(eventChecklist.getName());
+        assertThat(testChecklist.getDescription()).isEqualTo(eventChecklist.getDescription());
+        assertThat(testChecklist.getType()).isEqualTo(eventChecklist.getType());
+        assertThat(testChecklist.getStatus()).isEqualTo(UPDATED_STATUS);
+        assertThat(testChecklist.getEventId()).isEqualTo(event.getId());
+    }
+
+    @Test
+    public void updateEventChecklistStatus_EventChecklistIsNotExists_ShouldThrow400() throws Exception {
+        initEventDB();
+        eventChecklist.setEventId(event.getId());
+        initEventChecklistDB();
+
+        int databaseSizeBeforeUpdate = eventChecklistRepository.findAll().size();
+
+        restChecklistMockMvc.perform(put("/api/event-checklists/{id}/status/{eventChecklistStatus}", Long.MAX_VALUE, UPDATED_STATUS)
+            .contentType(TestUtil.APPLICATION_JSON_UTF8))
+            .andExpect(status().isBadRequest());
+
+        // Validate the Checklist in the database
+        List<EventChecklist> eventChecklistList = eventChecklistRepository.findAll();
+        assertThat(eventChecklistList).hasSize(databaseSizeBeforeUpdate);
+    }
+
+    @Test
+    public void updateEventChecklistStatus_EventIsCancelled_ShouldThrow400() throws Exception {
+        event.setStatus(EventStatus.CANCELLED);
+        initEventDB();
+        eventChecklist.setEventId(event.getId());
+        initEventChecklistDB();
+
+        int databaseSizeBeforeUpdate = eventChecklistRepository.findAll().size();
+
+        restChecklistMockMvc.perform(put("/api/event-checklists/{id}/status/{eventChecklistStatus}", eventChecklist.getId(), UPDATED_STATUS)
+            .contentType(TestUtil.APPLICATION_JSON_UTF8))
+            .andExpect(status().isBadRequest());
+
+        // Validate the Checklist in the database
+        List<EventChecklist> eventChecklistList = eventChecklistRepository.findAll();
+        assertThat(eventChecklistList).hasSize(databaseSizeBeforeUpdate);
+    }
+
+    @Test
     public void equalsVerifier() throws Exception {
         TestUtil.equalsVerifier(EventChecklist.class);
         EventChecklist eventChecklist1 = new EventChecklist();

@@ -134,4 +134,16 @@ public class EventChecklistServiceImpl implements EventChecklistService {
         }
         checklistRepository.deleteById(id);
     }
+
+    @Override
+    public EventChecklistDTO updateStatus(Long id, EventChecklistStatus eventChecklistStatus) {
+        log.debug("Request to update status of event checklist: {}, to {}", id, eventChecklistStatus);
+        EventChecklist eventChecklist = checklistRepository.findById(id)
+            .orElseThrow(() -> new BadRequestException("Event Checklist not exists: " + id));
+        Event event = eventService.findEventByIdAndNotCancelledStatus(eventChecklist.getEventId());
+        eventChecklist.setStatus(eventChecklistStatus);
+        return checklistMapper.toDto(
+            checklistRepository.save(eventChecklist)
+        );
+    }
 }

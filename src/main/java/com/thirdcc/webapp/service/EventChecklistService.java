@@ -1,6 +1,7 @@
 package com.thirdcc.webapp.service;
 
 import com.thirdcc.webapp.domain.EventChecklist;
+import com.thirdcc.webapp.domain.enumeration.EventChecklistStatus;
 import com.thirdcc.webapp.service.dto.EventChecklistDTO;
 
 import org.springframework.data.domain.Page;
@@ -46,4 +47,6 @@ public interface EventChecklistService {
      * @param id the id of the entity.
      */
     void delete(Long id);
+
+    EventChecklistDTO updateStatus(Long id, EventChecklistStatus eventChecklistStatus);
 }

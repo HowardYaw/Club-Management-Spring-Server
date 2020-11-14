@@ -1,6 +1,7 @@
 package com.thirdcc.webapp.web.rest;
 
 import com.thirdcc.webapp.domain.EventChecklist;
+import com.thirdcc.webapp.domain.enumeration.EventChecklistStatus;
 import com.thirdcc.webapp.service.EventChecklistService;
 import com.thirdcc.webapp.service.dto.EventChecklistDTO;
 import com.thirdcc.webapp.web.rest.errors.BadRequestAlertException;
@@ -82,6 +83,15 @@ public class EventChecklistResource {
         EventChecklistDTO result = checklistService.update(checklistDTO);
         return ResponseEntity.ok()
             .headers(HeaderUtil.createEntityUpdateAlert(applicationName, true, ENTITY_NAME, checklistDTO.getId().toString()))
+            .body(result);
+    }
+
+    @PutMapping("/event-checklists/{id}/status/{eventChecklistStatus}")
+    public ResponseEntity<EventChecklistDTO> updateEventChecklistStatus(@PathVariable Long id, @PathVariable EventChecklistStatus eventChecklistStatus) {
+        log.debug("REST request to update event Checklist: {} with status: {}", id, eventChecklistStatus);
+        EventChecklistDTO result = checklistService.updateStatus(id, eventChecklistStatus);
+        return ResponseEntity.ok()
+            .headers(HeaderUtil.createEntityUpdateAlert(applicationName, true, ENTITY_NAME, id.toString()))
             .body(result);
     }
 
