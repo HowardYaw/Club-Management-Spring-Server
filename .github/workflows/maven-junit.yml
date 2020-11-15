@@ -6,9 +6,9 @@ name: Java CI with Maven
 on:
   pull_request:
     branches: 
-      - master/**
-      - production-version/**
-      - dev-version/** 
+      - 'master/**'
+      - 'production-version/**'
+      - 'dev-version/**'
 
 jobs:
   build:
