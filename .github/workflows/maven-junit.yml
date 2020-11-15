@@ -7,8 +7,8 @@ on:
   pull_request:
     branches: 
       - 'master'
-      - 'production-version/**'
-      - 'dev-version/**'
+      - 'production-version-*'
+      - 'dev-version-*'
 
 jobs:
   build:
