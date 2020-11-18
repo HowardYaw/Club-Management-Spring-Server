@@ -4,7 +4,6 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.Objects;
 
-import com.thirdcc.webapp.domain.Receipt;
 import com.thirdcc.webapp.domain.enumeration.TransactionType;
 
 /**
@@ -34,7 +33,7 @@ public class TransactionDTO implements Serializable {
 
     private String eventName;
 
-    private Receipt receiptDetails;
+    private ReceiptDTO receiptDTO;
 
 
     public Long getId() {
@@ -162,11 +161,11 @@ public class TransactionDTO implements Serializable {
         this.eventName = eventName;
     }
 
-    public Receipt getReceiptDetails() {
-        return receiptDetails;
+    public ReceiptDTO getReceiptDTO() {
+        return receiptDTO;
     }
 
-    public void setReceiptDetails(Receipt receiptDetails) {
-        this.receiptDetails = receiptDetails;
+    public void setReceiptDTO(ReceiptDTO receiptDTO) {
+        this.receiptDTO = receiptDTO;
     }
 }
