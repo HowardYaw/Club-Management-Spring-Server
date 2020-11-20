@@ -6,9 +6,9 @@ name: Java CI with Maven
 on:
   pull_request:
     branches: 
-      - master/**
-      - production-version/**
-      - dev-version/** 
+      - 'master'
+      - 'production-version-*'
+      - 'dev-version-*'
 
 jobs:
   build:
@@ -30,4 +30,4 @@ jobs:
         restore-keys: ${{ runner.os }}-m2
 
     - name: Run Maven Test
-      run: mvn -B test --file pom.xml
+      run: mvn -B verify --file pom.xml
