@@ -25,6 +25,8 @@ public class EventChecklistDTO implements Serializable {
 
     private EventChecklistType type;
 
+    private String eventName;
+
 
     public Long getId() {
         return id;
@@ -105,5 +107,13 @@ public class EventChecklistDTO implements Serializable {
             ", status='" + getStatus() + "'" +
             ", type='" + getType() + "'" +
             "}";
+    }
+
+    public String getEventName() {
+        return eventName;
+    }
+
+    public void setEventName(String eventName) {
+        this.eventName = eventName;
     }
 }

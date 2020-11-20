@@ -112,7 +112,8 @@ public class EventChecklistServiceImpl implements EventChecklistService {
     public Optional<EventChecklistDTO> findOne(Long id) {
         log.debug("Request to get Checklist : {}", id);
         return checklistRepository.findById(id)
-            .map(checklistMapper::toDto);
+            .map(checklistMapper::toDto)
+            .map(this::mapEventName);
     }
 
     /**
@@ -123,6 +124,40 @@ public class EventChecklistServiceImpl implements EventChecklistService {
     @Override
     public void delete(Long id) {
         log.debug("Request to delete Checklist : {}", id);
+        EventChecklist eventChecklist = checklistRepository.findById(id)
+            .orElseThrow(() -> new BadRequestException("Event Checklist not found: "+id));
+        Event event = eventService.findEventByIdAndNotCancelledStatus(eventChecklist.getEventId());
+        if (event.getStartDate().isBefore(Instant.now())) {
+            throw new BadRequestException("Cannot delete a event checklist for event that had been start");
+        }
+        if (eventChecklist.getStatus() != EventChecklistStatus.OPEN) {
+            throw new BadRequestException("Cannot delete a event Checklist that is not open status");
+        }
         checklistRepository.deleteById(id);
+    }
+
+    @Override
+    public EventChecklistDTO updateStatus(Long id, EventChecklistStatus eventChecklistStatus) {
+        log.debug("Request to update status of event checklist: {}, to {}", id, eventChecklistStatus);
+        EventChecklist eventChecklist = checklistRepository.findById(id)
+            .orElseThrow(() -> new BadRequestException("Event Checklist not exists: " + id));
+        Event event = eventService.findEventByIdAndNotCancelledStatus(eventChecklist.getEventId());
+        eventChecklist.setStatus(eventChecklistStatus);
+        return checklistMapper.toDto(
+            checklistRepository.save(eventChecklist)
+        );
+    }
+
+    @Override
+    public Page<EventChecklistDTO> findAllByEventId(Long eventId, Pageable pageable) {
+        eventService.findEventByIdAndNotCancelledStatus(eventId);
+        return checklistRepository.findAllByEventId(eventId, pageable)
+            .map(checklistMapper::toDto);
+    }
+
+    private EventChecklistDTO mapEventName(EventChecklistDTO eventChecklistDTO) {
+        Event event = eventService.findEventByIdAndNotCancelledStatus(eventChecklistDTO.getEventId());
+        eventChecklistDTO.setEventName(event.getName());
+        return eventChecklistDTO;
     }
 }
