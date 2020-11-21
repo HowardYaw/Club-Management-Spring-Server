@@ -32,8 +32,10 @@
     <include file="config/liquibase/changelog/20201028013344_added_entity_UserUniInfo.xml" relativeToChangelogFile="false"/>
     <include file="config/liquibase/changelog/20201028013345_added_entity_YearSession.xml" relativeToChangelogFile="false"/>
     <include file="config/liquibase/changelog/20201028013346_added_entity_Faculty.xml" relativeToChangelogFile="false"/>
+
     <!-- jhipster-needle-liquibase-add-changelog - JHipster will add liquibase changelogs here -->
     <!-- jhipster-needle-liquibase-add-constraints-changelog - JHipster will add liquibase constraints changelogs here -->
 
     <include file="config/liquibase/changelog/20201104173710_alter_entity_checklist_table_name.xml" relativeToChangelogFile="false" />
+    <include file="config/liquibase/changelog/20201121201520_alter_entity_EventAttendee_column_name" relativeToChangelogFile="false"/>
 </databaseChangeLog>
