@@ -4,6 +4,7 @@ import com.thirdcc.webapp.domain.Event;
 import com.thirdcc.webapp.domain.enumeration.EventStatus;
 import com.thirdcc.webapp.exception.BadRequestException;
 import com.thirdcc.webapp.repository.EventRepository;
+import com.thirdcc.webapp.repository.UserRepository;
 import com.thirdcc.webapp.service.EventAttendeeService;
 import com.thirdcc.webapp.domain.EventAttendee;
 import com.thirdcc.webapp.repository.EventAttendeeRepository;
@@ -35,11 +36,14 @@ public class EventAttendeeServiceImpl implements EventAttendeeService {
 
     private final EventRepository eventRepository;
 
+    private final UserRepository userRepository;
+
     private final EventAttendeeMapper eventAttendeeMapper;
 
-    public EventAttendeeServiceImpl(EventAttendeeRepository eventAttendeeRepository, EventRepository eventRepository, EventAttendeeMapper eventAttendeeMapper) {
+    public EventAttendeeServiceImpl(EventAttendeeRepository eventAttendeeRepository, EventRepository eventRepository, UserRepository userRepository, EventAttendeeMapper eventAttendeeMapper) {
         this.eventAttendeeRepository = eventAttendeeRepository;
         this.eventRepository = eventRepository;
+        this.userRepository = userRepository;
         this.eventAttendeeMapper = eventAttendeeMapper;
     }
 
@@ -57,6 +61,10 @@ public class EventAttendeeServiceImpl implements EventAttendeeService {
             add(EventStatus.OPEN);
             add(EventStatus.POSTPONED);
         }};
+
+        userRepository
+            .findOneById(eventAttendeeDTO.getUserId())
+            .orElseThrow(() -> new BadRequestException("User not found"));
 
         Event event = eventRepository
             .findOneByIdAndStatusIn(eventAttendeeDTO.getEventId(), eventStatuses)

@@ -23,8 +23,8 @@ public class EventAttendee implements Serializable {
     @Column(name = "user_id")
     private Long userId;
 
-    @Column(name = "even_id")
-    private Long evenId;
+    @Column(name = "event_id")
+    private Long eventId;
 
     @Column(name = "provide_transport")
     private Boolean provideTransport;
@@ -51,17 +51,17 @@ public class EventAttendee implements Serializable {
         this.userId = userId;
     }
 
-    public Long getEvenId() {
-        return evenId;
+    public Long getEventId() {
+        return eventId;
     }
 
-    public EventAttendee evenId(Long evenId) {
-        this.evenId = evenId;
+    public EventAttendee eventId(Long eventId) {
+        this.eventId = eventId;
         return this;
     }
 
-    public void setEvenId(Long evenId) {
-        this.evenId = evenId;
+    public void setEventId(Long eventId) {
+        this.eventId = eventId;
     }
 
     public Boolean isProvideTransport() {
@@ -99,7 +99,7 @@ public class EventAttendee implements Serializable {
         return "EventAttendee{" +
             "id=" + getId() +
             ", userId=" + getUserId() +
-            ", evenId=" + getEvenId() +
+            ", eventId=" + getEventId() +
             ", provideTransport='" + isProvideTransport() + "'" +
             "}";
     }

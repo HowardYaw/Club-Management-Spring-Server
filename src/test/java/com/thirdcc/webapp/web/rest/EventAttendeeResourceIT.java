@@ -1,28 +1,44 @@
 package com.thirdcc.webapp.web.rest;
 
 import com.thirdcc.webapp.ClubmanagementApp;
+import com.thirdcc.webapp.domain.Authority;
+import com.thirdcc.webapp.domain.Event;
 import com.thirdcc.webapp.domain.EventAttendee;
+import com.thirdcc.webapp.domain.User;
+import com.thirdcc.webapp.domain.enumeration.EventStatus;
+import com.thirdcc.webapp.exception.BadRequestException;
 import com.thirdcc.webapp.repository.EventAttendeeRepository;
+import com.thirdcc.webapp.repository.EventRepository;
+import com.thirdcc.webapp.repository.UserRepository;
 import com.thirdcc.webapp.service.EventAttendeeService;
+import com.thirdcc.webapp.service.UserService;
 import com.thirdcc.webapp.service.dto.EventAttendeeDTO;
 import com.thirdcc.webapp.service.mapper.EventAttendeeMapper;
 import com.thirdcc.webapp.web.rest.errors.ExceptionTranslator;
 
+import org.apache.commons.lang3.RandomStringUtils;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.Validator;
 
 import javax.persistence.EntityManager;
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static com.thirdcc.webapp.web.rest.TestUtil.createFormattingConversionService;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -34,16 +50,44 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * Integration tests for the {@Link EventAttendeeResource} REST controller.
  */
 @SpringBootTest(classes = ClubmanagementApp.class)
+@WithMockUser
 public class EventAttendeeResourceIT {
 
     private static final Long DEFAULT_USER_ID = 1L;
     private static final Long UPDATED_USER_ID = 2L;
 
-    private static final Long DEFAULT_EVEN_ID = 1L;
-    private static final Long UPDATED_EVEN_ID = 2L;
+    private static final Long DEFAULT_EVENT_ID = 1L;
+    private static final Long UPDATED_EVENT_ID = 2L;
 
     private static final Boolean DEFAULT_PROVIDE_TRANSPORT = false;
     private static final Boolean UPDATED_PROVIDE_TRANSPORT = true;
+
+    private static final String DEFAULT_EVENT_NAME = "DEFAULT_EVENT_NAME";
+    private static final String DEFAULT_EVENT_DESCRIPTION = "DEFAULT_EVENT_DESCRIPTION";
+    private static final String DEFAULT_EVENT_REMARKS = "DEFAULT_EVENT_REMARKS";
+    private static final String DEFAULT_EVENT_VENUE = "DEFAULT_EVENT_VENUE";
+    private static final Instant DEFAULT_EVENT_START_DATE = Instant.now().minus(5, ChronoUnit.DAYS);
+    private static final Instant DEFAULT_EVENT_END_DATE = Instant.now().plus(5, ChronoUnit.DAYS);
+    private static final BigDecimal DEFAULT_EVENT_FEE = new BigDecimal(2123);
+    private static final Boolean DEFAULT_EVENT_REQUIRED_TRANSPORT = Boolean.TRUE;
+    private static final EventStatus DEFAULT_EVENT_STATUS = EventStatus.OPEN;
+
+
+    private static final String DEFAULT_USER_LOGIN = "johndoe";
+    private static final String DEFAULT_USER_PASSWORD = "passjohndoe";
+    private static final String DEFAULT_USER_EMAIL = "johndoe@localhost";
+    private static final String DEFAULT_USER_FIRSTNAME = "john";
+    private static final String DEFAULT_USER_LASTNAME = "doe";
+    private static final String DEFAULT_USER_IMAGEURL = "http://placehold.it/50x50";
+    private static final String DEFAULT_USER_LANGKEY = "en";
+    private static User user;
+
+
+    @Autowired
+    private EventRepository eventRepository;
+
+    @Autowired
+    private UserRepository userRepository;
 
     @Autowired
     private EventAttendeeRepository eventAttendeeRepository;
@@ -73,6 +117,11 @@ public class EventAttendeeResourceIT {
 
     private EventAttendee eventAttendee;
 
+    private Event event;
+
+    @Autowired
+    private UserService userService;
+
     @BeforeEach
     public void setup() {
         MockitoAnnotations.initMocks(this);
@@ -91,12 +140,32 @@ public class EventAttendeeResourceIT {
      * This is a static method, as tests for other entities might also need it,
      * if they test an entity which requires the current entity.
      */
-    public static EventAttendee createEntity(EntityManager em) {
+    public static EventAttendee createEventAttendeeEntity(EntityManager em) {
         EventAttendee eventAttendee = new EventAttendee()
-            .userId(DEFAULT_USER_ID)
-            .evenId(DEFAULT_EVEN_ID)
+            .userId(user.getId())
+            .eventId(DEFAULT_EVENT_ID)
             .provideTransport(DEFAULT_PROVIDE_TRANSPORT);
         return eventAttendee;
+    }
+
+    public static Event createEventEntity(EntityManager em) {
+        Event event = new Event();
+        event.setName(DEFAULT_EVENT_NAME);
+        event.setDescription(DEFAULT_EVENT_DESCRIPTION);
+        event.setRemarks(DEFAULT_EVENT_REMARKS);
+        event.setVenue(DEFAULT_EVENT_VENUE);
+        event.setStartDate(DEFAULT_EVENT_START_DATE);
+        event.setEndDate(DEFAULT_EVENT_END_DATE);
+        event.setFee(DEFAULT_EVENT_FEE);
+        event.setRequiredTransport(DEFAULT_EVENT_REQUIRED_TRANSPORT);
+        event.setStatus(DEFAULT_EVENT_STATUS);
+        return event;
+    }
+
+    public static EventAttendeeDTO createDefaultEventAttendeeDTO() {
+        EventAttendeeDTO eventAttendeeDTO = new EventAttendeeDTO();
+        eventAttendeeDTO.setProvideTransport(DEFAULT_PROVIDE_TRANSPORT);
+        return eventAttendeeDTO;
     }
     /**
      * Create an updated entity for this test.
@@ -107,23 +176,38 @@ public class EventAttendeeResourceIT {
     public static EventAttendee createUpdatedEntity(EntityManager em) {
         EventAttendee eventAttendee = new EventAttendee()
             .userId(UPDATED_USER_ID)
-            .evenId(UPDATED_EVEN_ID)
+            .eventId(UPDATED_EVENT_ID)
             .provideTransport(UPDATED_PROVIDE_TRANSPORT);
         return eventAttendee;
     }
 
     @BeforeEach
     public void initTest() {
-        eventAttendee = createEntity(em);
+        event = createEventEntity(em);
+        user = userService.getUserWithAuthorities()
+            .orElseThrow(()-> new RuntimeException("Could not get user when initiate testing"));
+        eventAttendee = createEventAttendeeEntity(em);
+    }
+
+    @AfterEach
+    public void cleanUp() {
+        eventAttendeeRepository.deleteAll();
+        userRepository.deleteAll();
+        eventRepository.deleteAll();
     }
 
     @Test
     @Transactional
     public void createEventAttendee() throws Exception {
+        Event savedEvent = initEventDB();
         int databaseSizeBeforeCreate = eventAttendeeRepository.findAll().size();
 
         // Create the EventAttendee
-        EventAttendeeDTO eventAttendeeDTO = eventAttendeeMapper.toDto(eventAttendee);
+        EventAttendeeDTO eventAttendeeDTO = createDefaultEventAttendeeDTO();
+        eventAttendeeDTO.setEventId(savedEvent.getId());
+        eventAttendeeDTO.setUserId(user.getId());
+
+
         restEventAttendeeMockMvc.perform(post("/api/event-attendees")
             .contentType(TestUtil.APPLICATION_JSON_UTF8)
             .content(TestUtil.convertObjectToJsonBytes(eventAttendeeDTO)))
@@ -133,8 +217,8 @@ public class EventAttendeeResourceIT {
         List<EventAttendee> eventAttendeeList = eventAttendeeRepository.findAll();
         assertThat(eventAttendeeList).hasSize(databaseSizeBeforeCreate + 1);
         EventAttendee testEventAttendee = eventAttendeeList.get(eventAttendeeList.size() - 1);
-        assertThat(testEventAttendee.getUserId()).isEqualTo(DEFAULT_USER_ID);
-        assertThat(testEventAttendee.getEvenId()).isEqualTo(DEFAULT_EVEN_ID);
+        assertThat(testEventAttendee.getUserId()).isEqualTo(user.getId());
+        assertThat(testEventAttendee.getEventId()).isEqualTo(savedEvent.getId());
         assertThat(testEventAttendee.isProvideTransport()).isEqualTo(DEFAULT_PROVIDE_TRANSPORT);
     }
 
@@ -171,10 +255,10 @@ public class EventAttendeeResourceIT {
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
             .andExpect(jsonPath("$.[*].id").value(hasItem(eventAttendee.getId().intValue())))
             .andExpect(jsonPath("$.[*].userId").value(hasItem(DEFAULT_USER_ID.intValue())))
-            .andExpect(jsonPath("$.[*].evenId").value(hasItem(DEFAULT_EVEN_ID.intValue())))
+            .andExpect(jsonPath("$.[*].eventId").value(hasItem(DEFAULT_EVENT_ID.intValue())))
             .andExpect(jsonPath("$.[*].provideTransport").value(hasItem(DEFAULT_PROVIDE_TRANSPORT.booleanValue())));
     }
-    
+
     @Test
     @Transactional
     public void getEventAttendee() throws Exception {
@@ -187,7 +271,7 @@ public class EventAttendeeResourceIT {
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
             .andExpect(jsonPath("$.id").value(eventAttendee.getId().intValue()))
             .andExpect(jsonPath("$.userId").value(DEFAULT_USER_ID.intValue()))
-            .andExpect(jsonPath("$.evenId").value(DEFAULT_EVEN_ID.intValue()))
+            .andExpect(jsonPath("$.eventId").value(DEFAULT_EVENT_ID.intValue()))
             .andExpect(jsonPath("$.provideTransport").value(DEFAULT_PROVIDE_TRANSPORT.booleanValue()));
     }
 
@@ -213,7 +297,7 @@ public class EventAttendeeResourceIT {
         em.detach(updatedEventAttendee);
         updatedEventAttendee
             .userId(UPDATED_USER_ID)
-            .evenId(UPDATED_EVEN_ID)
+            .eventId(UPDATED_EVENT_ID)
             .provideTransport(UPDATED_PROVIDE_TRANSPORT);
         EventAttendeeDTO eventAttendeeDTO = eventAttendeeMapper.toDto(updatedEventAttendee);
 
@@ -227,7 +311,7 @@ public class EventAttendeeResourceIT {
         assertThat(eventAttendeeList).hasSize(databaseSizeBeforeUpdate);
         EventAttendee testEventAttendee = eventAttendeeList.get(eventAttendeeList.size() - 1);
         assertThat(testEventAttendee.getUserId()).isEqualTo(UPDATED_USER_ID);
-        assertThat(testEventAttendee.getEvenId()).isEqualTo(UPDATED_EVEN_ID);
+        assertThat(testEventAttendee.getEventId()).isEqualTo(UPDATED_EVENT_ID);
         assertThat(testEventAttendee.isProvideTransport()).isEqualTo(UPDATED_PROVIDE_TRANSPORT);
     }
 
@@ -305,4 +389,17 @@ public class EventAttendeeResourceIT {
         assertThat(eventAttendeeMapper.fromId(42L).getId()).isEqualTo(42);
         assertThat(eventAttendeeMapper.fromId(null)).isNull();
     }
+
+    private Event initEventDB(){
+        return eventRepository.saveAndFlush(event);
+    }
+
+
+    private EventAttendee initEventAttendeeDB(Event event, User user) {
+        eventAttendee.setEventId(event.getId());
+        eventAttendee.setUserId(user.getId());
+        return eventAttendeeRepository.saveAndFlush(eventAttendee);
+    }
+
+
 }

@@ -6,7 +6,7 @@
             "fieldType": "Long"
         },
         {
-            "fieldName": "evenId",
+            "fieldName": "eventId",
             "fieldType": "Long"
         },
         {
