@@ -105,7 +105,7 @@ public class TransactionServiceImpl implements TransactionService {
 
     @Override
     public Page<TransactionDTO> findAllByEventId(Long eventId, Pageable pageable) {
-        log.debug("Request to find all Transaction of event: {]", eventId);
+        log.debug("Request to find all Transaction of event: {}", eventId);
         eventService.findEventByIdAndNotCancelledStatus(eventId);
         return transactionRepository.findAllByEventId(eventId, pageable)
             .map(transactionMapper::toDto);
