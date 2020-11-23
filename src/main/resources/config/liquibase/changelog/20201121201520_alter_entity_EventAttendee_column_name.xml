@@ -7,8 +7,8 @@
                         http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd">
 
     <changeSet author="Clement" id="20201121201520-1">
-        <renameColumn tableName="event_attendee" oldColumnName="even_id" newColumnName="event_id"/>
+        <renameColumn tableName="event_attendee" oldColumnName="even_id" newColumnName="event_id" columnDataType="bigint"/>
     </changeSet>
 
 </databaseChangeLog>
-m
+

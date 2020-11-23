@@ -74,9 +74,18 @@ public class EventAttendeeServiceImpl implements EventAttendeeService {
             throw new BadRequestException("Cannot add attendee to ended event");
         }
 
-        EventAttendee eventAttendee = eventAttendeeMapper.toEntity(eventAttendeeDTO);
-        eventAttendee = eventAttendeeRepository.save(eventAttendee);
-        return eventAttendeeMapper.toDto(eventAttendee);
+        boolean eventAttendeeExisted = eventAttendeeRepository
+            .findOneByEventIdAndUserId(eventAttendeeDTO.getEventId(),eventAttendeeDTO.getUserId())
+            .isPresent();
+        log.debug("eventAttendeeExisted:"+ eventAttendeeExisted);
+
+        if(eventAttendeeExisted){
+            throw new BadRequestException("User has registered as attendee for this event");
+        } else {
+            EventAttendee eventAttendee = eventAttendeeMapper.toEntity(eventAttendeeDTO);
+            eventAttendee = eventAttendeeRepository.save(eventAttendee);
+            return eventAttendeeMapper.toDto(eventAttendee);
+        }
     }
 
     /**

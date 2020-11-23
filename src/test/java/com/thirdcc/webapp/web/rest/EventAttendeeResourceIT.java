@@ -13,6 +13,7 @@ import com.thirdcc.webapp.repository.UserRepository;
 import com.thirdcc.webapp.service.EventAttendeeService;
 import com.thirdcc.webapp.service.UserService;
 import com.thirdcc.webapp.service.dto.EventAttendeeDTO;
+import com.thirdcc.webapp.service.impl.EventAttendeeServiceImpl;
 import com.thirdcc.webapp.service.mapper.EventAttendeeMapper;
 import com.thirdcc.webapp.web.rest.errors.ExceptionTranslator;
 
@@ -21,6 +22,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockitoAnnotations;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -34,6 +37,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.Validator;
 
 import javax.persistence.EntityManager;
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -52,9 +56,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest(classes = ClubmanagementApp.class)
 @WithMockUser
 public class EventAttendeeResourceIT {
+    private final Logger log = LoggerFactory.getLogger(EventAttendeeServiceImpl.class);
 
     private static final Long DEFAULT_USER_ID = 1L;
     private static final Long UPDATED_USER_ID = 2L;
+    private static final Long NON_EXIST_USER_ID = 912L;
 
     private static final Long DEFAULT_EVENT_ID = 1L;
     private static final Long UPDATED_EVENT_ID = 2L;
@@ -81,7 +87,6 @@ public class EventAttendeeResourceIT {
     private static final String DEFAULT_USER_IMAGEURL = "http://placehold.it/50x50";
     private static final String DEFAULT_USER_LANGKEY = "en";
     private static User user;
-
 
     @Autowired
     private EventRepository eventRepository;
@@ -142,7 +147,7 @@ public class EventAttendeeResourceIT {
      */
     public static EventAttendee createEventAttendeeEntity(EntityManager em) {
         EventAttendee eventAttendee = new EventAttendee()
-            .userId(user.getId())
+            .userId(DEFAULT_USER_ID)
             .eventId(DEFAULT_EVENT_ID)
             .provideTransport(DEFAULT_PROVIDE_TRANSPORT);
         return eventAttendee;
@@ -192,12 +197,10 @@ public class EventAttendeeResourceIT {
     @AfterEach
     public void cleanUp() {
         eventAttendeeRepository.deleteAll();
-        userRepository.deleteAll();
         eventRepository.deleteAll();
     }
 
     @Test
-    @Transactional
     public void createEventAttendee() throws Exception {
         Event savedEvent = initEventDB();
         int databaseSizeBeforeCreate = eventAttendeeRepository.findAll().size();
@@ -206,7 +209,6 @@ public class EventAttendeeResourceIT {
         EventAttendeeDTO eventAttendeeDTO = createDefaultEventAttendeeDTO();
         eventAttendeeDTO.setEventId(savedEvent.getId());
         eventAttendeeDTO.setUserId(user.getId());
-
 
         restEventAttendeeMockMvc.perform(post("/api/event-attendees")
             .contentType(TestUtil.APPLICATION_JSON_UTF8)
@@ -223,7 +225,127 @@ public class EventAttendeeResourceIT {
     }
 
     @Test
-    @Transactional
+    public void createEventAttendee_WithNonExistingUserId_ShouldThrow400() throws Exception {
+        Event savedEvent = initEventDB();
+        int databaseSizeBeforeCreate = eventAttendeeRepository.findAll().size();
+
+        // Create the EventAttendee
+        EventAttendeeDTO eventAttendeeDTO = createDefaultEventAttendeeDTO();
+        eventAttendeeDTO.setUserId(NON_EXIST_USER_ID);
+        eventAttendeeDTO.setEventId(savedEvent.getId());
+
+        restEventAttendeeMockMvc.perform(post("/api/event-attendees")
+            .contentType(TestUtil.APPLICATION_JSON_UTF8)
+            .content(TestUtil.convertObjectToJsonBytes(eventAttendeeDTO)))
+            .andExpect(status().isBadRequest());
+
+        List<EventAttendee> eventAttendeeList = eventAttendeeRepository.findAll();
+        assertThat(eventAttendeeList).hasSize(databaseSizeBeforeCreate);
+    }
+
+    @Test
+    public void createEventAttendee_WithExistedAttendee_ShouldThrow400() throws Exception {
+        EventAttendee eventAttendee = initEventAttendeeDB();
+        int databaseSizeBeforeCreate = eventAttendeeRepository.findAll().size();
+
+        // Create the EventAttendee
+        EventAttendeeDTO eventAttendeeDTO = createDefaultEventAttendeeDTO();
+        eventAttendeeDTO.setUserId(eventAttendee.getUserId());
+        eventAttendeeDTO.setEventId(eventAttendee.getEventId());
+
+        restEventAttendeeMockMvc.perform(post("/api/event-attendees")
+            .contentType(TestUtil.APPLICATION_JSON_UTF8)
+            .content(TestUtil.convertObjectToJsonBytes(eventAttendeeDTO)))
+            .andExpect(status().isBadRequest());
+
+        List<EventAttendee> eventAttendeeList = eventAttendeeRepository.findAll();
+        assertThat(eventAttendeeList).hasSize(databaseSizeBeforeCreate);
+    }
+
+    @Test
+    public void createEventAttendee_WithNonExistingEvent_ShouldThrow400() throws Exception {
+        int databaseSizeBeforeCreate = eventAttendeeRepository.findAll().size();
+
+        EventAttendeeDTO eventAttendeeDTO = createDefaultEventAttendeeDTO();
+        eventAttendeeDTO.setUserId(user.getId());
+        eventAttendeeDTO.setEventId(event.getId());
+
+        restEventAttendeeMockMvc.perform(post("/api/event-attendees")
+            .contentType(TestUtil.APPLICATION_JSON_UTF8)
+            .content(TestUtil.convertObjectToJsonBytes(eventAttendeeDTO)))
+            .andExpect(status().isBadRequest());
+
+        List<EventAttendee> eventAttendeeList = eventAttendeeRepository.findAll();
+        assertThat(eventAttendeeList).hasSize(databaseSizeBeforeCreate);
+    }
+
+
+    @Test
+    public void createEventAttendee_WithEventEnded_ShouldThrow400() throws Exception {
+        event.setEndDate(Instant.now().minus(1, ChronoUnit.DAYS));
+        Event savedEvent = initEventDB();
+
+        int databaseSizeBeforeCreate = eventAttendeeRepository.findAll().size();
+
+        assertThat(savedEvent.getEndDate()).isBefore(Instant.now());
+
+        EventAttendeeDTO eventAttendeeDTO = createDefaultEventAttendeeDTO();
+        eventAttendeeDTO.setUserId(user.getId());
+        eventAttendeeDTO.setEventId(savedEvent.getId());
+
+        restEventAttendeeMockMvc.perform(post("/api/event-attendees")
+            .contentType(TestUtil.APPLICATION_JSON_UTF8)
+            .content(TestUtil.convertObjectToJsonBytes(eventAttendeeDTO)))
+            .andExpect(status().isBadRequest());
+
+        List<EventAttendee> eventAttendeeList = eventAttendeeRepository.findAll();
+        assertThat(eventAttendeeList).hasSize(databaseSizeBeforeCreate);
+    }
+
+    @Test
+    public void createEventAttendee_WithEventClosed_ShouldThrow400() throws Exception {
+        event.setStatus(EventStatus.CLOSED);
+        Event savedEvent = initEventDB();
+
+        int databaseSizeBeforeCreate = eventAttendeeRepository.findAll().size();
+
+        EventAttendeeDTO eventAttendeeDTO = createDefaultEventAttendeeDTO();
+        eventAttendeeDTO.setUserId(user.getId());
+        eventAttendeeDTO.setEventId(savedEvent.getId());
+
+        assertThat(savedEvent.getStatus()).isEqualByComparingTo(EventStatus.CLOSED);
+
+        restEventAttendeeMockMvc.perform(post("/api/event-attendees")
+            .contentType(TestUtil.APPLICATION_JSON_UTF8)
+            .content(TestUtil.convertObjectToJsonBytes(eventAttendeeDTO)))
+            .andExpect(status().isBadRequest());
+
+        List<EventAttendee> eventAttendeeList = eventAttendeeRepository.findAll();
+        assertThat(eventAttendeeList).hasSize(databaseSizeBeforeCreate);
+    }
+
+    @Test
+    public void createEventAttendee_WithEventCancelled_ShouldThrow400() throws Exception {
+        event.setStatus(EventStatus.CANCELLED);
+        Event savedEvent = initEventDB();
+
+        int databaseSizeBeforeCreate = eventAttendeeRepository.findAll().size();
+
+        EventAttendeeDTO eventAttendeeDTO = createDefaultEventAttendeeDTO();
+        eventAttendeeDTO.setEventId(savedEvent.getId());
+
+        assertThat(savedEvent.getStatus()).isEqualByComparingTo(EventStatus.CANCELLED);
+
+        restEventAttendeeMockMvc.perform(post("/api/event-attendees")
+            .contentType(TestUtil.APPLICATION_JSON_UTF8)
+            .content(TestUtil.convertObjectToJsonBytes(eventAttendeeDTO)))
+            .andExpect(status().isBadRequest());
+
+        List<EventAttendee> eventAttendeeList = eventAttendeeRepository.findAll();
+        assertThat(eventAttendeeList).hasSize(databaseSizeBeforeCreate);
+    }
+
+    @Test
     public void createEventAttendeeWithExistingId() throws Exception {
         int databaseSizeBeforeCreate = eventAttendeeRepository.findAll().size();
 
@@ -242,9 +364,7 @@ public class EventAttendeeResourceIT {
         assertThat(eventAttendeeList).hasSize(databaseSizeBeforeCreate);
     }
 
-
     @Test
-    @Transactional
     public void getAllEventAttendees() throws Exception {
         // Initialize the database
         eventAttendeeRepository.saveAndFlush(eventAttendee);
@@ -260,7 +380,6 @@ public class EventAttendeeResourceIT {
     }
 
     @Test
-    @Transactional
     public void getEventAttendee() throws Exception {
         // Initialize the database
         eventAttendeeRepository.saveAndFlush(eventAttendee);
@@ -276,47 +395,44 @@ public class EventAttendeeResourceIT {
     }
 
     @Test
-    @Transactional
     public void getNonExistingEventAttendee() throws Exception {
         // Get the eventAttendee
         restEventAttendeeMockMvc.perform(get("/api/event-attendees/{id}", Long.MAX_VALUE))
             .andExpect(status().isNotFound());
     }
 
+//    @Test
+//    public void updateEventAttendee() throws Exception {
+//        // Initialize the database
+//        eventAttendeeRepository.saveAndFlush(eventAttendee);
+//
+//        int databaseSizeBeforeUpdate = eventAttendeeRepository.findAll().size();
+//
+//        // Update the eventAttendee
+//        EventAttendee updatedEventAttendee = eventAttendeeRepository.findById(eventAttendee.getId()).get();
+//        // Disconnect from session so that the updates on updatedEventAttendee are not directly saved in db
+//        em.detach(updatedEventAttendee);
+//        updatedEventAttendee
+//            .userId(UPDATED_USER_ID)
+//            .eventId(UPDATED_EVENT_ID)
+//            .provideTransport(UPDATED_PROVIDE_TRANSPORT);
+//        EventAttendeeDTO eventAttendeeDTO = eventAttendeeMapper.toDto(updatedEventAttendee);
+//
+//        restEventAttendeeMockMvc.perform(put("/api/event-attendees")
+//            .contentType(TestUtil.APPLICATION_JSON_UTF8)
+//            .content(TestUtil.convertObjectToJsonBytes(eventAttendeeDTO)))
+//            .andExpect(status().isOk());
+//
+//        // Validate the EventAttendee in the database
+//        List<EventAttendee> eventAttendeeList = eventAttendeeRepository.findAll();
+//        assertThat(eventAttendeeList).hasSize(databaseSizeBeforeUpdate);
+//        EventAttendee testEventAttendee = eventAttendeeList.get(eventAttendeeList.size() - 1);
+//        assertThat(testEventAttendee.getUserId()).isEqualTo(UPDATED_USER_ID);
+//        assertThat(testEventAttendee.getEventId()).isEqualTo(UPDATED_EVENT_ID);
+//        assertThat(testEventAttendee.isProvideTransport()).isEqualTo(UPDATED_PROVIDE_TRANSPORT);
+//    }
+
     @Test
-    @Transactional
-    public void updateEventAttendee() throws Exception {
-        // Initialize the database
-        eventAttendeeRepository.saveAndFlush(eventAttendee);
-
-        int databaseSizeBeforeUpdate = eventAttendeeRepository.findAll().size();
-
-        // Update the eventAttendee
-        EventAttendee updatedEventAttendee = eventAttendeeRepository.findById(eventAttendee.getId()).get();
-        // Disconnect from session so that the updates on updatedEventAttendee are not directly saved in db
-        em.detach(updatedEventAttendee);
-        updatedEventAttendee
-            .userId(UPDATED_USER_ID)
-            .eventId(UPDATED_EVENT_ID)
-            .provideTransport(UPDATED_PROVIDE_TRANSPORT);
-        EventAttendeeDTO eventAttendeeDTO = eventAttendeeMapper.toDto(updatedEventAttendee);
-
-        restEventAttendeeMockMvc.perform(put("/api/event-attendees")
-            .contentType(TestUtil.APPLICATION_JSON_UTF8)
-            .content(TestUtil.convertObjectToJsonBytes(eventAttendeeDTO)))
-            .andExpect(status().isOk());
-
-        // Validate the EventAttendee in the database
-        List<EventAttendee> eventAttendeeList = eventAttendeeRepository.findAll();
-        assertThat(eventAttendeeList).hasSize(databaseSizeBeforeUpdate);
-        EventAttendee testEventAttendee = eventAttendeeList.get(eventAttendeeList.size() - 1);
-        assertThat(testEventAttendee.getUserId()).isEqualTo(UPDATED_USER_ID);
-        assertThat(testEventAttendee.getEventId()).isEqualTo(UPDATED_EVENT_ID);
-        assertThat(testEventAttendee.isProvideTransport()).isEqualTo(UPDATED_PROVIDE_TRANSPORT);
-    }
-
-    @Test
-    @Transactional
     public void updateNonExistingEventAttendee() throws Exception {
         int databaseSizeBeforeUpdate = eventAttendeeRepository.findAll().size();
 
@@ -335,7 +451,6 @@ public class EventAttendeeResourceIT {
     }
 
     @Test
-    @Transactional
     public void deleteEventAttendee() throws Exception {
         // Initialize the database
         eventAttendeeRepository.saveAndFlush(eventAttendee);
@@ -353,7 +468,6 @@ public class EventAttendeeResourceIT {
     }
 
     @Test
-    @Transactional
     public void equalsVerifier() throws Exception {
         TestUtil.equalsVerifier(EventAttendee.class);
         EventAttendee eventAttendee1 = new EventAttendee();
@@ -368,7 +482,6 @@ public class EventAttendeeResourceIT {
     }
 
     @Test
-    @Transactional
     public void dtoEqualsVerifier() throws Exception {
         TestUtil.equalsVerifier(EventAttendeeDTO.class);
         EventAttendeeDTO eventAttendeeDTO1 = new EventAttendeeDTO();
@@ -384,7 +497,6 @@ public class EventAttendeeResourceIT {
     }
 
     @Test
-    @Transactional
     public void testEntityFromId() {
         assertThat(eventAttendeeMapper.fromId(42L).getId()).isEqualTo(42);
         assertThat(eventAttendeeMapper.fromId(null)).isNull();
@@ -394,8 +506,7 @@ public class EventAttendeeResourceIT {
         return eventRepository.saveAndFlush(event);
     }
 
-
-    private EventAttendee initEventAttendeeDB(Event event, User user) {
+    private EventAttendee initEventAttendeeDB() {
         eventAttendee.setEventId(event.getId());
         eventAttendee.setUserId(user.getId());
         return eventAttendeeRepository.saveAndFlush(eventAttendee);
