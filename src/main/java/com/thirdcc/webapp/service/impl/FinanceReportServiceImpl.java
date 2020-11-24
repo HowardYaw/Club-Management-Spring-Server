@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -52,6 +53,18 @@ public class FinanceReportServiceImpl implements FinanceReportService {
             .map(this::mapTotalExpenses)
             .collect(Collectors.toList());
         return PageUtils.toPage(financeReportDTOList, pageable);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<FinanceReportDTO> findOneByEventId(Long eventId) {
+        return eventService
+            .findOne(eventId)
+            .map(this::toFinanceReportDTO)
+            .map(this::mapTotalBudgetIncome)
+            .map(this::mapTotalBudgetExpenses)
+            .map(this::mapTotalIncome)
+            .map(this::mapTotalExpenses);
     }
 
     private FinanceReportDTO toFinanceReportDTO(EventDTO eventDTO) {
