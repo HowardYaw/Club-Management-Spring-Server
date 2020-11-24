@@ -21,6 +21,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.Validator;
 
 import javax.persistence.EntityManager;
@@ -133,7 +134,7 @@ class FinanceReportResourceIT {
     }
 
     @Test
-    public void getAllEventActivities() throws Exception {
+    public void getAllEventFinanceReport() throws Exception {
         Event savedEvent = initEventDB();
         Receipt savedReceipt = initReceiptDB();
         Budget incomeBudget = initBudgetDB(savedEvent, TransactionType.INCOME);
@@ -149,6 +150,31 @@ class FinanceReportResourceIT {
             .andExpect(jsonPath("$.[*].totalBudgetExpenses").value(hasItem(DEFAULT_BUDGET_AMOUNT.doubleValue())))
             .andExpect(jsonPath("$.[*].totalIncome").value(hasItem(DEFAULT_TRANSACTION_AMOUNT.doubleValue())))
             .andExpect(jsonPath("$.[*].totalExpenses").value(hasItem(DEFAULT_TRANSACTION_AMOUNT.doubleValue())));
+    }
+
+    @Test
+    public void getFinanceReportByEventId() throws Exception {
+        Event savedEvent = initEventDB();
+        Receipt savedReceipt = initReceiptDB();
+        Budget incomeBudget = initBudgetDB(savedEvent, TransactionType.INCOME);
+        Budget expenseBudget = initBudgetDB(savedEvent, TransactionType.EXPENSE);
+        Transaction incomeTransaction = initTransactionDB(savedEvent, savedReceipt, TransactionType.INCOME);
+        Transaction expenseTransaction = initTransactionDB(savedEvent, savedReceipt, TransactionType.EXPENSE);
+
+        restFinanceReportMockMvc.perform(get("/api/finance-report/{eventId}", savedEvent.getId()))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
+            .andExpect(jsonPath("$.eventDTO.id").value(savedEvent.getId().intValue()))
+            .andExpect(jsonPath("$.totalBudgetIncome").value(DEFAULT_BUDGET_AMOUNT.doubleValue()))
+            .andExpect(jsonPath("$.totalBudgetExpenses").value(DEFAULT_BUDGET_AMOUNT.doubleValue()))
+            .andExpect(jsonPath("$.totalIncome").value(DEFAULT_TRANSACTION_AMOUNT.doubleValue()))
+            .andExpect(jsonPath("$.totalExpenses").value(DEFAULT_TRANSACTION_AMOUNT.doubleValue()));
+    }
+
+    @Test
+    public void getFinanceReportByEventId_WithNonExistingEventId() throws Exception {
+        restFinanceReportMockMvc.perform(get("/api/finance-report/{eventId}", Long.MAX_VALUE))
+            .andExpect(status().isNotFound());
     }
 
     private Event initEventDB() {
