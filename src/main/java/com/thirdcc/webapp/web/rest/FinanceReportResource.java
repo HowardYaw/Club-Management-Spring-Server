@@ -29,13 +29,14 @@ public class FinanceReportResource {
     @Value("${jhipster.clientApp.name}")
     private String applicationName;
 
-    private FinanceReportService financeReportService;
+    private final FinanceReportService financeReportService;
 
 
-    public FinanceReportResource() {
+    public FinanceReportResource(FinanceReportService financeReportService) {
+        this.financeReportService = financeReportService;
     }
 
-    @GetMapping("/event-activities")
+    @GetMapping("/finance-report")
     public ResponseEntity<List<FinanceReportDTO>> getAllEventFinanceReport(Pageable pageable, @RequestParam MultiValueMap<String, String> queryParams, UriComponentsBuilder uriBuilder) {
         log.debug("REST request to get a page of EventActivities");
         Page<FinanceReportDTO> page = financeReportService.findAll(pageable);

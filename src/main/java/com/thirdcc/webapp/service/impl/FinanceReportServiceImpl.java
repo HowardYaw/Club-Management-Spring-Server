@@ -12,11 +12,15 @@ import com.thirdcc.webapp.service.dto.FinanceReportDTO;
 import com.thirdcc.webapp.utils.PageUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Service
+@Transactional
 public class FinanceReportServiceImpl implements FinanceReportService {
 
     private final EventService eventService;
@@ -36,6 +40,7 @@ public class FinanceReportServiceImpl implements FinanceReportService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Page<FinanceReportDTO> findAll(Pageable pageable) {
         List<FinanceReportDTO> financeReportDTOList = eventService
             .findAll(Pageable.unpaged())
@@ -61,7 +66,7 @@ public class FinanceReportServiceImpl implements FinanceReportService {
             .stream()
             .map(Transaction::getAmount)
             .reduce(BigDecimal.ZERO, BigDecimal::add);
-        financeReportDTO.setTotalBudgetExpenses(totalBudgetExpenses);
+        financeReportDTO.setTotalExpenses(totalBudgetExpenses);
         return financeReportDTO;
     }
 
@@ -71,7 +76,7 @@ public class FinanceReportServiceImpl implements FinanceReportService {
             .stream()
             .map(Transaction::getAmount)
             .reduce(BigDecimal.ZERO, BigDecimal::add);
-        financeReportDTO.setTotalBudgetExpenses(totalBudgetIncome);
+        financeReportDTO.setTotalIncome(totalBudgetIncome);
         return financeReportDTO;
     }
 
@@ -91,7 +96,7 @@ public class FinanceReportServiceImpl implements FinanceReportService {
             .stream()
             .map(Budget::getAmount)
             .reduce(BigDecimal.ZERO, BigDecimal::add);
-        financeReportDTO.setTotalBudgetExpenses(totalBudgetIncome);
+        financeReportDTO.setTotalBudgetIncome(totalBudgetIncome);
         return financeReportDTO;
     }
 }
