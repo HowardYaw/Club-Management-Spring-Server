@@ -46,7 +46,7 @@ class YearSessionUtilsTest {
         Instant instant = localDate.atStartOfDay().atZone(ZoneId.systemDefault()).toInstant();
         String yearSession = YearSessionUtils.toYearSession(instant);
 
-        assertThat(yearSession).isEqualTo("2019/2020");
+        assertThat(yearSession).isEqualTo("2018/2019");
     }
 
     @Test
@@ -56,7 +56,7 @@ class YearSessionUtilsTest {
         Instant instant = localDate.atStartOfDay().atZone(ZoneId.systemDefault()).toInstant();
         String yearSession = YearSessionUtils.toYearSession(instant);
 
-        assertThat(yearSession).isEqualTo("2018/2019");
+        assertThat(yearSession).isEqualTo("2019/2020");
     }
 
     @Test
