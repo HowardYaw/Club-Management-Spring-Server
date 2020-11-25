@@ -5,6 +5,7 @@ import com.thirdcc.webapp.domain.enumeration.TransactionType;
 import org.springframework.data.jpa.repository.*;
 import org.springframework.stereotype.Repository;
 
+import java.time.Instant;
 import java.util.List;
 
 
@@ -16,5 +17,7 @@ import java.util.List;
 public interface TransactionRepository extends JpaRepository<Transaction, Long> {
 
     List<Transaction> findAllByEventIdAndType(Long eventId, TransactionType type);
+
+    List<Transaction> findAllByCreatedDateGreaterThanEqualAndCreatedDateLessThan(Instant inclusiveFrom, Instant exclusiveTo);
 
 }
