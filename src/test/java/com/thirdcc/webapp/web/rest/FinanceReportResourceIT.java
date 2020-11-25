@@ -4,11 +4,10 @@ import com.thirdcc.webapp.ClubmanagementApp;
 import com.thirdcc.webapp.domain.*;
 import com.thirdcc.webapp.domain.enumeration.EventStatus;
 import com.thirdcc.webapp.domain.enumeration.TransactionType;
-import com.thirdcc.webapp.repository.BudgetRepository;
-import com.thirdcc.webapp.repository.EventRepository;
-import com.thirdcc.webapp.repository.ReceiptRepository;
-import com.thirdcc.webapp.repository.TransactionRepository;
+import com.thirdcc.webapp.repository.*;
 import com.thirdcc.webapp.service.FinanceReportService;
+import com.thirdcc.webapp.service.YearSessionService;
+import com.thirdcc.webapp.utils.YearSessionUtils;
 import com.thirdcc.webapp.web.rest.errors.ExceptionTranslator;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -21,16 +20,16 @@ import org.springframework.http.MediaType;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.Validator;
 
 import javax.persistence.EntityManager;
 
 import java.math.BigDecimal;
-import java.time.Instant;
+import java.time.*;
 import java.time.temporal.ChronoUnit;
 
 import static com.thirdcc.webapp.web.rest.TestUtil.createFormattingConversionService;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.hasItem;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -62,6 +61,12 @@ class FinanceReportResourceIT {
 
     @Autowired
     private FinanceReportService financeReportService;
+
+    @Autowired
+    private YearSessionService yearSessionService;
+
+    @Autowired
+    private YearSessionRepository yearSessionRepository;
 
     @Autowired
     private EventRepository eventRepository;
@@ -97,7 +102,7 @@ class FinanceReportResourceIT {
     @BeforeEach
     public void setup() {
         MockitoAnnotations.initMocks(this);
-        final FinanceReportResource financeReportResource = new FinanceReportResource(financeReportService);
+        final FinanceReportResource financeReportResource = new FinanceReportResource(financeReportService, yearSessionService);
         this.restFinanceReportMockMvc = MockMvcBuilders.standaloneSetup(financeReportResource)
             .setCustomArgumentResolvers(pageableArgumentResolver)
             .setControllerAdvice(exceptionTranslator)
@@ -161,7 +166,7 @@ class FinanceReportResourceIT {
         Transaction incomeTransaction = initTransactionDB(savedEvent, savedReceipt, TransactionType.INCOME);
         Transaction expenseTransaction = initTransactionDB(savedEvent, savedReceipt, TransactionType.EXPENSE);
 
-        restFinanceReportMockMvc.perform(get("/api/finance-report/{eventId}", savedEvent.getId()))
+        restFinanceReportMockMvc.perform(get("/api/finance-report/event/{eventId}", savedEvent.getId()))
             .andExpect(status().isOk())
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
             .andExpect(jsonPath("$.eventDTO.id").value(savedEvent.getId().intValue()))
@@ -173,8 +178,83 @@ class FinanceReportResourceIT {
 
     @Test
     public void getFinanceReportByEventId_WithNonExistingEventId() throws Exception {
-        restFinanceReportMockMvc.perform(get("/api/finance-report/{eventId}", Long.MAX_VALUE))
+        restFinanceReportMockMvc.perform(get("/api/finance-report/event/{eventId}", Long.MAX_VALUE))
             .andExpect(status().isNotFound());
+    }
+
+    @Test
+    public void getFinanceReportByYearSession() throws Exception {
+        Event savedEvent = initEventDB();
+        Receipt savedReceipt = initReceiptDB();
+        Instant transactionDate = LocalDate.of(2020, Month.JANUARY, 10).atStartOfDay().atZone(ZoneId.systemDefault()).toInstant();
+        YearSession savedYearSession = initYearSessionDB(transactionDate);
+
+        Month transactionMonth = transactionDate.atZone(ZoneId.systemDefault()).toLocalDate().getMonth();
+        assertThat(transactionMonth).isEqualByComparingTo(Month.JANUARY);
+
+        restFinanceReportMockMvc.perform(
+            get("/api/finance-report/year-session")
+                .param("yearSessionId", savedYearSession.getId().toString())
+        )
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
+            .andExpect(jsonPath("$.INCOME.JANUARY").value(DEFAULT_TRANSACTION_AMOUNT.doubleValue()))
+            .andExpect(jsonPath("$.INCOME.FEBRUARY").value(BigDecimal.ZERO.doubleValue()))
+            .andExpect(jsonPath("$.INCOME.MARCH").value(BigDecimal.ZERO.doubleValue()))
+            .andExpect(jsonPath("$.INCOME.APRIL").value(BigDecimal.ZERO.doubleValue()))
+            .andExpect(jsonPath("$.INCOME.MAY").value(BigDecimal.ZERO.doubleValue()))
+            .andExpect(jsonPath("$.INCOME.JUNE").value(BigDecimal.ZERO.doubleValue()))
+            .andExpect(jsonPath("$.INCOME.JULY").value(BigDecimal.ZERO.doubleValue()))
+            .andExpect(jsonPath("$.INCOME.AUGUST").value(BigDecimal.ZERO.doubleValue()))
+            .andExpect(jsonPath("$.INCOME.SEPTEMBER").value(BigDecimal.ZERO.doubleValue()))
+            .andExpect(jsonPath("$.INCOME.OCTOBER").value(BigDecimal.ZERO.doubleValue()))
+            .andExpect(jsonPath("$.INCOME.NOVEMBER").value(BigDecimal.ZERO.doubleValue()))
+            .andExpect(jsonPath("$.INCOME.DECEMBER").value(BigDecimal.ZERO.doubleValue()))
+            .andExpect(jsonPath("$.EXPENSE.JANUARY").value(DEFAULT_TRANSACTION_AMOUNT.doubleValue()))
+            .andExpect(jsonPath("$.EXPENSE.FEBRUARY").value(BigDecimal.ZERO.doubleValue()))
+            .andExpect(jsonPath("$.EXPENSE.MARCH").value(BigDecimal.ZERO.doubleValue()))
+            .andExpect(jsonPath("$.EXPENSE.APRIL").value(BigDecimal.ZERO.doubleValue()))
+            .andExpect(jsonPath("$.EXPENSE.MAY").value(BigDecimal.ZERO.doubleValue()))
+            .andExpect(jsonPath("$.EXPENSE.JUNE").value(BigDecimal.ZERO.doubleValue()))
+            .andExpect(jsonPath("$.EXPENSE.JULY").value(BigDecimal.ZERO.doubleValue()))
+            .andExpect(jsonPath("$.EXPENSE.AUGUST").value(BigDecimal.ZERO.doubleValue()))
+            .andExpect(jsonPath("$.EXPENSE.SEPTEMBER").value(BigDecimal.ZERO.doubleValue()))
+            .andExpect(jsonPath("$.EXPENSE.OCTOBER").value(BigDecimal.ZERO.doubleValue()))
+            .andExpect(jsonPath("$.EXPENSE.NOVEMBER").value(BigDecimal.ZERO.doubleValue()))
+            .andExpect(jsonPath("$.EXPENSE.DECEMBER").value(BigDecimal.ZERO.doubleValue()));
+    }
+
+    @Test
+    public void getFinanceReportByYearSession_WithNoTransaction() throws Exception {
+        YearSession savedYearSession = initYearSessionDB(Instant.now());
+
+        restFinanceReportMockMvc.perform(get("/api/finance-report/year-session"))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
+            .andExpect(jsonPath("$.INCOME.JANUARY").value(BigDecimal.ZERO.doubleValue()))
+            .andExpect(jsonPath("$.INCOME.FEBRUARY").value(BigDecimal.ZERO.doubleValue()))
+            .andExpect(jsonPath("$.INCOME.MARCH").value(BigDecimal.ZERO.doubleValue()))
+            .andExpect(jsonPath("$.INCOME.APRIL").value(BigDecimal.ZERO.doubleValue()))
+            .andExpect(jsonPath("$.INCOME.MAY").value(BigDecimal.ZERO.doubleValue()))
+            .andExpect(jsonPath("$.INCOME.JUNE").value(BigDecimal.ZERO.doubleValue()))
+            .andExpect(jsonPath("$.INCOME.JULY").value(BigDecimal.ZERO.doubleValue()))
+            .andExpect(jsonPath("$.INCOME.AUGUST").value(BigDecimal.ZERO.doubleValue()))
+            .andExpect(jsonPath("$.INCOME.SEPTEMBER").value(BigDecimal.ZERO.doubleValue()))
+            .andExpect(jsonPath("$.INCOME.OCTOBER").value(BigDecimal.ZERO.doubleValue()))
+            .andExpect(jsonPath("$.INCOME.NOVEMBER").value(BigDecimal.ZERO.doubleValue()))
+            .andExpect(jsonPath("$.INCOME.DECEMBER").value(BigDecimal.ZERO.doubleValue()))
+            .andExpect(jsonPath("$.EXPENSE.JANUARY").value(BigDecimal.ZERO.doubleValue()))
+            .andExpect(jsonPath("$.EXPENSE.FEBRUARY").value(BigDecimal.ZERO.doubleValue()))
+            .andExpect(jsonPath("$.EXPENSE.MARCH").value(BigDecimal.ZERO.doubleValue()))
+            .andExpect(jsonPath("$.EXPENSE.APRIL").value(BigDecimal.ZERO.doubleValue()))
+            .andExpect(jsonPath("$.EXPENSE.MAY").value(BigDecimal.ZERO.doubleValue()))
+            .andExpect(jsonPath("$.EXPENSE.JUNE").value(BigDecimal.ZERO.doubleValue()))
+            .andExpect(jsonPath("$.EXPENSE.JULY").value(BigDecimal.ZERO.doubleValue()))
+            .andExpect(jsonPath("$.EXPENSE.AUGUST").value(BigDecimal.ZERO.doubleValue()))
+            .andExpect(jsonPath("$.EXPENSE.SEPTEMBER").value(BigDecimal.ZERO.doubleValue()))
+            .andExpect(jsonPath("$.EXPENSE.OCTOBER").value(BigDecimal.ZERO.doubleValue()))
+            .andExpect(jsonPath("$.EXPENSE.NOVEMBER").value(BigDecimal.ZERO.doubleValue()))
+            .andExpect(jsonPath("$.EXPENSE.DECEMBER").value(BigDecimal.ZERO.doubleValue()));
     }
 
     private Event initEventDB() {
@@ -207,5 +287,12 @@ class FinanceReportResourceIT {
         transaction.setType(transactionType);
         transaction.setDetails(DEFAULT_TRANSACTION_DETAILS);
         return transactionRepository.saveAndFlush(transaction);
+    }
+
+    private YearSession initYearSessionDB(Instant instant) {
+        YearSession yearSession = new YearSession();
+        String value = YearSessionUtils.toYearSession(instant);
+        yearSession.setValue(value);
+        return yearSessionRepository.saveAndFlush(yearSession);
     }
 }
