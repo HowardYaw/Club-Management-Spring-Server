@@ -2,7 +2,6 @@ package com.thirdcc.webapp.service.impl;
 
 import com.thirdcc.webapp.domain.Budget;
 import com.thirdcc.webapp.domain.Transaction;
-import com.thirdcc.webapp.domain.YearSession;
 import com.thirdcc.webapp.domain.enumeration.TransactionType;
 import com.thirdcc.webapp.repository.BudgetRepository;
 import com.thirdcc.webapp.repository.TransactionRepository;
@@ -19,18 +18,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.persistence.Tuple;
 import java.math.BigDecimal;
 import java.time.*;
-import java.time.temporal.ChronoUnit;
 import java.util.*;
-import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import static java.time.temporal.TemporalAdjusters.firstDayOfYear;
-import static java.time.temporal.TemporalAdjusters.lastDayOfYear;
-import static java.util.stream.Collectors.groupingBy;
 
 @Service
 @Transactional
@@ -82,6 +73,7 @@ public class FinanceReportServiceImpl implements FinanceReportService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Map<TransactionType, Map<Month, BigDecimal>> getFinanceReportByYearSession(String yearSession) {
         ZoneId zoneId = ZoneId.systemDefault();
         Instant inclusiveFrom = YearSessionUtils.getFirstInstantOfYearSession(yearSession);

@@ -12,9 +12,12 @@ import com.thirdcc.webapp.web.rest.errors.ExceptionTranslator;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.data.auditing.DateTimeProvider;
 import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
@@ -27,6 +30,7 @@ import javax.persistence.EntityManager;
 import java.math.BigDecimal;
 import java.time.*;
 import java.time.temporal.ChronoUnit;
+import java.util.Optional;
 
 import static com.thirdcc.webapp.web.rest.TestUtil.createFormattingConversionService;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -58,6 +62,13 @@ class FinanceReportResourceIT {
     private static final BigDecimal DEFAULT_EVENT_FEE = new BigDecimal(2123);
     private static final Boolean DEFAULT_EVENT_REQUIRED_TRANSPORT = Boolean.TRUE;
     private static final EventStatus DEFAULT_EVENT_STATUS = EventStatus.OPEN;
+
+
+    /** this Bean is mocked in
+     * @see com.thirdcc.webapp.config.DateTimeProviderConfiguration
+     */
+    @Autowired
+    public DateTimeProvider dateTimeProvider;
 
     @Autowired
     private FinanceReportService financeReportService;
@@ -184,13 +195,18 @@ class FinanceReportResourceIT {
 
     @Test
     public void getFinanceReportByYearSession() throws Exception {
+        //mock createdDate
+        LocalDateTime transactionLocalDateTime =  LocalDateTime.of(1998, 1, 20, 0, 0, 0);
+        Mockito
+            .when(dateTimeProvider.getNow())
+            .thenReturn(Optional.of(transactionLocalDateTime));
+
         Event savedEvent = initEventDB();
         Receipt savedReceipt = initReceiptDB();
-        Instant transactionDate = LocalDate.of(2020, Month.JANUARY, 10).atStartOfDay().atZone(ZoneId.systemDefault()).toInstant();
+        Instant transactionDate = transactionLocalDateTime.atZone(ZoneId.systemDefault()).toInstant();
         YearSession savedYearSession = initYearSessionDB(transactionDate);
-
-        Month transactionMonth = transactionDate.atZone(ZoneId.systemDefault()).toLocalDate().getMonth();
-        assertThat(transactionMonth).isEqualByComparingTo(Month.JANUARY);
+        Transaction incomeTransaction = initTransactionDB(savedEvent, savedReceipt, TransactionType.INCOME);
+        Transaction expenseTransaction = initTransactionDB(savedEvent, savedReceipt, TransactionType.EXPENSE);
 
         restFinanceReportMockMvc.perform(
             get("/api/finance-report/year-session")
@@ -255,6 +271,18 @@ class FinanceReportResourceIT {
             .andExpect(jsonPath("$.EXPENSE.OCTOBER").value(BigDecimal.ZERO.doubleValue()))
             .andExpect(jsonPath("$.EXPENSE.NOVEMBER").value(BigDecimal.ZERO.doubleValue()))
             .andExpect(jsonPath("$.EXPENSE.DECEMBER").value(BigDecimal.ZERO.doubleValue()));
+    }
+
+
+    @Test
+    public void getFinanceReportByYearSession_WithInvalidYearSessionId() throws Exception {
+        YearSession savedYearSession = initYearSessionDB(Instant.now());
+
+        restFinanceReportMockMvc.perform(
+            get("/api/finance-report/year-session")
+                .param("yearSessionId", String.valueOf(Long.MAX_VALUE))
+        )
+            .andExpect(status().isBadRequest());
     }
 
     private Event initEventDB() {
