@@ -113,22 +113,22 @@ public class FinanceReportServiceImpl implements FinanceReportService {
     }
 
     private FinanceReportDTO mapTotalExpenses(FinanceReportDTO financeReportDTO) {
-        BigDecimal totalBudgetExpenses = transactionRepository
+        BigDecimal totalExpenses = transactionRepository
             .findAllByEventIdAndType(financeReportDTO.getEventDTO().getId(), TransactionType.EXPENSE)
             .stream()
             .map(Transaction::getAmount)
             .reduce(BigDecimal.ZERO, BigDecimal::add);
-        financeReportDTO.setTotalExpenses(totalBudgetExpenses);
+        financeReportDTO.setTotalExpenses(totalExpenses);
         return financeReportDTO;
     }
 
     private FinanceReportDTO mapTotalIncome(FinanceReportDTO financeReportDTO) {
-        BigDecimal totalBudgetIncome = transactionRepository
+        BigDecimal totalIncome = transactionRepository
             .findAllByEventIdAndType(financeReportDTO.getEventDTO().getId(), TransactionType.INCOME)
             .stream()
             .map(Transaction::getAmount)
             .reduce(BigDecimal.ZERO, BigDecimal::add);
-        financeReportDTO.setTotalIncome(totalBudgetIncome);
+        financeReportDTO.setTotalIncome(totalIncome);
         return financeReportDTO;
     }
 
