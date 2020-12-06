@@ -61,6 +61,12 @@ public class EventAttendeeServiceImpl implements EventAttendeeService {
             .map(eventAttendeeMapper::toDto);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public Page<EventAttendeeDTO> findAllByEventId(Pageable pageable, Long eventId) {
+        return eventAttendeeRepository.findAllByEventId(pageable, eventId)
+            .map(eventAttendeeMapper::toDto);
+    }
 
     /**
      * Get one eventAttendee by id.

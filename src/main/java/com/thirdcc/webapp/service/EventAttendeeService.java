@@ -28,7 +28,7 @@ public interface EventAttendeeService {
      */
     Page<EventAttendeeDTO> findAll(Pageable pageable);
 
-
+    Page<EventAttendeeDTO> findAllByEventId(Pageable pageable, Long eventId);
     /**
      * Get the "id" eventAttendee.
      *

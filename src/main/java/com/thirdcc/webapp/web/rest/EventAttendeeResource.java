@@ -114,6 +114,14 @@ public class EventAttendeeResource {
         return ResponseUtil.wrapOrNotFound(eventAttendeeDTO);
     }
 
+    @GetMapping("/event-attendees/event/{eventId}")
+    public ResponseEntity<List<EventAttendeeDTO>> getAllEventAttendeeByEventId(Pageable pageable, @PathVariable Long eventId, @RequestParam MultiValueMap<String, String> queryParams, UriComponentsBuilder uriBuilder) {
+        log.debug("REST request to get a page of EventAttendees");
+        Page<EventAttendeeDTO> page = eventAttendeeService.findAllByEventId(pageable, eventId);
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(uriBuilder.queryParams(queryParams), page);
+        return ResponseEntity.ok().headers(headers).body(page.getContent());
+    }
+
     /**
      * {@code DELETE  /event-attendees/:id} : delete the "id" eventAttendee.
      *
