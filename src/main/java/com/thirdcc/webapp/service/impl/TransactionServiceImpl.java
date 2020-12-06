@@ -2,6 +2,7 @@ package com.thirdcc.webapp.service.impl;
 
 import com.thirdcc.webapp.domain.Event;
 import com.thirdcc.webapp.domain.enumeration.ClaimStatus;
+import com.thirdcc.webapp.domain.enumeration.TransactionStatus;
 import com.thirdcc.webapp.domain.enumeration.TransactionType;
 import com.thirdcc.webapp.exception.BadRequestException;
 import com.thirdcc.webapp.repository.EventRepository;
@@ -80,10 +81,27 @@ public class TransactionServiceImpl implements TransactionService {
             transactionDTO.setReceiptId(receiptDTO.getId());
         }
         Transaction transaction = transactionMapper.toEntity(transactionDTO);
+        transaction.setStatus(TransactionStatus.SUCCESS);
         transaction = transactionRepository.save(transaction);
         if (transactionDTO.getType() == TransactionType.EXPENSE) {
             createClaimRecord(transaction);
         }
+        return transactionMapper.toDto(transaction);
+    }
+
+    @Override
+    public TransactionDTO update(TransactionDTO transactionDTO) {
+        log.debug("Request to update Transaction: {}", transactionDTO);
+        Transaction transaction = transactionRepository
+            .findById(transactionDTO.getId())
+            .orElseThrow(() -> new BadRequestException("Id not found when updating transaction"));
+        if (transaction.getStatus() == TransactionStatus.CANCELLED) {
+            throw new BadRequestException("Cannot update transaction that is cancelled");
+        }
+        transaction.setAmount(transactionDTO.getAmount());
+        transaction.setDetails(transactionDTO.getDetails());
+        transaction.setStatus(transactionDTO.getStatus());
+        transaction = transactionRepository.save(transaction);
         return transactionMapper.toDto(transaction);
     }
 

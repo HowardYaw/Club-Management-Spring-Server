@@ -159,4 +159,9 @@ public class Transaction extends AbstractAuditingEntity implements Serializable 
     public void setStatus(TransactionStatus status) {
         this.status = status;
     }
+
+    public Transaction status(TransactionStatus status) {
+        this.status = status;
+        return this;
+    }
 }
