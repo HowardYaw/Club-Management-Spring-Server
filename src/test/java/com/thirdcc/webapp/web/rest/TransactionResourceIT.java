@@ -7,6 +7,7 @@ import com.thirdcc.webapp.domain.Receipt;
 import com.thirdcc.webapp.domain.Transaction;
 import com.thirdcc.webapp.domain.enumeration.ClaimStatus;
 import com.thirdcc.webapp.domain.enumeration.EventStatus;
+import com.thirdcc.webapp.domain.enumeration.TransactionStatus;
 import com.thirdcc.webapp.repository.ClaimRepository;
 import com.thirdcc.webapp.repository.EventRepository;
 import com.thirdcc.webapp.repository.ReceiptRepository;
@@ -63,6 +64,8 @@ public class TransactionResourceIT {
 
     private static final String DEFAULT_DETAILS = "TRANSACTION_DETAILS";
     private static final String UPDATED_DETAILS = "TRANSACTION_UPDATED_DETAILS";
+
+    private static final TransactionStatus DEFAULT_TRANSACTION_STATUS = TransactionStatus.SUCCESS;
 
     // Event Default data
     private static final String DEFAULT_EVENT_NAME = "DEFAULT_EVENT_NAME";
@@ -212,6 +215,7 @@ public class TransactionResourceIT {
         assertThat(testTransaction.getType()).isEqualTo(transaction.getType());
         assertThat(testTransaction.getAmount()).isEqualTo(DEFAULT_AMOUNT.setScale(2));
         assertThat(testTransaction.getDetails()).isEqualTo(DEFAULT_DETAILS);
+        assertThat(testTransaction.getStatus()).isEqualTo(DEFAULT_TRANSACTION_STATUS);
 
         // Validate Claim table
         List<Claim> claimList = claimRepository.findAll();
@@ -350,6 +354,7 @@ public class TransactionResourceIT {
         assertThat(testTransaction.getType()).isEqualTo(transaction.getType());
         assertThat(testTransaction.getAmount()).isEqualTo(DEFAULT_AMOUNT.setScale(2));
         assertThat(testTransaction.getDetails()).isEqualTo(DEFAULT_DETAILS);
+        assertThat(testTransaction.getStatus()).isEqualTo(DEFAULT_TRANSACTION_STATUS);
     }
 
     @Test
@@ -451,100 +456,98 @@ public class TransactionResourceIT {
         restTransactionMockMvc.perform(get("/api/transactions/event/{eventId}?sort=id,desc", savedEvent.getId()))
             .andExpect(status().isBadRequest());
     }
-    
-//    @Test
-//    public void getTransaction() throws Exception {
-//        // Initialize the database
-//        transactionRepository.saveAndFlush(transaction);
-//
-//        // Get the transaction
-//        restTransactionMockMvc.perform(get("/api/transactions/{id}", transaction.getId()))
-//            .andExpect(status().isOk())
-//            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
-//            .andExpect(jsonPath("$.id").value(transaction.getId().intValue()))
-//            .andExpect(jsonPath("$.eventId").value(DEFAULT_EVENT_ID.intValue()))
-//            .andExpect(jsonPath("$.receiptId").value(DEFAULT_RECEIPT_ID.intValue()))
-//            .andExpect(jsonPath("$.type").value(DEFAULT_TYPE.toString()))
-//            .andExpect(jsonPath("$.amount").value(DEFAULT_AMOUNT.intValue()))
-//            .andExpect(jsonPath("$.details").value(DEFAULT_DETAILS.toString()));
-//    }
-//
-//    @Test
-//    public void getNonExistingTransaction() throws Exception {
-//        // Get the transaction
-//        restTransactionMockMvc.perform(get("/api/transactions/{id}", Long.MAX_VALUE))
-//            .andExpect(status().isNotFound());
-//    }
-//
-//    @Test
-//    public void updateTransaction() throws Exception {
-//        // Initialize the database
-//        transactionRepository.saveAndFlush(transaction);
-//
-//        int databaseSizeBeforeUpdate = transactionRepository.findAll().size();
-//
-//        // Update the transaction
-//        Transaction updatedTransaction = transactionRepository.findById(transaction.getId()).get();
-//        // Disconnect from session so that the updates on updatedTransaction are not directly saved in db
-//        em.detach(updatedTransaction);
-//        updatedTransaction
-//            .eventId(UPDATED_EVENT_ID)
-//            .receiptId(UPDATED_RECEIPT_ID)
-//            .type(UPDATED_TYPE)
-//            .amount(UPDATED_AMOUNT)
-//            .details(UPDATED_DETAILS);
-//        TransactionDTO transactionDTO = transactionMapper.toDto(updatedTransaction);
-//
-//        restTransactionMockMvc.perform(put("/api/transactions")
-//            .contentType(TestUtil.APPLICATION_JSON_UTF8)
-//            .content(TestUtil.convertObjectToJsonBytes(transactionDTO)))
-//            .andExpect(status().isOk());
-//
-//        // Validate the Transaction in the database
-//        List<Transaction> transactionList = transactionRepository.findAll();
-//        assertThat(transactionList).hasSize(databaseSizeBeforeUpdate);
-//        Transaction testTransaction = transactionList.get(transactionList.size() - 1);
-//        assertThat(testTransaction.getEventId()).isEqualTo(UPDATED_EVENT_ID);
-//        assertThat(testTransaction.getReceiptId()).isEqualTo(UPDATED_RECEIPT_ID);
-//        assertThat(testTransaction.getType()).isEqualTo(UPDATED_TYPE);
-//        assertThat(testTransaction.getAmount()).isEqualTo(UPDATED_AMOUNT);
-//        assertThat(testTransaction.getDetails()).isEqualTo(UPDATED_DETAILS);
-//    }
-//
-//    @Test
-//    public void updateNonExistingTransaction() throws Exception {
-//        int databaseSizeBeforeUpdate = transactionRepository.findAll().size();
-//
-//        // Create the Transaction
-//        TransactionDTO transactionDTO = transactionMapper.toDto(transaction);
-//
-//        // If the entity doesn't have an ID, it will throw BadRequestAlertException
-//        restTransactionMockMvc.perform(put("/api/transactions")
-//            .contentType(TestUtil.APPLICATION_JSON_UTF8)
-//            .content(TestUtil.convertObjectToJsonBytes(transactionDTO)))
-//            .andExpect(status().isBadRequest());
-//
-//        // Validate the Transaction in the database
-//        List<Transaction> transactionList = transactionRepository.findAll();
-//        assertThat(transactionList).hasSize(databaseSizeBeforeUpdate);
-//    }
-//
-//    @Test
-//    public void deleteTransaction() throws Exception {
-//        // Initialize the database
-//        transactionRepository.saveAndFlush(transaction);
-//
-//        int databaseSizeBeforeDelete = transactionRepository.findAll().size();
-//
-//        // Delete the transaction
-//        restTransactionMockMvc.perform(delete("/api/transactions/{id}", transaction.getId())
-//            .accept(TestUtil.APPLICATION_JSON_UTF8))
-//            .andExpect(status().isNoContent());
-//
-//        // Validate the database contains one less item
-//        List<Transaction> transactionList = transactionRepository.findAll();
-//        assertThat(transactionList).hasSize(databaseSizeBeforeDelete - 1);
-//    }
+
+    @Test
+    public void updateTransaction() throws Exception {
+        // Initialize the database
+        Event savedEvent = initEventDB();
+        transaction.setEventId(savedEvent.getId());
+        transaction.setStatus(DEFAULT_TRANSACTION_STATUS);
+        Transaction savedTransaction = initTransactionDB();
+
+        int databaseSizeBeforeUpdate = transactionRepository.findAll().size();
+
+        // Update the transaction
+        Transaction updatedTransaction = transactionRepository.findById(savedTransaction.getId()).get();
+        // Disconnect from session so that the updates on updatedTransaction are not directly saved in db
+        em.detach(updatedTransaction);
+        updatedTransaction
+            .type(UPDATED_TYPE)
+            .amount(UPDATED_AMOUNT)
+            .details(UPDATED_DETAILS)
+            .status(TransactionStatus.CANCELLED);
+        TransactionDTO transactionDTO = transactionMapper.toDto(updatedTransaction);
+
+        restTransactionMockMvc.perform(put("/api/transactions")
+            .contentType(TestUtil.APPLICATION_JSON_UTF8)
+            .content(TestUtil.convertObjectToJsonBytes(transactionDTO)))
+            .andExpect(status().isOk());
+
+        // Validate the Transaction in the database
+        List<Transaction> transactionList = transactionRepository.findAll();
+        assertThat(transactionList).hasSize(databaseSizeBeforeUpdate);
+        Transaction testTransaction = transactionList.get(transactionList.size() - 1);
+        assertThat(testTransaction.getEventId()).isEqualTo(transaction.getEventId());
+        assertThat(testTransaction.getType()).isEqualTo(transaction.getType());
+        assertThat(testTransaction.getAmount()).isEqualTo(UPDATED_AMOUNT.setScale(2));
+        assertThat(testTransaction.getDetails()).isEqualTo(UPDATED_DETAILS);
+        assertThat(testTransaction.getStatus()).isEqualTo(TransactionStatus.CANCELLED);
+    }
+
+    @Test
+    public void updateTransaction_NonExistingRecord_ShouldThrow400() throws Exception {
+        // Initialize the database
+        Event savedEvent = initEventDB();
+        transaction.setEventId(savedEvent.getId());
+        transaction.setStatus(DEFAULT_TRANSACTION_STATUS);
+        Transaction savedTransaction = initTransactionDB();
+
+        int databaseSizeBeforeUpdate = transactionRepository.findAll().size();
+
+        // Create the Transaction
+        transaction.setId(Long.MAX_VALUE);
+        TransactionDTO transactionDTO = transactionMapper.toDto(transaction);
+
+        // If the entity doesn't have an ID, it will throw BadRequestAlertException
+        restTransactionMockMvc.perform(put("/api/transactions")
+            .contentType(TestUtil.APPLICATION_JSON_UTF8)
+            .content(TestUtil.convertObjectToJsonBytes(transactionDTO)))
+            .andExpect(status().isBadRequest());
+
+        // Validate the Transaction in the database
+        List<Transaction> transactionList = transactionRepository.findAll();
+        assertThat(transactionList).hasSize(databaseSizeBeforeUpdate);
+    }
+
+    @Test
+    public void updateTransaction_CancelledTransaction_ShouldThrow400() throws Exception {
+        // Initialize the database
+        Event savedEvent = initEventDB();
+        transaction.setEventId(savedEvent.getId());
+        transaction.setStatus(TransactionStatus.CANCELLED);
+        Transaction savedTransaction = initTransactionDB();
+
+        int databaseSizeBeforeUpdate = transactionRepository.findAll().size();
+
+        Transaction updatedTransaction = transactionRepository.findById(savedTransaction.getId()).get();
+        // Disconnect from session so that the updates on updatedTransaction are not directly saved in db
+        em.detach(updatedTransaction);
+        updatedTransaction
+            .type(UPDATED_TYPE)
+            .amount(UPDATED_AMOUNT)
+            .details(UPDATED_DETAILS)
+            .status(TransactionStatus.SUCCESS);
+        TransactionDTO transactionDTO = transactionMapper.toDto(updatedTransaction);
+
+        restTransactionMockMvc.perform(put("/api/transactions")
+            .contentType(TestUtil.APPLICATION_JSON_UTF8)
+            .content(TestUtil.convertObjectToJsonBytes(transactionDTO)))
+            .andExpect(status().isBadRequest());
+
+        // Validate the Transaction in the database
+        List<Transaction> transactionList = transactionRepository.findAll();
+        assertThat(transactionList).hasSize(databaseSizeBeforeUpdate);
+    }
 
     @Test
     public void equalsVerifier() throws Exception {
