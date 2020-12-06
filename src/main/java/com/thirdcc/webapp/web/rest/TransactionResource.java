@@ -45,25 +45,25 @@ public class TransactionResource {
         this.transactionService = transactionService;
     }
 
-//    /**
-//     * {@code POST  /transactions} : Create a new transaction.
-//     *
-//     * @param transactionDTO the transactionDTO to create.
-//     * @return the {@link ResponseEntity} with status {@code 201 (Created)} and with body the new transactionDTO, or with status {@code 400 (Bad Request)} if the transaction has already an ID.
-//     * @throws URISyntaxException if the Location URI syntax is incorrect.
-//     */
-//    @PostMapping("/transactions")
-//    public ResponseEntity<TransactionDTO> createTransaction(@RequestBody TransactionDTO transactionDTO) throws URISyntaxException {
-//        log.debug("REST request to save Transaction : {}", transactionDTO);
-//        if (transactionDTO.getId() != null) {
-//            throw new BadRequestAlertException("A new transaction cannot already have an ID", ENTITY_NAME, "idexists");
-//        }
-//        TransactionDTO result = transactionService.save(transactionDTO);
-//        return ResponseEntity.created(new URI("/api/transactions/" + result.getId()))
-//            .headers(HeaderUtil.createEntityCreationAlert(applicationName, true, ENTITY_NAME, result.getId().toString()))
-//            .body(result);
-//    }
-//
+    /**
+     * {@code POST  /transactions} : Create a new transaction.
+     *
+     * @param transactionDTO the transactionDTO to create.
+     * @return the {@link ResponseEntity} with status {@code 201 (Created)} and with body the new transactionDTO, or with status {@code 400 (Bad Request)} if the transaction has already an ID.
+     * @throws URISyntaxException if the Location URI syntax is incorrect.
+     */
+    @PostMapping("/transactions")
+    public ResponseEntity<TransactionDTO> createTransaction(@RequestBody TransactionDTO transactionDTO) throws URISyntaxException {
+        log.debug("REST request to save Transaction : {}", transactionDTO);
+        if (transactionDTO.getId() != null) {
+            throw new BadRequestAlertException("A new transaction cannot already have an ID", ENTITY_NAME, "idexists");
+        }
+        TransactionDTO result = transactionService.save(transactionDTO);
+        return ResponseEntity.created(new URI("/api/transactions/" + result.getId()))
+            .headers(HeaderUtil.createEntityCreationAlert(applicationName, true, ENTITY_NAME, result.getId().toString()))
+            .body(result);
+    }
+
 //    /**
 //     * {@code PUT  /transactions} : Updates an existing transaction.
 //     *
