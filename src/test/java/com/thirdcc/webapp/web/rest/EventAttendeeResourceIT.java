@@ -78,14 +78,6 @@ public class EventAttendeeResourceIT {
     private static final Boolean DEFAULT_EVENT_REQUIRED_TRANSPORT = Boolean.TRUE;
     private static final EventStatus DEFAULT_EVENT_STATUS = EventStatus.OPEN;
 
-
-    private static final String DEFAULT_USER_LOGIN = "johndoe";
-    private static final String DEFAULT_USER_PASSWORD = "passjohndoe";
-    private static final String DEFAULT_USER_EMAIL = "johndoe@localhost";
-    private static final String DEFAULT_USER_FIRSTNAME = "john";
-    private static final String DEFAULT_USER_LASTNAME = "doe";
-    private static final String DEFAULT_USER_IMAGEURL = "http://placehold.it/50x50";
-    private static final String DEFAULT_USER_LANGKEY = "en";
     private static User user;
 
     @Autowired
@@ -231,7 +223,7 @@ public class EventAttendeeResourceIT {
 
         // Create the EventAttendee
         EventAttendeeDTO eventAttendeeDTO = createDefaultEventAttendeeDTO();
-        eventAttendeeDTO.setUserId(NON_EXIST_USER_ID);
+        eventAttendeeDTO.setUserId(Long.MAX_VALUE);
         eventAttendeeDTO.setEventId(savedEvent.getId());
 
         restEventAttendeeMockMvc.perform(post("/api/event-attendees")
@@ -268,7 +260,7 @@ public class EventAttendeeResourceIT {
 
         EventAttendeeDTO eventAttendeeDTO = createDefaultEventAttendeeDTO();
         eventAttendeeDTO.setUserId(user.getId());
-        eventAttendeeDTO.setEventId(event.getId());
+        eventAttendeeDTO.setEventId(Long.MAX_VALUE);
 
         restEventAttendeeMockMvc.perform(post("/api/event-attendees")
             .contentType(TestUtil.APPLICATION_JSON_UTF8)

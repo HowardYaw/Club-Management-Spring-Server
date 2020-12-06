@@ -81,11 +81,12 @@ public class EventAttendeeServiceImpl implements EventAttendeeService {
 
         if(eventAttendeeExisted){
             throw new BadRequestException("User has registered as attendee for this event");
-        } else {
-            EventAttendee eventAttendee = eventAttendeeMapper.toEntity(eventAttendeeDTO);
-            eventAttendee = eventAttendeeRepository.save(eventAttendee);
-            return eventAttendeeMapper.toDto(eventAttendee);
         }
+
+        EventAttendee eventAttendee = eventAttendeeMapper.toEntity(eventAttendeeDTO);
+        eventAttendee = eventAttendeeRepository.save(eventAttendee);
+        return eventAttendeeMapper.toDto(eventAttendee);
+
     }
 
     /**
