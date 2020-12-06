@@ -17,6 +17,7 @@ public class ReceiptDTO implements Serializable {
 
     private String receiptContent;
 
+    private String receiptUniqueId;
 
     public Long getId() {
         return id;
@@ -87,5 +88,13 @@ public class ReceiptDTO implements Serializable {
 
     public void setReceiptContent(String receiptContent) {
         this.receiptContent = receiptContent;
+    }
+
+    public String getReceiptUniqueId() {
+        return receiptUniqueId;
+    }
+
+    public void setReceiptUniqueId(String receiptUniqueId) {
+        this.receiptUniqueId = receiptUniqueId;
     }
 }
