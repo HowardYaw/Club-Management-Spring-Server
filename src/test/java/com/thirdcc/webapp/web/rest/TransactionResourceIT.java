@@ -1,12 +1,18 @@
 package com.thirdcc.webapp.web.rest;
 
 import com.thirdcc.webapp.ClubmanagementApp;
+import com.thirdcc.webapp.domain.Claim;
 import com.thirdcc.webapp.domain.Event;
+import com.thirdcc.webapp.domain.Receipt;
 import com.thirdcc.webapp.domain.Transaction;
+import com.thirdcc.webapp.domain.enumeration.ClaimStatus;
 import com.thirdcc.webapp.domain.enumeration.EventStatus;
+import com.thirdcc.webapp.repository.ClaimRepository;
 import com.thirdcc.webapp.repository.EventRepository;
+import com.thirdcc.webapp.repository.ReceiptRepository;
 import com.thirdcc.webapp.repository.TransactionRepository;
 import com.thirdcc.webapp.service.TransactionService;
+import com.thirdcc.webapp.service.dto.ReceiptDTO;
 import com.thirdcc.webapp.service.dto.TransactionDTO;
 import com.thirdcc.webapp.service.mapper.TransactionMapper;
 import com.thirdcc.webapp.web.rest.errors.ExceptionTranslator;
@@ -67,6 +73,9 @@ public class TransactionResourceIT {
     private static final Instant DEFAULT_EVENT_END_DATE = Instant.now().plus(5, ChronoUnit.DAYS);
     private static final BigDecimal DEFAULT_EVENT_FEE = new BigDecimal(2123);
     private static final EventStatus DEFAULT_EVENT_STATUS = EventStatus.OPEN;
+    private static final String DEFAULT_RECEIPT_IMAGE_TYPE = "DEFAULT_RECEIPT_IMAGE_TYPE";
+    private static final String DEFAULT_RECEIPT_IMAGE_FILENAME = "DEFAULT_RECEIPT_IMAGE_FILENAME";
+    private static final String DEFAULT_RECEIPT_IMAGE_CONTENT = "DEAFULT_RECEIPT_IMAGE_CONTENT";
 
 
     @Autowired
@@ -102,6 +111,14 @@ public class TransactionResourceIT {
 
     private Event event;
 
+    @Autowired
+    private ReceiptRepository receiptRepository;
+
+    private ReceiptDTO receiptDTO;
+
+    @Autowired
+    private ClaimRepository claimRepository;
+
     @BeforeEach
     public void setup() {
         MockitoAnnotations.initMocks(this);
@@ -122,8 +139,6 @@ public class TransactionResourceIT {
      */
     public static Transaction createTransactionEntity() {
         return new Transaction()
-            .eventId(DEFAULT_EVENT_ID)
-            .receiptId(DEFAULT_RECEIPT_ID)
             .type(DEFAULT_TYPE)
             .amount(DEFAULT_AMOUNT)
             .details(DEFAULT_DETAILS);
@@ -141,58 +156,251 @@ public class TransactionResourceIT {
             .venue(DEFAULT_EVENT_VENUE);
     }
 
+    public static ReceiptDTO createReceiptDTO() {
+        ReceiptDTO receiptDTO = new ReceiptDTO();
+        receiptDTO.setFileName(DEFAULT_RECEIPT_IMAGE_FILENAME);
+        receiptDTO.setFileType(DEFAULT_RECEIPT_IMAGE_TYPE);
+        receiptDTO.setReceiptContent(DEFAULT_RECEIPT_IMAGE_CONTENT);
+        return receiptDTO;
+    }
+
     @BeforeEach
     public void initTest() {
         transaction = createTransactionEntity();
         event = createEventEntity();
+        receiptDTO = createReceiptDTO();
     }
 
     @AfterEach
     public void cleanUp() {
         transactionRepository.deleteAll();
         eventRepository.deleteAll();
+        receiptRepository.deleteAll();
+        claimRepository.deleteAll();
     }
 
-//    @Test
-//    public void createTransaction() throws Exception {
-//        int databaseSizeBeforeCreate = transactionRepository.findAll().size();
-//
-//        // Create the Transaction
-//        TransactionDTO transactionDTO = transactionMapper.toDto(transaction);
-//        restTransactionMockMvc.perform(post("/api/transactions")
-//            .contentType(TestUtil.APPLICATION_JSON_UTF8)
-//            .content(TestUtil.convertObjectToJsonBytes(transactionDTO)))
-//            .andExpect(status().isCreated());
-//
-//        // Validate the Transaction in the database
-//        List<Transaction> transactionList = transactionRepository.findAll();
-//        assertThat(transactionList).hasSize(databaseSizeBeforeCreate + 1);
-//        Transaction testTransaction = transactionList.get(transactionList.size() - 1);
-//        assertThat(testTransaction.getEventId()).isEqualTo(DEFAULT_EVENT_ID);
-//        assertThat(testTransaction.getReceiptId()).isEqualTo(DEFAULT_RECEIPT_ID);
-//        assertThat(testTransaction.getType()).isEqualTo(DEFAULT_TYPE);
-//        assertThat(testTransaction.getAmount()).isEqualTo(DEFAULT_AMOUNT);
-//        assertThat(testTransaction.getDetails()).isEqualTo(DEFAULT_DETAILS);
-//    }
-//
-//    @Test
-//    public void createTransactionWithExistingId() throws Exception {
-//        int databaseSizeBeforeCreate = transactionRepository.findAll().size();
-//
-//        // Create the Transaction with an existing ID
-//        transaction.setId(1L);
-//        TransactionDTO transactionDTO = transactionMapper.toDto(transaction);
-//
-//        // An entity with an existing ID cannot be created, so this API call must fail
-//        restTransactionMockMvc.perform(post("/api/transactions")
-//            .contentType(TestUtil.APPLICATION_JSON_UTF8)
-//            .content(TestUtil.convertObjectToJsonBytes(transactionDTO)))
-//            .andExpect(status().isBadRequest());
-//
-//        // Validate the Transaction in the database
-//        List<Transaction> transactionList = transactionRepository.findAll();
-//        assertThat(transactionList).hasSize(databaseSizeBeforeCreate);
-//    }
+    @Test
+    public void createTransaction_TypeExpense() throws Exception {
+        // Initialize the database
+        Event savedEvent = initEventDB();
+        transaction.setEventId(savedEvent.getId());
+        transaction.setType(TransactionType.EXPENSE);
+
+        int databaseSizeBeforeCreate = transactionRepository.findAll().size();
+        int receiptDatabaseSizeBeforeCreate = receiptRepository.findAll().size();
+        int claimDatabaseSizeBeforeCreate = claimRepository.findAll().size();
+
+        // Create the Transaction
+        TransactionDTO transactionDTO = transactionMapper.toDto(transaction);
+        transactionDTO.setReceiptDTO(receiptDTO);
+        restTransactionMockMvc.perform(post("/api/transactions")
+            .contentType(TestUtil.APPLICATION_JSON_UTF8)
+            .content(TestUtil.convertObjectToJsonBytes(transactionDTO)))
+            .andExpect(status().isCreated());
+
+        // Validate Receipt Table
+        List<Receipt> receiptList = receiptRepository.findAll();
+        assertThat(receiptList).hasSize(receiptDatabaseSizeBeforeCreate + 1);
+        Receipt testReceipt = receiptList.get(receiptList.size() - 1);
+
+        // Validate the Transaction in the database
+        List<Transaction> transactionList = transactionRepository.findAll();
+        assertThat(transactionList).hasSize(databaseSizeBeforeCreate + 1);
+        Transaction testTransaction = transactionList.get(transactionList.size() - 1);
+        assertThat(testTransaction.getEventId()).isEqualTo(transaction.getEventId());
+        assertThat(testTransaction.getReceiptId()).isEqualTo(testReceipt.getId());
+        assertThat(testTransaction.getType()).isEqualTo(transaction.getType());
+        assertThat(testTransaction.getAmount()).isEqualTo(DEFAULT_AMOUNT.setScale(2));
+        assertThat(testTransaction.getDetails()).isEqualTo(DEFAULT_DETAILS);
+
+        // Validate Claim table
+        List<Claim> claimList = claimRepository.findAll();
+        assertThat(claimList).hasSize(claimDatabaseSizeBeforeCreate + 1);
+        Claim testClaim = claimList.get(claimList.size() - 1);
+        assertThat(testClaim.getAmount()).isEqualTo(testTransaction.getAmount());
+        assertThat(testClaim.getTransactionId()).isEqualTo(testTransaction.getId());
+        assertThat(testClaim.getStatus()).isEqualTo(ClaimStatus.OPEN);
+        assertThat(testClaim.getCreatedBy()).isNotNull();
+        assertThat(testClaim.getCreatedDate()).isNotNull();
+    }
+
+    @Test
+    public void createTransaction_TypeExpense_WithCancelledEvent_ShouldThrow400() throws Exception {
+        // Initialize the database
+        event.setStatus(EventStatus.CANCELLED);
+        Event savedEvent = initEventDB();
+        transaction.setEventId(savedEvent.getId());
+        transaction.setType(TransactionType.EXPENSE);
+
+        int databaseSizeBeforeCreate = transactionRepository.findAll().size();
+        int receiptDatabaseSizeBeforeCreate = receiptRepository.findAll().size();
+        int claimDatabaseSizeBeforeCreate = claimRepository.findAll().size();
+
+        // Create the Transaction
+        TransactionDTO transactionDTO = transactionMapper.toDto(transaction);
+        transactionDTO.setReceiptDTO(receiptDTO);
+        restTransactionMockMvc.perform(post("/api/transactions")
+            .contentType(TestUtil.APPLICATION_JSON_UTF8)
+            .content(TestUtil.convertObjectToJsonBytes(transactionDTO)))
+            .andExpect(status().isBadRequest());
+
+        // Validate Receipt Table
+        List<Receipt> receiptList = receiptRepository.findAll();
+        assertThat(receiptList).hasSize(receiptDatabaseSizeBeforeCreate);
+
+        // Validate the Transaction in the database
+        List<Transaction> transactionList = transactionRepository.findAll();
+        assertThat(transactionList).hasSize(databaseSizeBeforeCreate);
+
+        // Validate Claim table
+        List<Claim> claimList = claimRepository.findAll();
+        assertThat(claimList).hasSize(claimDatabaseSizeBeforeCreate);
+    }
+
+    @Test
+    public void createTransaction_TypeExpense_WithNullEventId_ShouldThrow400() throws Exception {
+        // Initialize the database
+        Event savedEvent = initEventDB();
+        transaction.setEventId(null);
+        transaction.setType(TransactionType.EXPENSE);
+
+        int databaseSizeBeforeCreate = transactionRepository.findAll().size();
+        int receiptDatabaseSizeBeforeCreate = receiptRepository.findAll().size();
+        int claimDatabaseSizeBeforeCreate = claimRepository.findAll().size();
+
+        // Create the Transaction
+        TransactionDTO transactionDTO = transactionMapper.toDto(transaction);
+        transactionDTO.setReceiptDTO(receiptDTO);
+        restTransactionMockMvc.perform(post("/api/transactions")
+            .contentType(TestUtil.APPLICATION_JSON_UTF8)
+            .content(TestUtil.convertObjectToJsonBytes(transactionDTO)))
+            .andExpect(status().isBadRequest());
+
+        // Validate Receipt Table
+        List<Receipt> receiptList = receiptRepository.findAll();
+        assertThat(receiptList).hasSize(receiptDatabaseSizeBeforeCreate);
+
+        // Validate the Transaction in the database
+        List<Transaction> transactionList = transactionRepository.findAll();
+        assertThat(transactionList).hasSize(databaseSizeBeforeCreate);
+
+        // Validate Claim table
+        List<Claim> claimList = claimRepository.findAll();
+        assertThat(claimList).hasSize(claimDatabaseSizeBeforeCreate);
+    }
+
+    @Test
+    public void createTransaction_TypeExpense_WithoutReceiptDTO_ShouldThrow400() throws Exception {
+        // Initialize the database
+        Event savedEvent = initEventDB();
+        transaction.setEventId(savedEvent.getId());
+        transaction.setType(TransactionType.EXPENSE);
+
+        int databaseSizeBeforeCreate = transactionRepository.findAll().size();
+        int receiptDatabaseSizeBeforeCreate = receiptRepository.findAll().size();
+        int claimDatabaseSizeBeforeCreate = claimRepository.findAll().size();
+
+        // Create the Transaction
+        TransactionDTO transactionDTO = transactionMapper.toDto(transaction);
+        restTransactionMockMvc.perform(post("/api/transactions")
+            .contentType(TestUtil.APPLICATION_JSON_UTF8)
+            .content(TestUtil.convertObjectToJsonBytes(transactionDTO)))
+            .andExpect(status().isBadRequest());
+
+        // Validate Receipt Table
+        List<Receipt> receiptList = receiptRepository.findAll();
+        assertThat(receiptList).hasSize(receiptDatabaseSizeBeforeCreate);
+
+        // Validate the Transaction in the database
+        List<Transaction> transactionList = transactionRepository.findAll();
+        assertThat(transactionList).hasSize(databaseSizeBeforeCreate);
+
+        // Validate Claim table
+        List<Claim> claimList = claimRepository.findAll();
+        assertThat(claimList).hasSize(claimDatabaseSizeBeforeCreate);
+    }
+
+    @Test
+    public void createTransaction_TypeIncome() throws Exception {
+        // Initialize the database
+        Event savedEvent = initEventDB();
+        transaction.setEventId(savedEvent.getId());
+        transaction.setType(TransactionType.INCOME);
+
+        int databaseSizeBeforeCreate = transactionRepository.findAll().size();
+        int receiptDatabaseSizeBeforeCreate = receiptRepository.findAll().size();
+
+        // Create the Transaction
+        TransactionDTO transactionDTO = transactionMapper.toDto(transaction);
+        restTransactionMockMvc.perform(post("/api/transactions")
+            .contentType(TestUtil.APPLICATION_JSON_UTF8)
+            .content(TestUtil.convertObjectToJsonBytes(transactionDTO)))
+            .andExpect(status().isCreated());
+
+        // Validate Receipt Table
+        List<Receipt> receiptList = receiptRepository.findAll();
+        assertThat(receiptList).hasSize(receiptDatabaseSizeBeforeCreate);
+
+        // Validate the Transaction in the database
+        List<Transaction> transactionList = transactionRepository.findAll();
+        assertThat(transactionList).hasSize(databaseSizeBeforeCreate + 1);
+        Transaction testTransaction = transactionList.get(transactionList.size() - 1);
+        assertThat(testTransaction.getEventId()).isEqualTo(transaction.getEventId());
+        assertThat(testTransaction.getReceiptId()).isNull();
+        assertThat(testTransaction.getType()).isEqualTo(transaction.getType());
+        assertThat(testTransaction.getAmount()).isEqualTo(DEFAULT_AMOUNT.setScale(2));
+        assertThat(testTransaction.getDetails()).isEqualTo(DEFAULT_DETAILS);
+    }
+
+    @Test
+    public void createTransaction_TypeIncome_WithCancelledEvent_ShouldThrow400() throws Exception {
+        // Initialize the database
+        event.setStatus(EventStatus.CANCELLED);
+        Event savedEvent = initEventDB();
+        transaction.setEventId(savedEvent.getId());
+        transaction.setType(TransactionType.INCOME);
+
+        int databaseSizeBeforeCreate = transactionRepository.findAll().size();
+        int receiptDatabaseSizeBeforeCreate = receiptRepository.findAll().size();
+
+        // Create the Transaction
+        TransactionDTO transactionDTO = transactionMapper.toDto(transaction);
+        restTransactionMockMvc.perform(post("/api/transactions")
+            .contentType(TestUtil.APPLICATION_JSON_UTF8)
+            .content(TestUtil.convertObjectToJsonBytes(transactionDTO)))
+            .andExpect(status().isBadRequest());
+
+        // Validate Receipt Table
+        List<Receipt> receiptList = receiptRepository.findAll();
+        assertThat(receiptList).hasSize(receiptDatabaseSizeBeforeCreate);
+
+        // Validate the Transaction in the database
+        List<Transaction> transactionList = transactionRepository.findAll();
+        assertThat(transactionList).hasSize(databaseSizeBeforeCreate);
+    }
+
+    @Test
+    public void createTransaction_WithExistingId_ShouldThrow400() throws Exception {
+        Event savedEvent = initEventDB();
+        transaction.setEventId(savedEvent.getId());
+        Transaction savedTransaction = transactionRepository.save(transaction);
+
+        int databaseSizeBeforeCreate = transactionRepository.findAll().size();
+
+        // Create the Transaction with an existing ID
+        transaction.setId(savedTransaction.getId());
+        TransactionDTO transactionDTO = transactionMapper.toDto(transaction);
+
+        // An entity with an existing ID cannot be created, so this API call must fail
+        restTransactionMockMvc.perform(post("/api/transactions")
+            .contentType(TestUtil.APPLICATION_JSON_UTF8)
+            .content(TestUtil.convertObjectToJsonBytes(transactionDTO)))
+            .andExpect(status().isBadRequest());
+
+        // Validate the Transaction in the database
+        List<Transaction> transactionList = transactionRepository.findAll();
+        assertThat(transactionList).hasSize(databaseSizeBeforeCreate);
+    }
 
 
     @Test
@@ -208,7 +416,6 @@ public class TransactionResourceIT {
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
             .andExpect(jsonPath("$.[*].id").value(hasItem(savedTransaction.getId().intValue())))
             .andExpect(jsonPath("$.[*].eventId").value(hasItem(savedTransaction.getEventId().intValue())))
-            .andExpect(jsonPath("$.[*].receiptId").value(hasItem(savedTransaction.getReceiptId().intValue())))
             .andExpect(jsonPath("$.[*].type").value(hasItem(savedTransaction.getType().toString())))
             .andExpect(jsonPath("$.[*].amount").value(hasItem(savedTransaction.getAmount().doubleValue())))
             .andExpect(jsonPath("$.[*].details").value(hasItem(savedTransaction.getDetails())));
@@ -227,7 +434,6 @@ public class TransactionResourceIT {
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
             .andExpect(jsonPath("$.[*].id").value(hasItem(savedTransaction.getId().intValue())))
             .andExpect(jsonPath("$.[*].eventId").value(hasItem(savedTransaction.getEventId().intValue())))
-            .andExpect(jsonPath("$.[*].receiptId").value(hasItem(savedTransaction.getReceiptId().intValue())))
             .andExpect(jsonPath("$.[*].type").value(hasItem(savedTransaction.getType().toString())))
             .andExpect(jsonPath("$.[*].amount").value(hasItem(savedTransaction.getAmount().doubleValue())))
             .andExpect(jsonPath("$.[*].details").value(hasItem(savedTransaction.getDetails())));
