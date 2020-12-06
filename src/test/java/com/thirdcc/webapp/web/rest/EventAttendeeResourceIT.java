@@ -174,7 +174,7 @@ public class EventAttendeeResourceIT {
             .andExpect(jsonPath("$.[*].evenId").value(hasItem(DEFAULT_EVEN_ID.intValue())))
             .andExpect(jsonPath("$.[*].provideTransport").value(hasItem(DEFAULT_PROVIDE_TRANSPORT.booleanValue())));
     }
-    
+
     @Test
     @Transactional
     public void getEventAttendee() throws Exception {
@@ -190,6 +190,13 @@ public class EventAttendeeResourceIT {
             .andExpect(jsonPath("$.evenId").value(DEFAULT_EVEN_ID.intValue()))
             .andExpect(jsonPath("$.provideTransport").value(DEFAULT_PROVIDE_TRANSPORT.booleanValue()));
     }
+
+    @Test
+    @Transactional
+    public void getEventAttendeeWithEventId() throws Exception {
+        eventAttendeeRepository.saveAndFlush(eventAttendee);
+    }
+
 
     @Test
     @Transactional
