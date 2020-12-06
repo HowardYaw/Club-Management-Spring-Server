@@ -60,7 +60,6 @@ public class EventAttendeeResourceIT {
 
     private static final Long DEFAULT_USER_ID = 1L;
     private static final Long UPDATED_USER_ID = 2L;
-    private static final Long NON_EXIST_USER_ID = 912L;
 
     private static final Long DEFAULT_EVENT_ID = 1L;
     private static final Long UPDATED_EVENT_ID = 2L;
@@ -324,6 +323,7 @@ public class EventAttendeeResourceIT {
         int databaseSizeBeforeCreate = eventAttendeeRepository.findAll().size();
 
         EventAttendeeDTO eventAttendeeDTO = createDefaultEventAttendeeDTO();
+        eventAttendeeDTO.setUserId(user.getId());
         eventAttendeeDTO.setEventId(savedEvent.getId());
 
         assertThat(savedEvent.getStatus()).isEqualByComparingTo(EventStatus.CANCELLED);
