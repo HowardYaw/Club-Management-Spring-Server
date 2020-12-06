@@ -1,5 +1,6 @@
 package com.thirdcc.webapp.web.rest;
 
+import com.thirdcc.webapp.security.AuthoritiesConstants;
 import com.thirdcc.webapp.service.TransactionService;
 import com.thirdcc.webapp.web.rest.errors.BadRequestAlertException;
 import com.thirdcc.webapp.service.dto.TransactionDTO;
@@ -54,6 +55,7 @@ public class TransactionResource {
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
     @PostMapping("/transactions")
+    @PreAuthorize("@managementTeamSecurityExpression.hasRoleAdminOrIsEventCrew(#transactionDTO.getEventId())")
     public ResponseEntity<TransactionDTO> createTransaction(@RequestBody TransactionDTO transactionDTO) throws URISyntaxException {
         log.debug("REST request to save Transaction : {}", transactionDTO);
         if (transactionDTO.getId() != null) {
@@ -75,6 +77,7 @@ public class TransactionResource {
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
     @PutMapping("/transactions")
+    @PreAuthorize("@managementTeamSecurityExpression.hasRoleAdminOrIsEventHead(#transactionDTO.getEventId())")
     public ResponseEntity<TransactionDTO> updateTransaction(@RequestBody TransactionDTO transactionDTO) throws URISyntaxException {
         log.debug("REST request to update Transaction: {}", transactionDTO);
         if (transactionDTO.getId() == null) {
@@ -95,6 +98,7 @@ public class TransactionResource {
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the list of transactions in body.
      */
     @GetMapping("/transactions")
+    @PreAuthorize("hasRole(\"" + AuthoritiesConstants.ADMIN + "\")")
     public ResponseEntity<List<TransactionDTO>> getAllTransactions(Pageable pageable, @RequestParam MultiValueMap<String, String> queryParams, UriComponentsBuilder uriBuilder) {
         log.debug("REST request to get a page of Transactions");
         Page<TransactionDTO> page = transactionService.findAll(pageable);
@@ -103,6 +107,7 @@ public class TransactionResource {
     }
 
     @GetMapping("/transactions/event/{eventId}")
+    @PreAuthorize("@managementTeamSecurityExpression.hasRoleAdminOrIsEventCrew(#transactionDTO.getEventId())")
     public ResponseEntity<List<TransactionDTO>> getAllTransactionsByEventId(@PathVariable Long eventId, Pageable pageable, @RequestParam MultiValueMap<String, String> queryParams, UriComponentsBuilder uriBuilder) {
         log.debug("REST request to get a page of Transactions by eventId: {}", eventId);
         Page<TransactionDTO> page = transactionService.findAllByEventId(eventId, pageable);

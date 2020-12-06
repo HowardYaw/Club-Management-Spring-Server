@@ -76,6 +76,14 @@ public class ManagementTeamSecurityExpression {
         return eventCrew != null && eventCrew.getRole().equals(EventCrewRole.HEAD);
     }
 
+    public boolean hasRoleAdminOrIsEventHead(Long eventId) {
+        if (getUserAuthRole().contains(AuthoritiesConstants.ADMIN)) {
+            return true;
+        } else {
+            return isEventHead(eventId);
+        }
+    }
+
     private List<String> getUserAuthRole() {
         User currentUser = userService.getUserWithAuthorities()
             .orElseThrow(() -> new BadRequestException("User is not login"));
