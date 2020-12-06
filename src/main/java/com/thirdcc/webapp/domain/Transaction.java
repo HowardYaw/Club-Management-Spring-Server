@@ -1,4 +1,5 @@
 package com.thirdcc.webapp.domain;
+import com.thirdcc.webapp.domain.enumeration.TransactionStatus;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 
@@ -39,6 +40,10 @@ public class Transaction extends AbstractAuditingEntity implements Serializable 
 
     @Column(name = "details")
     private String details;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status")
+    private TransactionStatus status;
 
     // jhipster-needle-entity-add-field - JHipster will add fields here, do not remove
     public Long getId() {
@@ -145,5 +150,13 @@ public class Transaction extends AbstractAuditingEntity implements Serializable 
             ", lastModifiedBy='" + getLastModifiedBy() + "'" +
             ", lastModifiedDate='" + getLastModifiedDate() + "'" +
             "}";
+    }
+
+    public TransactionStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(TransactionStatus status) {
+        this.status = status;
     }
 }
