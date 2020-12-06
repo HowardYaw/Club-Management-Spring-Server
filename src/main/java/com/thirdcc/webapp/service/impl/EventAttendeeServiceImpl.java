@@ -63,7 +63,7 @@ public class EventAttendeeServiceImpl implements EventAttendeeService {
         }};
 
         userRepository
-            .findOneById(eventAttendeeDTO.getUserId())
+            .findById(eventAttendeeDTO.getUserId())
             .orElseThrow(() -> new BadRequestException("User not found"));
 
         Event event = eventRepository
