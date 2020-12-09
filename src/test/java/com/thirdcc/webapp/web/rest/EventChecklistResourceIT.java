@@ -36,6 +36,7 @@ import java.util.List;
 import static com.thirdcc.webapp.web.rest.TestUtil.createFormattingConversionService;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -265,35 +266,86 @@ public class EventChecklistResourceIT {
     @Test
     public void getAllChecklists() throws Exception {
         // Initialize the database
-        eventChecklistRepository.saveAndFlush(eventChecklist);
+        initEventDB();
+        eventChecklist.setEventId(event.getId());
+        initEventChecklistDB();
 
         // Get all the eventChecklistList
         restChecklistMockMvc.perform(get("/api/event-checklists?sort=id,desc"))
             .andExpect(status().isOk())
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
             .andExpect(jsonPath("$.[*].id").value(hasItem(eventChecklist.getId().intValue())))
-            .andExpect(jsonPath("$.[*].eventId").value(hasItem(DEFAULT_EVENT_ID.intValue())))
+            .andExpect(jsonPath("$.[*].eventId").value(hasItem(event.getId().intValue())))
             .andExpect(jsonPath("$.[*].name").value(hasItem(DEFAULT_NAME.toString())))
             .andExpect(jsonPath("$.[*].description").value(hasItem(DEFAULT_DESCRIPTION.toString())))
             .andExpect(jsonPath("$.[*].status").value(hasItem(DEFAULT_STATUS.toString())))
             .andExpect(jsonPath("$.[*].type").value(hasItem(DEFAULT_TYPE.toString())));
     }
+
+    @Test
+    public void getAllEventChecklistsByEventId() throws Exception {
+        // Initialize the database
+        initEventDB();
+        eventChecklist.setEventId(event.getId());
+        initEventChecklistDB();
+
+        // Get all the eventChecklistList
+        restChecklistMockMvc.perform(get("/api/event-checklists/event/{eventId}?sort=id,desc", event.getId()))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
+            .andExpect(jsonPath("$.[*].id").value(hasItem(eventChecklist.getId().intValue())))
+            .andExpect(jsonPath("$.[*].eventId").value(hasItem(eventChecklist.getEventId().intValue())))
+            .andExpect(jsonPath("$.[*].name").value(hasItem(DEFAULT_NAME)))
+            .andExpect(jsonPath("$.[*].description").value(hasItem(DEFAULT_DESCRIPTION)))
+            .andExpect(jsonPath("$.[*].status").value(hasItem(DEFAULT_STATUS.toString())))
+            .andExpect(jsonPath("$.[*].type").value(hasItem(DEFAULT_TYPE.toString())));
+    }
+
+    @Test
+    public void getAllEventChecklistsByEventId_EventIsCancelled_ShouldThrow400() throws Exception {
+        // Initialize the database
+        event.setStatus(EventStatus.CANCELLED);
+        initEventDB();
+        eventChecklist.setEventId(event.getId());
+        initEventChecklistDB();
+
+        // Get all the eventChecklistList
+        restChecklistMockMvc.perform(get("/api/event-checklists/event/{eventId}?sort=id,desc", eventChecklist.getEventId()))
+            .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    public void getAllEventChecklistsByEventId_NoEventChecklistsWithEventId_ShouldReturnEmptyList() throws Exception {
+        // Initialize the database
+        initEventDB();
+        eventChecklist.setEventId(Long.MAX_VALUE);
+        initEventChecklistDB();
+
+        // Get all the eventChecklistList
+        restChecklistMockMvc.perform(get("/api/event-checklists/event/{eventId}?sort=id,desc", event.getId()))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
+            .andExpect(jsonPath("$", hasSize(0)));
+    }
     
     @Test
     public void getChecklist() throws Exception {
         // Initialize the database
-        eventChecklistRepository.saveAndFlush(eventChecklist);
+        initEventDB();
+        eventChecklist.setEventId(event.getId());
+        initEventChecklistDB();
 
         // Get the eventChecklist
         restChecklistMockMvc.perform(get("/api/event-checklists/{id}", eventChecklist.getId()))
             .andExpect(status().isOk())
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
             .andExpect(jsonPath("$.id").value(eventChecklist.getId().intValue()))
-            .andExpect(jsonPath("$.eventId").value(DEFAULT_EVENT_ID.intValue()))
-            .andExpect(jsonPath("$.name").value(DEFAULT_NAME.toString()))
-            .andExpect(jsonPath("$.description").value(DEFAULT_DESCRIPTION.toString()))
+            .andExpect(jsonPath("$.eventId").value(event.getId().intValue()))
+            .andExpect(jsonPath("$.name").value(DEFAULT_NAME))
+            .andExpect(jsonPath("$.description").value(DEFAULT_DESCRIPTION))
             .andExpect(jsonPath("$.status").value(DEFAULT_STATUS.toString()))
-            .andExpect(jsonPath("$.type").value(DEFAULT_TYPE.toString()));
+            .andExpect(jsonPath("$.type").value(DEFAULT_TYPE.toString()))
+            .andExpect(jsonPath("$.eventName").value(event.getName()));
     }
 
     @Test
@@ -452,7 +504,9 @@ public class EventChecklistResourceIT {
     @Test
     public void deleteChecklist() throws Exception {
         // Initialize the database
-        eventChecklistRepository.saveAndFlush(eventChecklist);
+        initEventDB();
+        eventChecklist.setEventId(event.getId());
+        initEventChecklistDB();
 
         int databaseSizeBeforeDelete = eventChecklistRepository.findAll().size();
 
@@ -464,6 +518,143 @@ public class EventChecklistResourceIT {
         // Validate the database contains one less item
         List<EventChecklist> eventChecklistList = eventChecklistRepository.findAll();
         assertThat(eventChecklistList).hasSize(databaseSizeBeforeDelete - 1);
+    }
+
+    @Test
+    public void deleteChecklist_EventChecklistNotExists_ShouldThrow400() throws Exception {
+        // Initialize the database
+        initEventDB();
+        eventChecklist.setEventId(event.getId());
+        initEventChecklistDB();
+
+        int databaseSizeBeforeDelete = eventChecklistRepository.findAll().size();
+
+        // Delete the eventChecklist
+        restChecklistMockMvc.perform(delete("/api/event-checklists/{id}", Long.MAX_VALUE)
+            .accept(TestUtil.APPLICATION_JSON_UTF8))
+            .andExpect(status().isBadRequest());
+
+        // Validate the database contains one less item
+        List<EventChecklist> eventChecklistList = eventChecklistRepository.findAll();
+        assertThat(eventChecklistList).hasSize(databaseSizeBeforeDelete);
+    }
+
+    @Test
+    public void deleteChecklist_EventIsCancelled_ShouldThrow400() throws Exception {
+        // Initialize the database
+        event.setStatus(EventStatus.CANCELLED);
+        initEventDB();
+        eventChecklist.setEventId(event.getId());
+        initEventChecklistDB();
+
+        int databaseSizeBeforeDelete = eventChecklistRepository.findAll().size();
+
+        // Delete the eventChecklist
+        restChecklistMockMvc.perform(delete("/api/event-checklists/{id}", eventChecklist.getId())
+            .accept(TestUtil.APPLICATION_JSON_UTF8))
+            .andExpect(status().isBadRequest());
+
+        // Validate the database contains one less item
+        List<EventChecklist> eventChecklistList = eventChecklistRepository.findAll();
+        assertThat(eventChecklistList).hasSize(databaseSizeBeforeDelete);
+    }
+
+    @Test
+    public void deleteChecklist_EventIsStarted_ShouldThrow400() throws Exception {
+        // Initialize the database
+        event.setStartDate(Instant.now().minus(1, ChronoUnit.DAYS));
+        initEventDB();
+        eventChecklist.setEventId(event.getId());
+        initEventChecklistDB();
+
+        int databaseSizeBeforeDelete = eventChecklistRepository.findAll().size();
+
+        // Delete the eventChecklist
+        restChecklistMockMvc.perform(delete("/api/event-checklists/{id}", eventChecklist.getId())
+            .accept(TestUtil.APPLICATION_JSON_UTF8))
+            .andExpect(status().isBadRequest());
+
+        // Validate the database contains one less item
+        List<EventChecklist> eventChecklistList = eventChecklistRepository.findAll();
+        assertThat(eventChecklistList).hasSize(databaseSizeBeforeDelete);
+    }
+
+    @Test
+    public void deleteChecklist_EventChecklistStatusNotOpen_ShouldThrow400() throws Exception {
+        // Initialize the database
+        initEventDB();
+        eventChecklist.setEventId(event.getId());
+        eventChecklist.setStatus(EventChecklistStatus.IN_PROGRESS);
+        initEventChecklistDB();
+
+        int databaseSizeBeforeDelete = eventChecklistRepository.findAll().size();
+
+        // Delete the eventChecklist
+        restChecklistMockMvc.perform(delete("/api/event-checklists/{id}", eventChecklist.getId())
+            .accept(TestUtil.APPLICATION_JSON_UTF8))
+            .andExpect(status().isBadRequest());
+
+        // Validate the database contains one less item
+        List<EventChecklist> eventChecklistList = eventChecklistRepository.findAll();
+        assertThat(eventChecklistList).hasSize(databaseSizeBeforeDelete);
+    }
+
+    @Test
+    public void updateEventChecklistStatus() throws Exception {
+        initEventDB();
+        eventChecklist.setEventId(event.getId());
+        initEventChecklistDB();
+
+        int databaseSizeBeforeUpdate = eventChecklistRepository.findAll().size();
+
+        restChecklistMockMvc.perform(put("/api/event-checklists/{id}/status/{eventChecklistStatus}", eventChecklist.getId(), UPDATED_STATUS)
+            .contentType(TestUtil.APPLICATION_JSON_UTF8))
+            .andExpect(status().isOk());
+
+        // Validate the Checklist in the database
+        List<EventChecklist> eventChecklistList = eventChecklistRepository.findAll();
+        assertThat(eventChecklistList).hasSize(databaseSizeBeforeUpdate);
+        EventChecklist testChecklist = eventChecklistList.get(eventChecklistList.size() - 1);
+        assertThat(testChecklist.getName()).isEqualTo(eventChecklist.getName());
+        assertThat(testChecklist.getDescription()).isEqualTo(eventChecklist.getDescription());
+        assertThat(testChecklist.getType()).isEqualTo(eventChecklist.getType());
+        assertThat(testChecklist.getStatus()).isEqualTo(UPDATED_STATUS);
+        assertThat(testChecklist.getEventId()).isEqualTo(event.getId());
+    }
+
+    @Test
+    public void updateEventChecklistStatus_EventChecklistIsNotExists_ShouldThrow400() throws Exception {
+        initEventDB();
+        eventChecklist.setEventId(event.getId());
+        initEventChecklistDB();
+
+        int databaseSizeBeforeUpdate = eventChecklistRepository.findAll().size();
+
+        restChecklistMockMvc.perform(put("/api/event-checklists/{id}/status/{eventChecklistStatus}", Long.MAX_VALUE, UPDATED_STATUS)
+            .contentType(TestUtil.APPLICATION_JSON_UTF8))
+            .andExpect(status().isBadRequest());
+
+        // Validate the Checklist in the database
+        List<EventChecklist> eventChecklistList = eventChecklistRepository.findAll();
+        assertThat(eventChecklistList).hasSize(databaseSizeBeforeUpdate);
+    }
+
+    @Test
+    public void updateEventChecklistStatus_EventIsCancelled_ShouldThrow400() throws Exception {
+        event.setStatus(EventStatus.CANCELLED);
+        initEventDB();
+        eventChecklist.setEventId(event.getId());
+        initEventChecklistDB();
+
+        int databaseSizeBeforeUpdate = eventChecklistRepository.findAll().size();
+
+        restChecklistMockMvc.perform(put("/api/event-checklists/{id}/status/{eventChecklistStatus}", eventChecklist.getId(), UPDATED_STATUS)
+            .contentType(TestUtil.APPLICATION_JSON_UTF8))
+            .andExpect(status().isBadRequest());
+
+        // Validate the Checklist in the database
+        List<EventChecklist> eventChecklistList = eventChecklistRepository.findAll();
+        assertThat(eventChecklistList).hasSize(databaseSizeBeforeUpdate);
     }
 
     @Test

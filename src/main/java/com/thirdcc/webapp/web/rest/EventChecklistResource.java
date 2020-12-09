@@ -1,6 +1,7 @@
 package com.thirdcc.webapp.web.rest;
 
 import com.thirdcc.webapp.domain.EventChecklist;
+import com.thirdcc.webapp.domain.enumeration.EventChecklistStatus;
 import com.thirdcc.webapp.service.EventChecklistService;
 import com.thirdcc.webapp.service.dto.EventChecklistDTO;
 import com.thirdcc.webapp.web.rest.errors.BadRequestAlertException;
@@ -85,6 +86,15 @@ public class EventChecklistResource {
             .body(result);
     }
 
+    @PutMapping("/event-checklists/{id}/status/{eventChecklistStatus}")
+    public ResponseEntity<EventChecklistDTO> updateEventChecklistStatus(@PathVariable Long id, @PathVariable EventChecklistStatus eventChecklistStatus) {
+        log.debug("REST request to update event Checklist: {} with status: {}", id, eventChecklistStatus);
+        EventChecklistDTO result = checklistService.updateStatus(id, eventChecklistStatus);
+        return ResponseEntity.ok()
+            .headers(HeaderUtil.createEntityUpdateAlert(applicationName, true, ENTITY_NAME, id.toString()))
+            .body(result);
+    }
+
     /**
      * {@code GET  /event-checklists} : get all the checklists.
      *
@@ -97,6 +107,14 @@ public class EventChecklistResource {
     public ResponseEntity<List<EventChecklistDTO>> getAllChecklists(Pageable pageable, @RequestParam MultiValueMap<String, String> queryParams, UriComponentsBuilder uriBuilder) {
         log.debug("REST request to get a page of Checklists");
         Page<EventChecklistDTO> page = checklistService.findAll(pageable);
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(uriBuilder.queryParams(queryParams), page);
+        return ResponseEntity.ok().headers(headers).body(page.getContent());
+    }
+
+    @GetMapping("/event-checklists/event/{eventId}")
+    public ResponseEntity<List<EventChecklistDTO>> getAllEventChecklistsByEventId(@PathVariable long eventId, Pageable pageable, @RequestParam MultiValueMap<String, String> queryParams, UriComponentsBuilder uriBuilder) {
+        log.debug("REST request to get a page of Event Checklists with eventId: {}", eventId);
+        Page<EventChecklistDTO> page = checklistService.findAllByEventId(eventId, pageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(uriBuilder.queryParams(queryParams), page);
         return ResponseEntity.ok().headers(headers).body(page.getContent());
     }
