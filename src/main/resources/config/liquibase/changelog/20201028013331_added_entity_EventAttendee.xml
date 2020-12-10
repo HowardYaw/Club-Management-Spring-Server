@@ -48,9 +48,9 @@
     -->
     <changeSet id="20201028013331-1-data" author="jhipster" context="faker">
         <loadData
-                  file="config/liquibase/data/event_attendee.csv"
-                  separator=";"
-                  tableName="event_attendee">
+            file="config/liquibase/data/event_attendee.csv"
+            separator=";"
+            tableName="event_attendee">
             <column name="id" type="numeric"/>
             <column name="user_id" type="numeric"/>
             <column name="even_id" type="numeric"/>
