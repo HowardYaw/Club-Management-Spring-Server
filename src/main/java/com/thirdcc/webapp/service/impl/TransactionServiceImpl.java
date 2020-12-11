@@ -98,7 +98,6 @@ public class TransactionServiceImpl implements TransactionService {
         if (transaction.getStatus() == TransactionStatus.CANCELLED) {
             throw new BadRequestException("Cannot update transaction that is cancelled");
         }
-        transaction.setAmount(transactionDTO.getAmount());
         transaction.setDetails(transactionDTO.getDetails());
         transaction.setStatus(transactionDTO.getStatus());
         transaction = transactionRepository.save(transaction);

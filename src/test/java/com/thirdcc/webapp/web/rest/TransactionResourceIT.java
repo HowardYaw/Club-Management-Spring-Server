@@ -210,9 +210,9 @@ public class TransactionResourceIT {
         List<Transaction> transactionList = transactionRepository.findAll();
         assertThat(transactionList).hasSize(databaseSizeBeforeCreate + 1);
         Transaction testTransaction = transactionList.get(transactionList.size() - 1);
-        assertThat(testTransaction.getEventId()).isEqualTo(transaction.getEventId());
+        assertThat(testTransaction.getEventId()).isEqualTo(savedEvent.getId());
         assertThat(testTransaction.getReceiptId()).isEqualTo(testReceipt.getId());
-        assertThat(testTransaction.getType()).isEqualTo(transaction.getType());
+        assertThat(testTransaction.getType()).isEqualTo(TransactionType.EXPENSE);
         assertThat(testTransaction.getAmount()).isEqualTo(DEFAULT_AMOUNT.setScale(2));
         assertThat(testTransaction.getDetails()).isEqualTo(DEFAULT_DETAILS);
         assertThat(testTransaction.getStatus()).isEqualTo(DEFAULT_TRANSACTION_STATUS);
@@ -349,9 +349,9 @@ public class TransactionResourceIT {
         List<Transaction> transactionList = transactionRepository.findAll();
         assertThat(transactionList).hasSize(databaseSizeBeforeCreate + 1);
         Transaction testTransaction = transactionList.get(transactionList.size() - 1);
-        assertThat(testTransaction.getEventId()).isEqualTo(transaction.getEventId());
+        assertThat(testTransaction.getEventId()).isEqualTo(savedEvent.getId());
         assertThat(testTransaction.getReceiptId()).isNull();
-        assertThat(testTransaction.getType()).isEqualTo(transaction.getType());
+        assertThat(testTransaction.getType()).isEqualTo(TransactionType.INCOME);
         assertThat(testTransaction.getAmount()).isEqualTo(DEFAULT_AMOUNT.setScale(2));
         assertThat(testTransaction.getDetails()).isEqualTo(DEFAULT_DETAILS);
         assertThat(testTransaction.getStatus()).isEqualTo(DEFAULT_TRANSACTION_STATUS);
@@ -487,9 +487,9 @@ public class TransactionResourceIT {
         List<Transaction> transactionList = transactionRepository.findAll();
         assertThat(transactionList).hasSize(databaseSizeBeforeUpdate);
         Transaction testTransaction = transactionList.get(transactionList.size() - 1);
-        assertThat(testTransaction.getEventId()).isEqualTo(transaction.getEventId());
-        assertThat(testTransaction.getType()).isEqualTo(transaction.getType());
-        assertThat(testTransaction.getAmount()).isEqualTo(UPDATED_AMOUNT.setScale(2));
+        assertThat(testTransaction.getEventId()).isEqualTo(savedEvent.getId());
+        assertThat(testTransaction.getType()).isEqualTo(DEFAULT_TYPE);
+        assertThat(testTransaction.getAmount()).isEqualTo(DEFAULT_AMOUNT.setScale(2));
         assertThat(testTransaction.getDetails()).isEqualTo(UPDATED_DETAILS);
         assertThat(testTransaction.getStatus()).isEqualTo(TransactionStatus.CANCELLED);
     }
