@@ -6,6 +6,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.*;
 import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
+
+
 
 /**
  * Spring Data  repository for the EventAttendee entity.
@@ -15,5 +18,7 @@ import org.springframework.stereotype.Repository;
 public interface EventAttendeeRepository extends JpaRepository<EventAttendee, Long> {
 
     Page<EventAttendee> findAllByEventId(Pageable pageable, Long eventId);
+
+    Optional<EventAttendee> findOneByEventIdAndUserId(Long eventId , Long userId);
 
 }

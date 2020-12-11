@@ -20,6 +20,8 @@ public interface EventActivityService {
      */
     EventActivityDTO save(EventActivityDTO eventActivityDTO);
 
+    EventActivityDTO update(EventActivityDTO eventActivityDTO);
+
     /**
      * Get all the eventActivities.
      *
@@ -27,6 +29,8 @@ public interface EventActivityService {
      * @return the list of entities.
      */
     Page<EventActivityDTO> findAll(Pageable pageable);
+
+    Page<EventActivityDTO> findAllByEventId(Pageable pageable, Long eventId);
 
 
     /**

@@ -1,4 +1,6 @@
 package com.thirdcc.webapp.domain;
+import com.thirdcc.webapp.domain.enumeration.EventChecklistStatus;
+import com.thirdcc.webapp.domain.enumeration.EventChecklistType;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 
@@ -6,17 +8,13 @@ import javax.persistence.*;
 
 import java.io.Serializable;
 
-import com.thirdcc.webapp.domain.enumeration.ChecklistStatus;
-
-import com.thirdcc.webapp.domain.enumeration.ChecklistType;
-
 /**
  * A Checklist.
  */
 @Entity
-@Table(name = "checklist")
+@Table(name = "event_checklist")
 @Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
-public class Checklist implements Serializable {
+public class EventChecklist implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -36,11 +34,11 @@ public class Checklist implements Serializable {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status")
-    private ChecklistStatus status;
+    private EventChecklistStatus status;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "type")
-    private ChecklistType type;
+    private EventChecklistType type;
 
     // jhipster-needle-entity-add-field - JHipster will add fields here, do not remove
     public Long getId() {
@@ -55,7 +53,7 @@ public class Checklist implements Serializable {
         return eventId;
     }
 
-    public Checklist eventId(Long eventId) {
+    public EventChecklist eventId(Long eventId) {
         this.eventId = eventId;
         return this;
     }
@@ -68,7 +66,7 @@ public class Checklist implements Serializable {
         return name;
     }
 
-    public Checklist name(String name) {
+    public EventChecklist name(String name) {
         this.name = name;
         return this;
     }
@@ -81,7 +79,7 @@ public class Checklist implements Serializable {
         return description;
     }
 
-    public Checklist description(String description) {
+    public EventChecklist description(String description) {
         this.description = description;
         return this;
     }
@@ -90,29 +88,29 @@ public class Checklist implements Serializable {
         this.description = description;
     }
 
-    public ChecklistStatus getStatus() {
+    public EventChecklistStatus getStatus() {
         return status;
     }
 
-    public Checklist status(ChecklistStatus status) {
+    public EventChecklist status(EventChecklistStatus status) {
         this.status = status;
         return this;
     }
 
-    public void setStatus(ChecklistStatus status) {
+    public void setStatus(EventChecklistStatus status) {
         this.status = status;
     }
 
-    public ChecklistType getType() {
+    public EventChecklistType getType() {
         return type;
     }
 
-    public Checklist type(ChecklistType type) {
+    public EventChecklist type(EventChecklistType type) {
         this.type = type;
         return this;
     }
 
-    public void setType(ChecklistType type) {
+    public void setType(EventChecklistType type) {
         this.type = type;
     }
     // jhipster-needle-entity-add-getters-setters - JHipster will add getters and setters here, do not remove
@@ -122,10 +120,10 @@ public class Checklist implements Serializable {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof Checklist)) {
+        if (!(o instanceof EventChecklist)) {
             return false;
         }
-        return id != null && id.equals(((Checklist) o).id);
+        return id != null && id.equals(((EventChecklist) o).id);
     }
 
     @Override
