@@ -116,4 +116,8 @@ public class TokenProvider implements InitializingBean {
         }
         return false;
     }
+
+    public JwtParser getJWT() {
+        return Jwts.parser().setSigningKey(key);
+    }
 }

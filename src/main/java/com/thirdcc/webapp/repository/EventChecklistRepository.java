@@ -1,6 +1,9 @@
 package com.thirdcc.webapp.repository;
 
 import com.thirdcc.webapp.domain.EventChecklist;
+import com.thirdcc.webapp.service.dto.EventChecklistDTO;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.*;
 import org.springframework.stereotype.Repository;
 
@@ -12,4 +15,5 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface EventChecklistRepository extends JpaRepository<EventChecklist, Long> {
 
+    Page<EventChecklist> findAllByEventId(Long eventId, Pageable pageable);
 }
