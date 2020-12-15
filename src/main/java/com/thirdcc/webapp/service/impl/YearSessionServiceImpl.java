@@ -1,5 +1,6 @@
 package com.thirdcc.webapp.service.impl;
 
+import com.thirdcc.webapp.exception.BadRequestException;
 import com.thirdcc.webapp.service.YearSessionService;
 import com.thirdcc.webapp.domain.YearSession;
 import com.thirdcc.webapp.repository.YearSessionRepository;
@@ -63,6 +64,26 @@ public class YearSessionServiceImpl implements YearSessionService {
     public Optional<YearSession> findOne(Long id) {
         log.debug("Request to get YearSession : {}", id);
         return yearSessionRepository.findById(id);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public String getDefaultYearSessionString() {
+        List<YearSession> yearSessionList = yearSessionRepository.findAll();
+        if (yearSessionList.isEmpty()) {
+            throw new RuntimeException("Not a single YearSession is found in DB");
+        }
+        YearSession defaultYearSession = yearSessionList.get(yearSessionList.size() - 1);
+        return defaultYearSession.getValue();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public String getYearSessionStringById(Long id) {
+        return yearSessionRepository
+            .findById(id)
+            .orElseThrow(() -> new BadRequestException("YearSession is not found"))
+            .getValue();
     }
 
     /**
