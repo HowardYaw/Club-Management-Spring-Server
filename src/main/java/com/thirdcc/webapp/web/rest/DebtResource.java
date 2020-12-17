@@ -86,6 +86,15 @@ public class DebtResource {
             .body(result);
     }
     
+    @PutMapping("/debts/{debtId}/status/{debtStatus}")
+    public ResponseEntity<DebtDTO> updateDebtStatus(@PathVariable Long id, @PathVariable DebtStatus debtStatus) {
+        log.debug("REST request to update debt: {} with status: {}", id, debtStatus);
+        DebtDTO result = debtService.updateStatus(id, debtStatus);
+        return ResponseEntity.ok()
+            .headers(HeaderUtil.createEntityUpdateAlert(applicationName, true, ENTITY_NAME, id.toString()))
+            .body(result);
+    }
+
     /**
      * {@code GET  /debts} : get all the debts.
      *

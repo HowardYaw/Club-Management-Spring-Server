@@ -357,6 +357,57 @@ public class DebtResourceIT {
     }
 
     @Test
+    public void updateDebtStatus() throws Exception {
+        initDebtDB();
+
+        int databaseSizeBeforeUpdate = debtRepository.findAll().size();
+
+        restDebtMockMvc.perform(put("/api/debts/{id}/status/{debtStatus}", debt.getId(), UPDATED_STATUS)
+            .contentType(TestUtil.APPLICATION_JSON_UTF8))
+            .andExpect(status().isOk());
+
+        // Validate the Checklist in the database
+        List<Debt> debtList = debtRepository.findAll();
+        assertThat(debtList).hasSize(databaseSizeBeforeUpdate);
+        Debt testDebt = debtList.get(debtList.size() - 1);
+        assertThat(testDebt.getReceiptId()).isEqualTo(DEFAULT_RECEIPT_ID);
+        assertThat(testDebt.getEventAttendeeId()).isEqualTo(DEFAULT_EVENT_ATTENDEE_ID);
+        assertThat(testDebt.getAmount()).isEqualTo(DEFAULT_AMOUNT);
+        assertThat(testDebt.getStatus()).isEqualTo(UPDATED_STATUS);
+    }
+
+    @Test
+    public void updateDebtStatus_DebtIsNotExists_ShouldThrow400() throws Exception {
+        initDebtDB();
+
+        int databaseSizeBeforeUpdate = debtRepository.findAll().size();
+
+        restDebtMockMvc.perform(put("/api/debts/{id}/status/{debtStatus}", Long.MAX_VALUE, UPDATED_STATUS)
+            .contentType(TestUtil.APPLICATION_JSON_UTF8))
+            .andExpect(status().isBadRequest());
+
+        // Validate the Checklist in the database
+        List<Debt> debtList = debtRepository.findAll();
+        assertThat(debtList).hasSize(databaseSizeBeforeUpdate);
+    }
+
+    @Test
+    public void updateDebtStatus_DebtIsNotOpen_ShouldThrow400() throws Exception {
+        debt.setStatus(UPDATED_STATUS);
+        initDebtDB();
+
+        int databaseSizeBeforeUpdate = debtRepository.findAll().size();
+
+        restDebtMockMvc.perform(put("/api/debts/{id}/status/{debtStatus}", debt.getId(), UPDATED_STATUS)
+            .contentType(TestUtil.APPLICATION_JSON_UTF8))
+            .andExpect(status().isBadRequest());
+
+        // Validate the Checklist in the database
+        List<Debt> debtList = debtRepository.findAll();
+        assertThat(debtList).hasSize(databaseSizeBeforeUpdate);
+    }
+
+    @Test
     @Transactional
     public void equalsVerifier() throws Exception {
         TestUtil.equalsVerifier(Debt.class);

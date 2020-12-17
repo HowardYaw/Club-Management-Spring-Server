@@ -44,7 +44,16 @@ public interface DebtService {
      * @param id the id of the entity.
      */
     void delete(Long id);
-
+    
+    /**
+     * Update the debtStatus of the debt to "debtStatus" for "id" debt
+     *
+     * @param id the id of the entity
+     * @param debtStatus the new debtStatus of the entity
+     * @return the entity.
+     */
+    DebtDTO updateStatus(Long id, DebtStatus debtStatus);
+    
     /**
      * Get all the debts which is under "eventId" event.
      *

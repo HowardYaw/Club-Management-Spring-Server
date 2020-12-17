@@ -88,6 +88,27 @@ public class DebtServiceImpl implements DebtService {
         log.debug("Request to delete Debt : {}", id);
         debtRepository.deleteById(id);
     }
+
+    /**
+     * Update the debtStatus of the debt to "debtStatus" for "id" debt
+     *
+     * @param id the id of the entity
+     * @param debtStatus the new debtStatus of the entity
+     * @return the entity.
+     */
+    @Override
+    public DebtDTO updateStatus(Long id, DebtStatus debtStatus) {
+        log.debug("Request to update status of debt: {}, to {}", id, debtStatus);
+        Debt debt = debtRepository.findById(id)
+            .orElseThrow(() -> new BadRequestException("Debt not exists: " + id));
+        if(!debt.getStatus().equals(DebtStatus.OPEN)){
+            throw new BadRequestException("Debt is not open, not allow to update");
+        }
+        debt.setStatus(debtStatus);
+        return debtMapper.toDto(
+            debtRepository.save(debt)
+        );
+    }
     
     /**
      * Get all the debts.
