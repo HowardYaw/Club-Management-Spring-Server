@@ -13,37 +13,45 @@ import java.util.Optional;
  */
 public interface DebtService {
 
-    /**
-     * Save a debt.
-     *
-     * @param debtDTO the entity to save.
-     * @return the persisted entity.
-     */
-    DebtDTO save(DebtDTO debtDTO);
-
-    /**
-     * Get all the debts.
-     *
-     * @param pageable the pagination information.
-     * @return the list of entities.
-     */
-    Page<DebtDTO> findAll(Pageable pageable);
-
-
-    /**
-     * Get the "id" debt.
-     *
-     * @param id the id of the entity.
-     * @return the entity.
-     */
-    Optional<DebtDTO> findOne(Long id);
-
-    /**
-     * Delete the "id" debt.
-     *
-     * @param id the id of the entity.
-     */
-    void delete(Long id);
+//    /**
+//     * Save a debt.
+//     *
+//     * @param debtDTO the entity to save.
+//     * @return the persisted entity.
+//     */
+//    DebtDTO save(DebtDTO debtDTO);
+//    
+//    /**
+//     * Update a debt.
+//     *
+//     * @param debtDTO the entity to update.
+//     * @return the persisted entity.
+//     */
+//    public DebtDTO update(DebtDTO debtDTO);
+//    
+//    /**
+//     * Get all the debts.
+//     *
+//     * @param pageable the pagination information.
+//     * @return the list of entities.
+//     */
+//    Page<DebtDTO> findAll(Pageable pageable);
+//
+//
+//    /**
+//     * Get the "id" debt.
+//     *
+//     * @param id the id of the entity.
+//     * @return the entity.
+//     */
+//    Optional<DebtDTO> findOne(Long id);
+//
+//    /**
+//     * Delete the "id" debt.
+//     *
+//     * @param id the id of the entity.
+//     */
+//    void delete(Long id);
     
     /**
      * Update the debtStatus of the debt to "debtStatus" for "id" debt

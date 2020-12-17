@@ -50,8 +50,8 @@ public class DebtResourceIT {
     private static final Long DEFAULT_EVENT_ATTENDEE_ID = 1L;
     private static final Long UPDATED_EVENT_ATTENDEE_ID = 2L;
 
-    private static final BigDecimal DEFAULT_AMOUNT = new BigDecimal(1);
-    private static final BigDecimal UPDATED_AMOUNT = new BigDecimal(2);
+    private static final BigDecimal DEFAULT_AMOUNT = BigDecimal.valueOf(1, 2);
+    private static final BigDecimal UPDATED_AMOUNT = BigDecimal.valueOf(2, 2);
 
     private static final DebtStatus DEFAULT_STATUS = DebtStatus.OPEN;
     private static final DebtStatus UPDATED_STATUS = DebtStatus.COLLECTED;
@@ -115,7 +115,7 @@ public class DebtResourceIT {
      * This is a static method, as tests for other entities might also need it,
      * if they test an entity which requires the current entity.
      */
-    public static Debt createEntity(EntityManager em) {
+    public static Debt createDebtEntity(EntityManager em) {
         return new Debt()
             .receiptId(DEFAULT_RECEIPT_ID)
             .eventAttendeeId(DEFAULT_EVENT_ATTENDEE_ID)
@@ -128,7 +128,7 @@ public class DebtResourceIT {
      * This is a static method, as tests for other entities might also need it,
      * if they test an entity which requires the current entity.
      */
-    public static Debt createUpdatedEntity(EntityManager em) {
+    public static Debt createUpdatedDebtEntity(EntityManager em) {
         return new Debt()
             .receiptId(UPDATED_RECEIPT_ID)
             .eventAttendeeId(UPDATED_EVENT_ATTENDEE_ID)
@@ -150,7 +150,7 @@ public class DebtResourceIT {
 
     @BeforeEach
     public void initTest() {
-        debt = createEntity(em);
+        debt = createDebtEntity(em);
     }
 
     @AfterEach
@@ -163,75 +163,10 @@ public class DebtResourceIT {
     }
     
     private void initEventDB() {
+        event = createEventEntity();
         eventRepository.saveAndFlush(event);
     }
 
-    @Test
-    @Transactional
-    public void createDebt() throws Exception {
-        initDebtDB();
-        
-        int databaseSizeBeforeCreate = debtRepository.findAll().size();
-
-        // Create the Debt
-        DebtDTO debtDTO = debtMapper.toDto(debt);
-        restDebtMockMvc.perform(post("/api/debts")
-            .contentType(TestUtil.APPLICATION_JSON_UTF8)
-            .content(TestUtil.convertObjectToJsonBytes(debtDTO)))
-            .andExpect(status().isCreated());
-
-        // Validate the Debt in the database
-        List<Debt> debtList = debtRepository.findAll();
-        assertThat(debtList).hasSize(databaseSizeBeforeCreate + 1);
-        Debt testDebt = debtList.get(debtList.size() - 1);
-        assertThat(testDebt.getReceiptId()).isEqualTo(DEFAULT_RECEIPT_ID);
-        assertThat(testDebt.getEventAttendeeId()).isEqualTo(DEFAULT_EVENT_ATTENDEE_ID);
-        assertThat(testDebt.getAmount()).isEqualTo(DEFAULT_AMOUNT);
-        assertThat(testDebt.getStatus()).isEqualTo(DEFAULT_STATUS);
-    }
-
-    @Test
-    @Transactional
-    public void createDebtWithExistingId() throws Exception {
-        initDebtDB();
-        
-        int databaseSizeBeforeCreate = debtRepository.findAll().size();
-
-        // Create the Debt with an existing ID
-        debt.setId(1L);
-        DebtDTO debtDTO = debtMapper.toDto(debt);
-
-        // An entity with an existing ID cannot be created, so this API call must fail
-        restDebtMockMvc.perform(post("/api/debts")
-            .contentType(TestUtil.APPLICATION_JSON_UTF8)
-            .content(TestUtil.convertObjectToJsonBytes(debtDTO)))
-            .andExpect(status().isBadRequest());
-
-        // Validate the Debt in the database
-        List<Debt> debtList = debtRepository.findAll();
-        assertThat(debtList).hasSize(databaseSizeBeforeCreate);
-    }
-
-
-    @Test
-    @Transactional
-    public void getAllDebts() throws Exception {
-        initDebtDB();
-        
-        // Initialize the database
-        debtRepository.saveAndFlush(debt);
-
-        // Get all the debtList
-        restDebtMockMvc.perform(get("/api/debts?sort=id,desc"))
-            .andExpect(status().isOk())
-            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
-            .andExpect(jsonPath("$.[*].id").value(hasItem(debt.getId().intValue())))
-            .andExpect(jsonPath("$.[*].receiptId").value(hasItem(DEFAULT_RECEIPT_ID.intValue())))
-            .andExpect(jsonPath("$.[*].eventAttendeeId").value(hasItem(DEFAULT_EVENT_ATTENDEE_ID.intValue())))
-            .andExpect(jsonPath("$.[*].amount").value(hasItem(DEFAULT_AMOUNT.intValue())))
-            .andExpect(jsonPath("$.[*].status").value(hasItem(DEFAULT_STATUS.toString())));
-    }
-    
     @Test
     public void getAllDebtsByEventId() throws Exception {
         //TODO implement checking for admin and event crew
@@ -246,114 +181,18 @@ public class DebtResourceIT {
             .andExpect(jsonPath("$.[*].id").value(hasItem(debt.getId().intValue())))
             .andExpect(jsonPath("$.[*].receiptId").value(hasItem(DEFAULT_RECEIPT_ID.intValue())))
             .andExpect(jsonPath("$.[*].eventAttendeeId").value(hasItem(DEFAULT_EVENT_ATTENDEE_ID.intValue())))
-            .andExpect(jsonPath("$.[*].amount").value(hasItem(DEFAULT_AMOUNT.intValue())))
+            .andExpect(jsonPath("$.[*].amount").value(hasItem(DEFAULT_AMOUNT.doubleValue())))
             .andExpect(jsonPath("$.[*].status").value(hasItem(DEFAULT_STATUS.toString())));
     }
     
     @Test
     @Transactional
-    public void getDebt() throws Exception {
-        initDebtDB();
-        
-        // Initialize the database
-        debtRepository.saveAndFlush(debt);
-
-        // Get the debt
-        restDebtMockMvc.perform(get("/api/debts/{id}", debt.getId()))
-            .andExpect(status().isOk())
-            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
-            .andExpect(jsonPath("$.id").value(debt.getId().intValue()))
-            .andExpect(jsonPath("$.receiptId").value(DEFAULT_RECEIPT_ID.intValue()))
-            .andExpect(jsonPath("$.eventAttendeeId").value(DEFAULT_EVENT_ATTENDEE_ID.intValue()))
-            .andExpect(jsonPath("$.amount").value(DEFAULT_AMOUNT.intValue()))
-            .andExpect(jsonPath("$.status").value(DEFAULT_STATUS.toString()));
-    }
-
-    @Test
-    @Transactional
-    public void getNonExistingDebt() throws Exception {
+    public void getDebt_NonExisting_ShouldReturn404() throws Exception {
         initDebtDB();
         
         // Get the debt
         restDebtMockMvc.perform(get("/api/debts/{id}", Long.MAX_VALUE))
             .andExpect(status().isNotFound());
-    }
-
-    @Test
-    @Transactional
-    public void updateDebt() throws Exception {
-        initDebtDB();
-        
-        // Initialize the database
-        debtRepository.saveAndFlush(debt);
-
-        int databaseSizeBeforeUpdate = debtRepository.findAll().size();
-
-        // Update the debt
-        Debt updatedDebt = debtRepository.findById(debt.getId()).get();
-        // Disconnect from session so that the updates on updatedDebt are not directly saved in db
-        em.detach(updatedDebt);
-        updatedDebt
-            .receiptId(UPDATED_RECEIPT_ID)
-            .eventAttendeeId(UPDATED_EVENT_ATTENDEE_ID)
-            .amount(UPDATED_AMOUNT)
-            .status(UPDATED_STATUS);
-        DebtDTO debtDTO = debtMapper.toDto(updatedDebt);
-
-        restDebtMockMvc.perform(put("/api/debts")
-            .contentType(TestUtil.APPLICATION_JSON_UTF8)
-            .content(TestUtil.convertObjectToJsonBytes(debtDTO)))
-            .andExpect(status().isOk());
-
-        // Validate the Debt in the database
-        List<Debt> debtList = debtRepository.findAll();
-        assertThat(debtList).hasSize(databaseSizeBeforeUpdate);
-        Debt testDebt = debtList.get(debtList.size() - 1);
-        assertThat(testDebt.getReceiptId()).isEqualTo(UPDATED_RECEIPT_ID);
-        assertThat(testDebt.getEventAttendeeId()).isEqualTo(UPDATED_EVENT_ATTENDEE_ID);
-        assertThat(testDebt.getAmount()).isEqualTo(UPDATED_AMOUNT);
-        assertThat(testDebt.getStatus()).isEqualTo(UPDATED_STATUS);
-    }
-
-    @Test
-    @Transactional
-    public void updateNonExistingDebt() throws Exception {
-        initDebtDB();
-        
-        int databaseSizeBeforeUpdate = debtRepository.findAll().size();
-
-        // Create the Debt
-        DebtDTO debtDTO = debtMapper.toDto(debt);
-
-        // If the entity doesn't have an ID, it will throw BadRequestAlertException
-        restDebtMockMvc.perform(put("/api/debts")
-            .contentType(TestUtil.APPLICATION_JSON_UTF8)
-            .content(TestUtil.convertObjectToJsonBytes(debtDTO)))
-            .andExpect(status().isBadRequest());
-
-        // Validate the Debt in the database
-        List<Debt> debtList = debtRepository.findAll();
-        assertThat(debtList).hasSize(databaseSizeBeforeUpdate);
-    }
-
-    @Test
-    @Transactional
-    public void deleteDebt() throws Exception {
-        initDebtDB();
-        
-        // Initialize the database
-        debtRepository.saveAndFlush(debt);
-
-        int databaseSizeBeforeDelete = debtRepository.findAll().size();
-
-        // Delete the debt
-        restDebtMockMvc.perform(delete("/api/debts/{id}", debt.getId())
-            .accept(TestUtil.APPLICATION_JSON_UTF8))
-            .andExpect(status().isNoContent());
-
-        // Validate the database contains one less item
-        List<Debt> debtList = debtRepository.findAll();
-        assertThat(debtList).hasSize(databaseSizeBeforeDelete - 1);
     }
 
     @Test

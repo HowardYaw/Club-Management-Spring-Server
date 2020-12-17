@@ -35,59 +35,79 @@ public class DebtServiceImpl implements DebtService {
         this.debtMapper = debtMapper;
     }
 
-    /**
-     * Save a debt.
-     *
-     * @param debtDTO the entity to save.
-     * @return the persisted entity.
-     */
-    @Override
-    public DebtDTO save(DebtDTO debtDTO) {
-        log.debug("Request to save Debt : {}", debtDTO);
-        Debt debt = debtMapper.toEntity(debtDTO);
-        debt = debtRepository.save(debt);
-        return debtMapper.toDto(debt);
-    }
+//    /**
+//     * Save a debt.
+//     *
+//     * @param debtDTO the entity to save.
+//     * @return the persisted entity.
+//     */
+//    @Override
+//    public DebtDTO save(DebtDTO debtDTO) {
+//        log.debug("Request to save Debt : {}", debtDTO);
+//        Debt debt = debtMapper.toEntity(debtDTO);
+//        debt = debtRepository.save(debt);
+//        return debtMapper.toDto(debt);
+//    }
+    
+//    /**
+//     * Update a debt.
+//     *
+//     * @param debtDTO the entity to update.
+//     * @return the persisted entity.
+//     */
+//    @Override
+//    public DebtDTO update(DebtDTO debtDTO) {
+//        log.debug("Request to save Debt : {}", debtDTO);
+//        Debt debt = debtRepository.findById(debtDTO.getId())
+//            .orElseThrow(() -> new BadRequestException("Event Checklist not found"));
+//        debt.setAmount(debtDTO.getAmount());
+//        debt.setEventAttendeeId(debtDTO.getEventAttendeeId());
+//        debt.setReceiptId(debtDTO.getEventAttendeeId());
+//        debt.setStatus(debtDTO.getStatus());
+//        return debtMapper.toDto(
+//            debtRepository.save(debt)
+//        );
+//    }
 
-    /**
-     * Get all the debts.
-     *
-     * @param pageable the pagination information.
-     * @return the list of entities.
-     */
-    @Override
-    @Transactional(readOnly = true)
-    public Page<DebtDTO> findAll(Pageable pageable) {
-        log.debug("Request to get all Debts");
-        return debtRepository.findAll(pageable)
-            .map(debtMapper::toDto);
-    }
+//    /**
+//     * Get all the debts.
+//     *
+//     * @param pageable the pagination information.
+//     * @return the list of entities.
+//     */
+//    @Override
+//    @Transactional(readOnly = true)
+//    public Page<DebtDTO> findAll(Pageable pageable) {
+//        log.debug("Request to get all Debts");
+//        return debtRepository.findAll(pageable)
+//            .map(debtMapper::toDto);
+//    }
 
 
-    /**
-     * Get one debt by id.
-     *
-     * @param id the id of the entity.
-     * @return the entity.
-     */
-    @Override
-    @Transactional(readOnly = true)
-    public Optional<DebtDTO> findOne(Long id) {
-        log.debug("Request to get Debt : {}", id);
-        return debtRepository.findById(id)
-            .map(debtMapper::toDto);
-    }
+//    /**
+//     * Get one debt by id.
+//     *
+//     * @param id the id of the entity.
+//     * @return the entity.
+//     */
+//    @Override
+//    @Transactional(readOnly = true)
+//    public Optional<DebtDTO> findOne(Long id) {
+//        log.debug("Request to get Debt : {}", id);
+//        return debtRepository.findById(id)
+//            .map(debtMapper::toDto);
+//    }
 
-    /**
-     * Delete the debt by id.
-     *
-     * @param id the id of the entity.
-     */
-    @Override
-    public void delete(Long id) {
-        log.debug("Request to delete Debt : {}", id);
-        debtRepository.deleteById(id);
-    }
+//    /**
+//     * Delete the debt by id.
+//     *
+//     * @param id the id of the entity.
+//     */
+//    @Override
+//    public void delete(Long id) {
+//        log.debug("Request to delete Debt : {}", id);
+//        debtRepository.deleteById(id);
+//    }
 
     /**
      * Update the debtStatus of the debt to "debtStatus" for "id" debt
