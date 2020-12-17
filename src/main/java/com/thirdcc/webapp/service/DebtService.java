@@ -1,5 +1,6 @@
 package com.thirdcc.webapp.service;
 
+import com.thirdcc.webapp.domain.enumeration.DebtStatus;
 import com.thirdcc.webapp.service.dto.DebtDTO;
 
 import org.springframework.data.domain.Page;
@@ -43,4 +44,13 @@ public interface DebtService {
      * @param id the id of the entity.
      */
     void delete(Long id);
+
+    /**
+     * Get all the debts which is under "eventId" event.
+     *
+     * @param pageable the pagination information.
+     * @param eventId the event id of the event
+     * @return the list of entities.
+     */
+    Page<DebtDTO> findAllByEventId(Pageable pageable, Long eventId);
 }

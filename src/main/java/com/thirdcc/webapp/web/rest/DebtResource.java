@@ -1,5 +1,6 @@
 package com.thirdcc.webapp.web.rest;
 
+import com.thirdcc.webapp.domain.enumeration.DebtStatus;
 import com.thirdcc.webapp.service.DebtService;
 import com.thirdcc.webapp.web.rest.errors.BadRequestAlertException;
 import com.thirdcc.webapp.service.dto.DebtDTO;
@@ -84,7 +85,7 @@ public class DebtResource {
             .headers(HeaderUtil.createEntityUpdateAlert(applicationName, true, ENTITY_NAME, debtDTO.getId().toString()))
             .body(result);
     }
-
+    
     /**
      * {@code GET  /debts} : get all the debts.
      *
@@ -112,6 +113,14 @@ public class DebtResource {
         log.debug("REST request to get Debt : {}", id);
         Optional<DebtDTO> debtDTO = debtService.findOne(id);
         return ResponseUtil.wrapOrNotFound(debtDTO);
+    }
+    
+    @GetMapping("/debts/event/{eventId}")
+    public ResponseEntity<List<DebtDTO>> getAllDebtsByEventId(Pageable pageable, @PathVariable Long eventId, @RequestParam MultiValueMap<String, String> queryParams, UriComponentsBuilder uriBuilder) {
+        log.debug("REST request to get a page of Debts");
+        Page<DebtDTO> page = debtService.findAllByEventId(pageable, eventId);
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(uriBuilder.queryParams(queryParams), page);
+        return ResponseEntity.ok().headers(headers).body(page.getContent());
     }
 
     /**

@@ -2,6 +2,7 @@ package com.thirdcc.webapp.web.rest;
 
 import com.thirdcc.webapp.ClubmanagementApp;
 import com.thirdcc.webapp.domain.Debt;
+import com.thirdcc.webapp.domain.Event;
 import com.thirdcc.webapp.repository.DebtRepository;
 import com.thirdcc.webapp.service.DebtService;
 import com.thirdcc.webapp.service.dto.DebtDTO;
@@ -34,6 +35,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import com.thirdcc.webapp.domain.enumeration.DebtStatus;
+import com.thirdcc.webapp.domain.enumeration.EventStatus;
+import com.thirdcc.webapp.repository.EventRepository;
+import org.junit.jupiter.api.AfterEach;
 /**
  * Integration tests for the {@Link DebtResource} REST controller.
  */
@@ -52,9 +56,21 @@ public class DebtResourceIT {
     private static final DebtStatus DEFAULT_STATUS = DebtStatus.OPEN;
     private static final DebtStatus UPDATED_STATUS = DebtStatus.COLLECTED;
 
+    private static final String DEFAULT_NAME = "AAAAAAAAAA";
+    private static final String DEFAULT_DESCRIPTION = "AAAAAAAAAA";
+    private static final String DEFAULT_EVENT_REMARKS = "DEFAULT_REMARKS";
+    private static final String DEFAULT_EVENT_VENUE = "DEFAULT_VENUE";
+    private static final Instant DEFAULT_EVENT_START_DATE = Instant.now().plus(1, ChronoUnit.DAYS);
+    private static final Instant DEFAULT_EVENT_END_DATE = Instant.now().plus(2, ChronoUnit.DAYS);
+    private static final EventStatus DEFAULT_EVENT_STATUS = EventStatus.OPEN;
+    private static final BigDecimal DEFAULT_EVENT_FEE = BigDecimal.valueOf(10.0);
+
     @Autowired
     private DebtRepository debtRepository;
 
+    @Autowired
+    private EventRepository eventRepository;
+    
     @Autowired
     private DebtMapper debtMapper;
 
@@ -79,6 +95,7 @@ public class DebtResourceIT {
     private MockMvc restDebtMockMvc;
 
     private Debt debt;
+    private Event event;
 
     @BeforeEach
     public void setup() {
@@ -99,12 +116,11 @@ public class DebtResourceIT {
      * if they test an entity which requires the current entity.
      */
     public static Debt createEntity(EntityManager em) {
-        Debt debt = new Debt()
+        return new Debt()
             .receiptId(DEFAULT_RECEIPT_ID)
             .eventAttendeeId(DEFAULT_EVENT_ATTENDEE_ID)
             .amount(DEFAULT_AMOUNT)
             .status(DEFAULT_STATUS);
-        return debt;
     }
     /**
      * Create an updated entity for this test.
@@ -113,12 +129,23 @@ public class DebtResourceIT {
      * if they test an entity which requires the current entity.
      */
     public static Debt createUpdatedEntity(EntityManager em) {
-        Debt debt = new Debt()
+        return new Debt()
             .receiptId(UPDATED_RECEIPT_ID)
             .eventAttendeeId(UPDATED_EVENT_ATTENDEE_ID)
             .amount(UPDATED_AMOUNT)
             .status(UPDATED_STATUS);
-        return debt;
+    }
+    
+    public static Event createEventEntity() {
+        return new Event()
+            .name(DEFAULT_NAME)
+            .description(DEFAULT_DESCRIPTION)
+            .remarks(DEFAULT_EVENT_REMARKS)
+            .startDate(DEFAULT_EVENT_START_DATE)
+            .endDate(DEFAULT_EVENT_END_DATE)
+            .status(DEFAULT_EVENT_STATUS)
+            .venue(DEFAULT_EVENT_VENUE)
+            .fee(DEFAULT_EVENT_FEE);
     }
 
     @BeforeEach
@@ -126,9 +153,24 @@ public class DebtResourceIT {
         debt = createEntity(em);
     }
 
+    @AfterEach
+    public void cleanUp() {
+        debtRepository.deleteAll();
+    }
+    
+    private void initDebtDB() {
+        debtRepository.saveAndFlush(debt);
+    }
+    
+    private void initEventDB() {
+        eventRepository.saveAndFlush(event);
+    }
+
     @Test
     @Transactional
     public void createDebt() throws Exception {
+        initDebtDB();
+        
         int databaseSizeBeforeCreate = debtRepository.findAll().size();
 
         // Create the Debt
@@ -151,6 +193,8 @@ public class DebtResourceIT {
     @Test
     @Transactional
     public void createDebtWithExistingId() throws Exception {
+        initDebtDB();
+        
         int databaseSizeBeforeCreate = debtRepository.findAll().size();
 
         // Create the Debt with an existing ID
@@ -172,6 +216,8 @@ public class DebtResourceIT {
     @Test
     @Transactional
     public void getAllDebts() throws Exception {
+        initDebtDB();
+        
         // Initialize the database
         debtRepository.saveAndFlush(debt);
 
@@ -187,8 +233,28 @@ public class DebtResourceIT {
     }
     
     @Test
+    public void getAllDebtsByEventId() throws Exception {
+        //TODO implement checking for admin and event crew
+        // Initialize the database
+        initDebtDB();
+        initEventDB();
+
+        // Get all the debtList
+        restDebtMockMvc.perform(get("/api/debts/event/{eventId}?sort=id,desc", event.getId()))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
+            .andExpect(jsonPath("$.[*].id").value(hasItem(debt.getId().intValue())))
+            .andExpect(jsonPath("$.[*].receiptId").value(hasItem(DEFAULT_RECEIPT_ID.intValue())))
+            .andExpect(jsonPath("$.[*].eventAttendeeId").value(hasItem(DEFAULT_EVENT_ATTENDEE_ID.intValue())))
+            .andExpect(jsonPath("$.[*].amount").value(hasItem(DEFAULT_AMOUNT.intValue())))
+            .andExpect(jsonPath("$.[*].status").value(hasItem(DEFAULT_STATUS.toString())));
+    }
+    
+    @Test
     @Transactional
     public void getDebt() throws Exception {
+        initDebtDB();
+        
         // Initialize the database
         debtRepository.saveAndFlush(debt);
 
@@ -206,6 +272,8 @@ public class DebtResourceIT {
     @Test
     @Transactional
     public void getNonExistingDebt() throws Exception {
+        initDebtDB();
+        
         // Get the debt
         restDebtMockMvc.perform(get("/api/debts/{id}", Long.MAX_VALUE))
             .andExpect(status().isNotFound());
@@ -214,6 +282,8 @@ public class DebtResourceIT {
     @Test
     @Transactional
     public void updateDebt() throws Exception {
+        initDebtDB();
+        
         // Initialize the database
         debtRepository.saveAndFlush(debt);
 
@@ -248,6 +318,8 @@ public class DebtResourceIT {
     @Test
     @Transactional
     public void updateNonExistingDebt() throws Exception {
+        initDebtDB();
+        
         int databaseSizeBeforeUpdate = debtRepository.findAll().size();
 
         // Create the Debt
@@ -267,6 +339,8 @@ public class DebtResourceIT {
     @Test
     @Transactional
     public void deleteDebt() throws Exception {
+        initDebtDB();
+        
         // Initialize the database
         debtRepository.saveAndFlush(debt);
 

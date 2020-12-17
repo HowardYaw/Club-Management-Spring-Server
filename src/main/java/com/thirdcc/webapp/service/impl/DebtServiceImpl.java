@@ -2,6 +2,8 @@ package com.thirdcc.webapp.service.impl;
 
 import com.thirdcc.webapp.service.DebtService;
 import com.thirdcc.webapp.domain.Debt;
+import com.thirdcc.webapp.domain.enumeration.DebtStatus;
+import com.thirdcc.webapp.exception.BadRequestException;
 import com.thirdcc.webapp.repository.DebtRepository;
 import com.thirdcc.webapp.service.dto.DebtDTO;
 import com.thirdcc.webapp.service.mapper.DebtMapper;
@@ -85,5 +87,21 @@ public class DebtServiceImpl implements DebtService {
     public void delete(Long id) {
         log.debug("Request to delete Debt : {}", id);
         debtRepository.deleteById(id);
+    }
+    
+    /**
+     * Get all the debts.
+     *
+     * @param pageable the pagination information.
+     * @return the list of entities.
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public Page<DebtDTO> findAllByEventId(Pageable pageable, Long eventId) {
+        log.debug("Request to get all Debts");
+        //TODO implement the method to use getEventAttendeeById
+        //TODO currently will just return all debts
+        return debtRepository.findAll(pageable)
+            .map(debtMapper::toDto);
     }
 }
