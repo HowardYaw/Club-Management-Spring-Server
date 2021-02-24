@@ -1,18 +1,12 @@
 package com.thirdcc.webapp.web.rest;
 
 import com.thirdcc.webapp.ClubmanagementApp;
-import com.thirdcc.webapp.domain.Claim;
-import com.thirdcc.webapp.domain.Event;
-import com.thirdcc.webapp.domain.Receipt;
-import com.thirdcc.webapp.domain.Transaction;
-import com.thirdcc.webapp.domain.enumeration.ClaimStatus;
-import com.thirdcc.webapp.domain.enumeration.EventStatus;
-import com.thirdcc.webapp.domain.enumeration.TransactionStatus;
-import com.thirdcc.webapp.repository.ClaimRepository;
-import com.thirdcc.webapp.repository.EventRepository;
-import com.thirdcc.webapp.repository.ReceiptRepository;
-import com.thirdcc.webapp.repository.TransactionRepository;
+import com.thirdcc.webapp.domain.*;
+import com.thirdcc.webapp.domain.enumeration.*;
+import com.thirdcc.webapp.exception.BadRequestException;
+import com.thirdcc.webapp.repository.*;
 import com.thirdcc.webapp.service.TransactionService;
+import com.thirdcc.webapp.service.UserService;
 import com.thirdcc.webapp.service.dto.ReceiptDTO;
 import com.thirdcc.webapp.service.dto.TransactionDTO;
 import com.thirdcc.webapp.service.mapper.TransactionMapper;
@@ -23,10 +17,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.validation.Validator;
@@ -43,11 +39,11 @@ import static org.hamcrest.Matchers.hasItem;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-import com.thirdcc.webapp.domain.enumeration.TransactionType;
 /**
  * Integration tests for the {@Link TransactionResource} REST controller.
  */
 @SpringBootTest(classes = ClubmanagementApp.class)
+@AutoConfigureMockMvc
 public class TransactionResourceIT {
 
     private static final Long DEFAULT_EVENT_ID = 1L;
@@ -80,6 +76,10 @@ public class TransactionResourceIT {
     private static final String DEFAULT_RECEIPT_IMAGE_FILENAME = "DEFAULT_RECEIPT_IMAGE_FILENAME";
     private static final String DEFAULT_RECEIPT_IMAGE_CONTENT = "DEAFULT_RECEIPT_IMAGE_CONTENT";
 
+    // Event Crew Default data
+    private static final Long DEFAULT_USER_ID = 1L;
+    private static final EventCrewRole EVENT_CREW_ROLE_HEAD = EventCrewRole.HEAD;
+
 
     @Autowired
     private TransactionRepository transactionRepository;
@@ -105,6 +105,11 @@ public class TransactionResourceIT {
     @Autowired
     private Validator validator;
 
+    @Autowired
+    private UserService userService;
+
+    private User currentUser;
+
     private MockMvc restTransactionMockMvc;
 
     private Transaction transaction;
@@ -121,6 +126,11 @@ public class TransactionResourceIT {
 
     @Autowired
     private ClaimRepository claimRepository;
+
+    @Autowired
+    private EventCrewRepository eventCrewRepository;
+
+    private EventCrew eventCrew;
 
     @BeforeEach
     public void setup() {
@@ -167,11 +177,19 @@ public class TransactionResourceIT {
         return receiptDTO;
     }
 
+    public static EventCrew createEventCrew() {
+        EventCrew eventCrew = new EventCrew();
+        eventCrew.setEventId(DEFAULT_EVENT_ID);
+        eventCrew.setUserId(DEFAULT_USER_ID);
+        return eventCrew;
+    }
+
     @BeforeEach
     public void initTest() {
         transaction = createTransactionEntity();
         event = createEventEntity();
         receiptDTO = createReceiptDTO();
+        eventCrew = createEventCrew();
     }
 
     @AfterEach
@@ -180,6 +198,106 @@ public class TransactionResourceIT {
         eventRepository.deleteAll();
         receiptRepository.deleteAll();
         claimRepository.deleteAll();
+        eventCrewRepository.deleteAll();
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    public void createTransaction_UserWithRoleAdmin() throws Exception {
+        // Initialize the database
+        Event savedEvent = initEventDB();
+        transaction.setEventId(savedEvent.getId());
+        transaction.setType(TransactionType.INCOME);
+
+        int databaseSizeBeforeCreate = transactionRepository.findAll().size();
+        int receiptDatabaseSizeBeforeCreate = receiptRepository.findAll().size();
+
+        // Create the Transaction
+        TransactionDTO transactionDTO = transactionMapper.toDto(transaction);
+        restTransactionMockMvc.perform(post("/api/transactions")
+            .contentType(TestUtil.APPLICATION_JSON_UTF8)
+            .content(TestUtil.convertObjectToJsonBytes(transactionDTO)))
+            .andExpect(status().isCreated());
+
+        // Validate Receipt Table
+        List<Receipt> receiptList = receiptRepository.findAll();
+        assertThat(receiptList).hasSize(receiptDatabaseSizeBeforeCreate);
+
+        // Validate the Transaction in the database
+        List<Transaction> transactionList = transactionRepository.findAll();
+        assertThat(transactionList).hasSize(databaseSizeBeforeCreate + 1);
+        Transaction testTransaction = transactionList.get(transactionList.size() - 1);
+        assertThat(testTransaction.getEventId()).isEqualTo(savedEvent.getId());
+        assertThat(testTransaction.getReceiptId()).isNull();
+        assertThat(testTransaction.getType()).isEqualTo(TransactionType.INCOME);
+        assertThat(testTransaction.getAmount()).isEqualTo(DEFAULT_AMOUNT.setScale(2));
+        assertThat(testTransaction.getDetails()).isEqualTo(DEFAULT_DETAILS);
+        assertThat(testTransaction.getStatus()).isEqualTo(DEFAULT_TRANSACTION_STATUS);
+    }
+
+    @Test
+    @WithMockUser
+    public void createTransaction_UserIsEventCrew() throws Exception {
+        currentUser = getLoggedInUser();
+        // Initialize the database
+        Event savedEvent = initEventDB();
+        eventCrew.setUserId(currentUser.getId());
+        EventCrew savedEventCrew = initEventCrewDB();
+        transaction.setEventId(savedEvent.getId());
+        transaction.setType(TransactionType.INCOME);
+
+        int databaseSizeBeforeCreate = transactionRepository.findAll().size();
+        int receiptDatabaseSizeBeforeCreate = receiptRepository.findAll().size();
+
+        // Create the Transaction
+        TransactionDTO transactionDTO = transactionMapper.toDto(transaction);
+        restTransactionMockMvc.perform(post("/api/transactions")
+            .contentType(TestUtil.APPLICATION_JSON_UTF8)
+            .content(TestUtil.convertObjectToJsonBytes(transactionDTO)))
+            .andExpect(status().isCreated());
+
+        // Validate Receipt Table
+        List<Receipt> receiptList = receiptRepository.findAll();
+        assertThat(receiptList).hasSize(receiptDatabaseSizeBeforeCreate);
+
+        // Validate the Transaction in the database
+        List<Transaction> transactionList = transactionRepository.findAll();
+        assertThat(transactionList).hasSize(databaseSizeBeforeCreate + 1);
+        Transaction testTransaction = transactionList.get(transactionList.size() - 1);
+        assertThat(testTransaction.getEventId()).isEqualTo(savedEvent.getId());
+        assertThat(testTransaction.getReceiptId()).isNull();
+        assertThat(testTransaction.getType()).isEqualTo(TransactionType.INCOME);
+        assertThat(testTransaction.getAmount()).isEqualTo(DEFAULT_AMOUNT.setScale(2));
+        assertThat(testTransaction.getDetails()).isEqualTo(DEFAULT_DETAILS);
+        assertThat(testTransaction.getStatus()).isEqualTo(DEFAULT_TRANSACTION_STATUS);
+    }
+
+    @Test
+    @WithMockUser
+    public void createTransaction_UserNotEventCrewAndRoleUserOnly_ShouldThrow400() throws Exception {
+        currentUser = getLoggedInUser();
+        // Initialize the database
+        Event savedEvent = initEventDB();
+        transaction.setEventId(savedEvent.getId());
+        transaction.setType(TransactionType.INCOME);
+
+        int databaseSizeBeforeCreate = transactionRepository.findAll().size();
+        int receiptDatabaseSizeBeforeCreate = receiptRepository.findAll().size();
+
+        // Create the Transaction
+        TransactionDTO transactionDTO = transactionMapper.toDto(transaction);
+        restTransactionMockMvc.perform(post("/api/transactions")
+            .contentType(TestUtil.APPLICATION_JSON_UTF8)
+            .content(TestUtil.convertObjectToJsonBytes(transactionDTO)))
+            .andExpect(status().isBadRequest());
+
+        // Validate Receipt Table
+        List<Receipt> receiptList = receiptRepository.findAll();
+        assertThat(receiptList).hasSize(receiptDatabaseSizeBeforeCreate);
+
+        // Validate the Transaction in the database
+        List<Transaction> transactionList = transactionRepository.findAll();
+        assertThat(transactionList).hasSize(databaseSizeBeforeCreate);
     }
 
     @Test
@@ -584,6 +702,11 @@ public class TransactionResourceIT {
         assertThat(transactionMapper.fromId(null)).isNull();
     }
 
+    private User getLoggedInUser() {
+        return userService.getUserWithAuthorities()
+            .orElseThrow(() -> new BadRequestException("User not login"));
+    }
+
     private Transaction initTransactionDB() {
         return transactionRepository.saveAndFlush(transaction);
     }
@@ -591,4 +714,6 @@ public class TransactionResourceIT {
     private Event initEventDB() {
         return eventRepository.saveAndFlush(event);
     }
+
+    private EventCrew initEventCrewDB() { return eventCrewRepository.saveAndFlush(eventCrew); }
 }
