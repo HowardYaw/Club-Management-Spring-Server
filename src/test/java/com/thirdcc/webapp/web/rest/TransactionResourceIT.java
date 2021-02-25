@@ -110,6 +110,7 @@ public class TransactionResourceIT {
 
     private User currentUser;
 
+    @Autowired
     private MockMvc restTransactionMockMvc;
 
     private Transaction transaction;
@@ -136,12 +137,12 @@ public class TransactionResourceIT {
     public void setup() {
         MockitoAnnotations.initMocks(this);
         final TransactionResource transactionResource = new TransactionResource(transactionService);
-        this.restTransactionMockMvc = MockMvcBuilders.standaloneSetup(transactionResource)
-            .setCustomArgumentResolvers(pageableArgumentResolver)
-            .setControllerAdvice(exceptionTranslator)
-            .setConversionService(createFormattingConversionService())
-            .setMessageConverters(jacksonMessageConverter)
-            .setValidator(validator).build();
+//        this.restTransactionMockMvc = MockMvcBuilders.standaloneSetup(transactionResource)
+//            .setCustomArgumentResolvers(pageableArgumentResolver)
+//            .setControllerAdvice(exceptionTranslator)
+//            .setConversionService(createFormattingConversionService())
+//            .setMessageConverters(jacksonMessageConverter)
+//            .setValidator(validator).build();
     }
 
     /**
