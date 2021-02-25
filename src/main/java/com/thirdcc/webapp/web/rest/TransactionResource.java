@@ -7,14 +7,12 @@ import com.thirdcc.webapp.service.dto.TransactionDTO;
 
 import io.github.jhipster.web.util.HeaderUtil;
 import io.github.jhipster.web.util.PaginationUtil;
-import io.github.jhipster.web.util.ResponseUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -25,7 +23,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 
 import java.util.List;
-import java.util.Optional;
 
 /**
  * REST controller for managing {@link com.thirdcc.webapp.domain.Transaction}.
@@ -107,7 +104,7 @@ public class TransactionResource {
     }
 
     @GetMapping("/transactions/event/{eventId}")
-    @PreAuthorize("@managementTeamSecurityExpression.hasRoleAdminOrIsEventCrew(#transactionDTO.getEventId())")
+    @PreAuthorize("@managementTeamSecurityExpression.hasRoleAdminOrIsEventCrew(#eventId)")
     public ResponseEntity<List<TransactionDTO>> getAllTransactionsByEventId(@PathVariable Long eventId, Pageable pageable, @RequestParam MultiValueMap<String, String> queryParams, UriComponentsBuilder uriBuilder) {
         log.debug("REST request to get a page of Transactions by eventId: {}", eventId);
         Page<TransactionDTO> page = transactionService.findAllByEventId(eventId, pageable);

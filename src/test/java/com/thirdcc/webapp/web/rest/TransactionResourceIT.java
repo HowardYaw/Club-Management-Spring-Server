@@ -5,12 +5,10 @@ import com.thirdcc.webapp.domain.*;
 import com.thirdcc.webapp.domain.enumeration.*;
 import com.thirdcc.webapp.exception.BadRequestException;
 import com.thirdcc.webapp.repository.*;
-import com.thirdcc.webapp.service.TransactionService;
 import com.thirdcc.webapp.service.UserService;
 import com.thirdcc.webapp.service.dto.ReceiptDTO;
 import com.thirdcc.webapp.service.dto.TransactionDTO;
 import com.thirdcc.webapp.service.mapper.TransactionMapper;
-import com.thirdcc.webapp.web.rest.errors.ExceptionTranslator;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -19,13 +17,9 @@ import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
 import org.springframework.http.MediaType;
-import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.validation.Validator;
 
 import javax.persistence.EntityManager;
 import java.math.BigDecimal;
@@ -33,7 +27,6 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 
-import static com.thirdcc.webapp.web.rest.TestUtil.createFormattingConversionService;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.hasItem;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -44,6 +37,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  */
 @SpringBootTest(classes = ClubmanagementApp.class)
 @AutoConfigureMockMvc
+@WithMockUser(username = "admin", roles = "ADMIN")
 public class TransactionResourceIT {
 
     private static final Long DEFAULT_EVENT_ID = 1L;
@@ -88,22 +82,7 @@ public class TransactionResourceIT {
     private TransactionMapper transactionMapper;
 
     @Autowired
-    private TransactionService transactionService;
-
-    @Autowired
-    private MappingJackson2HttpMessageConverter jacksonMessageConverter;
-
-    @Autowired
-    private PageableHandlerMethodArgumentResolver pageableArgumentResolver;
-
-    @Autowired
-    private ExceptionTranslator exceptionTranslator;
-
-    @Autowired
     private EntityManager em;
-
-    @Autowired
-    private Validator validator;
 
     @Autowired
     private UserService userService;
@@ -136,13 +115,6 @@ public class TransactionResourceIT {
     @BeforeEach
     public void setup() {
         MockitoAnnotations.initMocks(this);
-        final TransactionResource transactionResource = new TransactionResource(transactionService);
-//        this.restTransactionMockMvc = MockMvcBuilders.standaloneSetup(transactionResource)
-//            .setCustomArgumentResolvers(pageableArgumentResolver)
-//            .setControllerAdvice(exceptionTranslator)
-//            .setConversionService(createFormattingConversionService())
-//            .setMessageConverters(jacksonMessageConverter)
-//            .setValidator(validator).build();
     }
 
     /**
@@ -203,7 +175,6 @@ public class TransactionResourceIT {
     }
 
     @Test
-    @WithMockUser(roles = "ADMIN")
     public void createTransaction_UserWithRoleAdmin() throws Exception {
         // Initialize the database
         Event savedEvent = initEventDB();
@@ -243,6 +214,7 @@ public class TransactionResourceIT {
         // Initialize the database
         Event savedEvent = initEventDB();
         eventCrew.setUserId(currentUser.getId());
+        eventCrew.setEventId(savedEvent.getId());
         EventCrew savedEventCrew = initEventCrewDB();
         transaction.setEventId(savedEvent.getId());
         transaction.setType(TransactionType.INCOME);
@@ -290,7 +262,7 @@ public class TransactionResourceIT {
         restTransactionMockMvc.perform(post("/api/transactions")
             .contentType(TestUtil.APPLICATION_JSON_UTF8)
             .content(TestUtil.convertObjectToJsonBytes(transactionDTO)))
-            .andExpect(status().isBadRequest());
+            .andExpect(status().isForbidden());
 
         // Validate Receipt Table
         List<Receipt> receiptList = receiptRepository.findAll();
@@ -627,6 +599,7 @@ public class TransactionResourceIT {
         transaction.setId(Long.MAX_VALUE);
         TransactionDTO transactionDTO = transactionMapper.toDto(transaction);
 
+        System.out.println("USER AUTH :: " + getLoggedInUser().getAuthorities());
         // If the entity doesn't have an ID, it will throw BadRequestAlertException
         restTransactionMockMvc.perform(put("/api/transactions")
             .contentType(TestUtil.APPLICATION_JSON_UTF8)
