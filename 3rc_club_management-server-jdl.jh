@@ -33,7 +33,7 @@ enum EventCrewRole {
 entity EventAttendee {
     id Long
     userId Long
-    evenId Long
+    eventId Long
     provideTransport Boolean
 }
 
@@ -56,7 +56,7 @@ entity Budget {
     id Long
     eventId Long
     amount BigDecimal
-    type TransactionType 
+    type TransactionType
     name String
     details TextBlob
 }
