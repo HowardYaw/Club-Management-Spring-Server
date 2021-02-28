@@ -28,7 +28,14 @@ public interface EventAttendeeService {
      */
     Page<EventAttendeeDTO> findAll(Pageable pageable);
 
+    /**
+     * Get all the eventAttendees from an Event via Event Id.
+     *
+     * @param pageable the pagination information.
+     * @return the list of entities.
+     */
     Page<EventAttendeeDTO> findAllByEventId(Pageable pageable, Long eventId);
+
     /**
      * Get the "id" eventAttendee.
      *

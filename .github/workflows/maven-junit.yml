@@ -5,7 +5,7 @@ name: Java CI with Maven
 
 on:
   pull_request:
-    branches: 
+    branches:
       - 'master'
       - 'production-version-*'
       - 'dev-version-*'
@@ -21,7 +21,7 @@ jobs:
       uses: actions/setup-java@v1
       with:
         java-version: 11
-        
+
     - name: Cache Maven packages
       uses: actions/cache@v2
       with:

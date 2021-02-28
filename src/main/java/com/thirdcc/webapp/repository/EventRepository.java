@@ -17,4 +17,6 @@ import java.util.Set;
 public interface EventRepository extends JpaRepository<Event, Long> {
 
     Optional<Event> findOneByIdAndStatusIn(Long id, Set<EventStatus> eventStatus);
+
+    Optional<Event> findOneById(Long id);
 }

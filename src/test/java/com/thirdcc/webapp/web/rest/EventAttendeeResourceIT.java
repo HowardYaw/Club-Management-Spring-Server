@@ -387,7 +387,7 @@ public class EventAttendeeResourceIT {
     }
 
     @Test
-    public void getAllEventAttendeesWithEventId() throws Exception {
+    public void getAllEventAttendees_WithEventId() throws Exception {
         // Initialize the database
         Event savedEvent = initEventDB();
         EventAttendee savedEventAttendee = initEventAttendeeDB();
@@ -400,6 +400,12 @@ public class EventAttendeeResourceIT {
             .andExpect(jsonPath("$.[*].userId").value(user.getId().intValue()))
             .andExpect(jsonPath("$.[*].eventId").value(savedEvent.getId().intValue()))
             .andExpect(jsonPath("$.[*].provideTransport").value(DEFAULT_PROVIDE_TRANSPORT.booleanValue()));
+    }
+
+    @Test
+    public void getAllEventAttendees_WithNonExistingEventId_ShouldThrow400() throws Exception {
+        restEventAttendeeMockMvc.perform(get("/api/event-attendees/event/{eventId}?sort=id,desc", Long.MAX_VALUE))
+            .andExpect(status().isBadRequest());
     }
 
     @Test
