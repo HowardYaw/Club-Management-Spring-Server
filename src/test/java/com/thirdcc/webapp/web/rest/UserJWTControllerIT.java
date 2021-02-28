@@ -3,7 +3,9 @@ package com.thirdcc.webapp.web.rest;
 import com.thirdcc.webapp.ClubmanagementApp;
 import com.thirdcc.webapp.domain.User;
 import com.thirdcc.webapp.repository.UserRepository;
+import com.thirdcc.webapp.security.firebase.FirebaseService;
 import com.thirdcc.webapp.security.jwt.TokenProvider;
+import com.thirdcc.webapp.service.UserService;
 import com.thirdcc.webapp.web.rest.errors.ExceptionTranslator;
 import com.thirdcc.webapp.web.rest.vm.LoginVM;
 import org.junit.jupiter.api.BeforeEach;
@@ -37,6 +39,12 @@ public class UserJWTControllerIT {
     private AuthenticationManagerBuilder authenticationManager;
 
     @Autowired
+    private FirebaseService firebaseService;
+
+    @Autowired
+    private UserService userService;
+
+    @Autowired
     private UserRepository userRepository;
 
     @Autowired
@@ -49,7 +57,7 @@ public class UserJWTControllerIT {
 
     @BeforeEach
     public void setup() {
-        UserJWTController userJWTController = new UserJWTController(tokenProvider, authenticationManager);
+        UserJWTController userJWTController = new UserJWTController(tokenProvider, authenticationManager, firebaseService, userService);
         this.mockMvc = MockMvcBuilders.standaloneSetup(userJWTController)
             .setControllerAdvice(exceptionTranslator)
             .build();
