@@ -106,6 +106,7 @@ public class EventAttendeeServiceImpl implements EventAttendeeService {
     @Override
     @Transactional(readOnly = true)
     public Page<EventAttendeeDTO> findAllByEventId(Pageable pageable, Long eventId) {
+        log.debug("Request to get all EventAttendee by Event Id: {}", eventId);
         eventRepository
             .findOneById(eventId)
             .orElseThrow(() -> new BadRequestException("Event not found"));
@@ -123,6 +124,7 @@ public class EventAttendeeServiceImpl implements EventAttendeeService {
     @Override
     @Transactional(readOnly = true)
     public Optional<EventAttendeeDTO> findOne(Long id) {
+        log.debug("Request to get EventAttendee : {}", id);
         return eventAttendeeRepository.findById(id)
             .map(eventAttendeeMapper::toDto);
     }
