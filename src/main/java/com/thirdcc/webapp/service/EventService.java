@@ -29,6 +29,16 @@ public interface EventService {
      */
     Page<EventDTO> findAll(Pageable pageable);
 
+    /**
+     * Get all the events and filter by date.
+     *
+     * @param pageable the pagination information.
+     * @param fromDate the starting of start_date to query the entity.
+     * @param toDate the ending of start_date to query the entity.
+     * @return the list of entities.
+     */
+    Page<EventDTO> findAllByDateRange(Pageable pageable, String fromDate, String toDate);
+
 
     /**
      * Get the "id" event.

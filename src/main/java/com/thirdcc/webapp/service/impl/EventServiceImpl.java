@@ -15,6 +15,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
@@ -62,6 +63,16 @@ public class EventServiceImpl implements EventService {
     public Page<EventDTO> findAll(Pageable pageable) {
         log.debug("Request to get all Events");
         return eventRepository.findAll(pageable)
+            .map(eventMapper::toDto);
+    }
+
+    @Override
+    public Page<EventDTO> findAllByDateRange(Pageable pageable, String fromDate, String toDate) {
+        log.debug("Request to get all Events and filter by date");
+
+        Instant from = Instant.parse(fromDate);
+        Instant to = Instant.parse(toDate);
+        return eventRepository.findEventsByStartDateBetween(from, to, pageable)
             .map(eventMapper::toDto);
     }
 
