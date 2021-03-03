@@ -14,6 +14,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.springframework.http.ResponseEntity;
@@ -53,6 +54,7 @@ public class EventResource {
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
     @PostMapping("/events")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     public ResponseEntity<EventDTO> createEvent(@RequestBody EventDTO eventDTO) throws URISyntaxException {
         log.debug("REST request to save Event : {}", eventDTO);
         if (eventDTO.getId() != null) {
