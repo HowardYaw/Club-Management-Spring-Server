@@ -2,8 +2,12 @@ package com.thirdcc.webapp.web.rest;
 
 import com.thirdcc.webapp.ClubmanagementApp;
 import com.thirdcc.webapp.domain.Event;
+import com.thirdcc.webapp.domain.User;
 import com.thirdcc.webapp.repository.EventRepository;
+import com.thirdcc.webapp.service.EventCrewService;
 import com.thirdcc.webapp.service.EventService;
+import com.thirdcc.webapp.service.UserService;
+import com.thirdcc.webapp.service.dto.EventCrewDTO;
 import com.thirdcc.webapp.service.dto.EventDTO;
 import com.thirdcc.webapp.service.mapper.EventMapper;
 import com.thirdcc.webapp.web.rest.errors.ExceptionTranslator;
@@ -17,6 +21,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,6 +33,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Optional;
 
 import static com.thirdcc.webapp.web.rest.TestUtil.createFormattingConversionService;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -83,6 +89,12 @@ public class EventResourceIT {
     private EventService eventService;
 
     @Autowired
+    private EventCrewService eventCrewService;
+
+    @Autowired
+    private UserService userService;
+
+    @Autowired
     private MappingJackson2HttpMessageConverter jacksonMessageConverter;
 
     @Autowired
@@ -110,6 +122,7 @@ public class EventResourceIT {
         final EventResource eventResource = new EventResource(eventService);
         this.restEventMockMvc = MockMvcBuilders
             .webAppContextSetup(context)
+            .defaultRequest(get("/").with(user("user").roles("ADMIN")))
             .apply(springSecurity())
             .build();
     }
@@ -318,11 +331,19 @@ public class EventResourceIT {
 
     @Test
     @Transactional
+    @WithMockUser(username = "user", password = "user", roles = "ADMIN")
     public void updateEvent() throws Exception {
         // Initialize the database
         eventRepository.saveAndFlush(event);
 
         int databaseSizeBeforeUpdate = eventRepository.findAll().size();
+
+        // Mock user for Authorization Checking
+        Optional<User> currentUser = userService.getUserWithAuthorities();
+        EventCrewDTO eventCrewDTO = new EventCrewDTO();
+        eventCrewDTO.setEventId(event.getId());
+        eventCrewDTO.setUserId(currentUser.get().getId());
+        eventCrewService.save(eventCrewDTO);
 
         // Update the event
         Event updatedEvent = eventRepository.findById(event.getId()).get();
@@ -341,7 +362,6 @@ public class EventResourceIT {
         EventDTO eventDTO = eventMapper.toDto(updatedEvent);
 
         restEventMockMvc.perform(put("/api/events")
-            .with(user("user").password("user").roles("USER"))
             .contentType(TestUtil.APPLICATION_JSON_UTF8)
             .content(TestUtil.convertObjectToJsonBytes(eventDTO)))
             .andExpect(status().isOk());
@@ -363,11 +383,19 @@ public class EventResourceIT {
 
     @Test
     @Transactional
+    @WithMockUser(username = "user", password = "user", roles = "ADMIN")
     public void updateNonExistingEvent() throws Exception {
         int databaseSizeBeforeUpdate = eventRepository.findAll().size();
 
         // Create the Event
         EventDTO eventDTO = eventMapper.toDto(event);
+
+        // Mock user for Authorization Checking
+        Optional<User> currentUser = userService.getUserWithAuthorities();
+        EventCrewDTO eventCrewDTO = new EventCrewDTO();
+        eventCrewDTO.setEventId(event.getId());
+        eventCrewDTO.setUserId(currentUser.get().getId());
+        eventCrewService.save(eventCrewDTO);
 
         // If the entity doesn't have an ID, it will throw BadRequestAlertException
         restEventMockMvc.perform(put("/api/events")
