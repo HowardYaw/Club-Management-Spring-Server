@@ -68,6 +68,7 @@ public class EventResourceIT {
 
     private static final EventStatus DEFAULT_STATUS = EventStatus.OPEN;
     private static final EventStatus UPDATED_STATUS = EventStatus.CLOSED;
+    private static final EventStatus CANCELLED_STATUS = EventStatus.CANCELLED;
 
     @Autowired
     private EventRepository eventRepository;
@@ -221,7 +222,6 @@ public class EventResourceIT {
             .andExpect(jsonPath("$.[*].status").value(hasItem(DEFAULT_STATUS.toString())));
     }
 
-
     @Test
     @Transactional
     public void getAllEventsWithDateRange() throws Exception {
@@ -335,6 +335,37 @@ public class EventResourceIT {
 
     @Test
     @Transactional
+    public void cancelEvent() throws Exception {
+        // Initialize the database
+        eventRepository.saveAndFlush(event);
+
+        // Cancel the event
+        restEventMockMvc.perform(put("/api/event/{eventId}/deactivate", event.getId()))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
+            .andExpect(jsonPath("$.id").value(event.getId().intValue()))
+            .andExpect(jsonPath("$.name").value(DEFAULT_NAME.toString()))
+            .andExpect(jsonPath("$.description").value(DEFAULT_DESCRIPTION.toString()))
+            .andExpect(jsonPath("$.remarks").value(DEFAULT_REMARKS.toString()))
+            .andExpect(jsonPath("$.venue").value(DEFAULT_VENUE.toString()))
+            .andExpect(jsonPath("$.startDate").value(DEFAULT_START_DATE.toString()))
+            .andExpect(jsonPath("$.endDate").value(DEFAULT_END_DATE.toString()))
+            .andExpect(jsonPath("$.fee").value(DEFAULT_FEE.intValue()))
+            .andExpect(jsonPath("$.requiredTransport").value(DEFAULT_REQUIRED_TRANSPORT.booleanValue()))
+            .andExpect(jsonPath("$.status").value(CANCELLED_STATUS.toString()));
+    }
+
+    @Test
+    @Transactional
+    public void cancelEvent_WithNonExistingEventId_ShouldReturn400() throws Exception {
+
+        restEventMockMvc.perform(put("/api/event/{eventId}/deactivate", Long.MAX_VALUE))
+            .andExpect(status().isBadRequest());
+    }
+
+
+    @Test
+    @Transactional
     public void updateNonExistingEvent() throws Exception {
         int databaseSizeBeforeUpdate = eventRepository.findAll().size();
 
@@ -407,4 +438,6 @@ public class EventResourceIT {
         assertThat(eventMapper.fromId(42L).getId()).isEqualTo(42);
         assertThat(eventMapper.fromId(null)).isNull();
     }
+
+
 }
