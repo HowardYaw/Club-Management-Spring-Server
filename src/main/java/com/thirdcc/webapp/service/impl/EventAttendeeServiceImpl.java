@@ -108,7 +108,7 @@ public class EventAttendeeServiceImpl implements EventAttendeeService {
     public Page<EventAttendeeDTO> findAllByEventId(Pageable pageable, Long eventId) {
         log.debug("Request to get all EventAttendee by Event Id: {}", eventId);
         eventRepository
-            .findOneById(eventId)
+            .findById(eventId)
             .orElseThrow(() -> new BadRequestException("Event not found"));
 
         return eventAttendeeRepository.findAllByEventId(pageable, eventId)
