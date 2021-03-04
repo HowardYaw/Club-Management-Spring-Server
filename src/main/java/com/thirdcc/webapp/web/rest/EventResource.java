@@ -96,7 +96,11 @@ public class EventResource {
     @GetMapping("/events")
     public ResponseEntity<List<EventDTO>> getAllEvents(Pageable pageable, @RequestParam MultiValueMap<String, String> queryParams, UriComponentsBuilder uriBuilder) {
         log.debug("REST request to get a page of Events");
-        Page<EventDTO> page = eventService.findAll(pageable);
+
+        Page<EventDTO> page = (queryParams.containsKey("from") && queryParams.containsKey("to")) ?
+            eventService.findAllByDateRange(pageable, queryParams.getFirst("from"), queryParams.getFirst("to")) :
+            eventService.findAll(pageable);
+
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(uriBuilder.queryParams(queryParams), page);
         return ResponseEntity.ok().headers(headers).body(page.getContent());
     }
