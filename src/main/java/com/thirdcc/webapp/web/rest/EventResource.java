@@ -130,4 +130,19 @@ public class EventResource {
         eventService.delete(id);
         return ResponseEntity.noContent().headers(HeaderUtil.createEntityDeletionAlert(applicationName, true, ENTITY_NAME, id.toString())).build();
     }
+
+    /**
+     {@code POST  /event/{eventId}/deactivate} : cancel "id" event.
+     *
+     * @param eventId the id of the eventDTO to cancel.
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and 400 ()}.
+     */
+    @PutMapping("/event/{eventId}/deactivate")
+    public ResponseEntity<EventDTO> cancelEvent(@PathVariable Long eventId ){
+        log.debug("REST request to cancel Event: {}", eventId);
+        EventDTO eventDTO = eventService.cancelEventById(eventId);
+        return ResponseEntity.ok()
+            .headers(HeaderUtil.createEntityUpdateAlert(applicationName, true, ENTITY_NAME, eventDTO.getId().toString()))
+            .body(eventDTO);
+    }
 }
