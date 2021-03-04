@@ -210,7 +210,7 @@ public class EventResourceIT {
 
         // An entity with an existing ID cannot be created, so this API call must fail
         restEventMockMvc.perform(post("/api/events")
-            .with(user("user").password("user").roles("ADMIN"))
+            .with(user("admin").password("admin").roles("ADMIN"))
             .contentType(TestUtil.APPLICATION_JSON_UTF8)
             .content(TestUtil.convertObjectToJsonBytes(eventDTO)))
             .andExpect(status().isBadRequest());
