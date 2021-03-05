@@ -2,8 +2,12 @@ package com.thirdcc.webapp.web.rest;
 
 import com.thirdcc.webapp.ClubmanagementApp;
 import com.thirdcc.webapp.domain.Event;
+import com.thirdcc.webapp.domain.User;
 import com.thirdcc.webapp.repository.EventRepository;
+import com.thirdcc.webapp.service.EventCrewService;
 import com.thirdcc.webapp.service.EventService;
+import com.thirdcc.webapp.service.UserService;
+import com.thirdcc.webapp.service.dto.EventCrewDTO;
 import com.thirdcc.webapp.service.dto.EventDTO;
 import com.thirdcc.webapp.service.mapper.EventMapper;
 import com.thirdcc.webapp.web.rest.errors.ExceptionTranslator;
@@ -17,6 +21,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,14 +33,19 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Optional;
 
 import static com.thirdcc.webapp.web.rest.TestUtil.createFormattingConversionService;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.*;
+import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import com.thirdcc.webapp.domain.enumeration.EventStatus;
+import org.springframework.web.context.WebApplicationContext;
+
 /**
  * Integration tests for the {@Link EventResource} REST controller.
  */
@@ -80,6 +90,12 @@ public class EventResourceIT {
     private EventService eventService;
 
     @Autowired
+    private EventCrewService eventCrewService;
+
+    @Autowired
+    private UserService userService;
+
+    @Autowired
     private MappingJackson2HttpMessageConverter jacksonMessageConverter;
 
     @Autowired
@@ -94,6 +110,9 @@ public class EventResourceIT {
     @Autowired
     private Validator validator;
 
+    @Autowired
+    private WebApplicationContext context;
+
     private MockMvc restEventMockMvc;
 
     private Event event;
@@ -102,12 +121,11 @@ public class EventResourceIT {
     public void setup() {
         MockitoAnnotations.initMocks(this);
         final EventResource eventResource = new EventResource(eventService);
-        this.restEventMockMvc = MockMvcBuilders.standaloneSetup(eventResource)
-            .setCustomArgumentResolvers(pageableArgumentResolver)
-            .setControllerAdvice(exceptionTranslator)
-            .setConversionService(createFormattingConversionService())
-            .setMessageConverters(jacksonMessageConverter)
-            .setValidator(validator).build();
+        this.restEventMockMvc = MockMvcBuilders
+            .webAppContextSetup(context)
+            .defaultRequest(get("/").with(user("user").roles("ADMIN")))
+            .apply(springSecurity())
+            .build();
     }
 
     /**
@@ -160,6 +178,7 @@ public class EventResourceIT {
         // Create the Event
         EventDTO eventDTO = eventMapper.toDto(event);
         restEventMockMvc.perform(post("/api/events")
+            .with(user("admin").password("admin").roles("ADMIN"))
             .contentType(TestUtil.APPLICATION_JSON_UTF8)
             .content(TestUtil.convertObjectToJsonBytes(eventDTO)))
             .andExpect(status().isCreated());
@@ -179,6 +198,21 @@ public class EventResourceIT {
         assertThat(testEvent.getStatus()).isEqualTo(DEFAULT_STATUS);
     }
 
+
+    @Test
+    @Transactional
+    public void createEventWithUserRole() throws Exception {
+
+        // Create the Event
+        EventDTO eventDTO = eventMapper.toDto(event);
+        restEventMockMvc.perform(post("/api/events").with(user("user").password("user").roles("USER"))
+            .contentType(TestUtil.APPLICATION_JSON_UTF8)
+            .content(TestUtil.convertObjectToJsonBytes(eventDTO)))
+            .andExpect(status().isForbidden());
+
+    }
+
+
     @Test
     @Transactional
     public void createEventWithExistingId() throws Exception {
@@ -190,6 +224,7 @@ public class EventResourceIT {
 
         // An entity with an existing ID cannot be created, so this API call must fail
         restEventMockMvc.perform(post("/api/events")
+            .with(user("admin").password("admin").roles("ADMIN"))
             .contentType(TestUtil.APPLICATION_JSON_UTF8)
             .content(TestUtil.convertObjectToJsonBytes(eventDTO)))
             .andExpect(status().isBadRequest());
@@ -207,7 +242,8 @@ public class EventResourceIT {
         eventRepository.saveAndFlush(event);
 
         // Get all the eventList
-        restEventMockMvc.perform(get("/api/events?sort=id,desc"))
+        restEventMockMvc.perform(get("/api/events?sort=id,desc")
+            .with(user("user").password("user").roles("USER")))
             .andExpect(status().isOk())
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
             .andExpect(jsonPath("$.[*].id").value(hasItem(event.getId().intValue())))
@@ -222,6 +258,7 @@ public class EventResourceIT {
             .andExpect(jsonPath("$.[*].status").value(hasItem(DEFAULT_STATUS.toString())));
     }
 
+
     @Test
     @Transactional
     public void getAllEventsWithDateRange() throws Exception {
@@ -229,7 +266,8 @@ public class EventResourceIT {
         eventRepository.saveAndFlush(event);
 
         // Get all the eventList with date range
-        restEventMockMvc.perform(get("/api/events?page=0&size=3&sort=startDate,desc&from="+DEFAULT_START_DATE.minusSeconds(60 * 60 * 24)+"&to="+DEFAULT_START_DATE.plusSeconds(60 * 60 * 24)))
+        restEventMockMvc.perform(get("/api/events?page=0&size=3&sort=startDate,desc&from="+DEFAULT_START_DATE.minusSeconds(60 * 60 * 24)+"&to="+DEFAULT_START_DATE.plusSeconds(60 * 60 * 24))
+            .with(user("user").password("user").roles("USER")))
             .andExpect(status().isOk())
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
             .andExpect(jsonPath("$.[*].id").value(hasItem(event.getId().intValue())))
@@ -252,7 +290,8 @@ public class EventResourceIT {
         eventRepository.saveAndFlush(event);
 
         // Get all the eventList with date range but should return empty array
-        restEventMockMvc.perform(get("/api/events?page=0&size=3&sort=startDate,desc&from="+Instant.now().minusSeconds(60 * 60 * 24)+"&to="+Instant.now().plusSeconds(60 * 60 * 24)))
+        restEventMockMvc.perform(get("/api/events?page=0&size=3&sort=startDate,desc&from="+Instant.now().minusSeconds(60 * 60 * 24)+"&to="+Instant.now().plusSeconds(60 * 60 * 24))
+            .with(user("user").password("user").roles("USER")))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$").isArray())
             .andExpect(jsonPath("$").isEmpty());
@@ -266,7 +305,8 @@ public class EventResourceIT {
         eventRepository.saveAndFlush(event);
 
         // Get the event
-        restEventMockMvc.perform(get("/api/events/{id}", event.getId()))
+        restEventMockMvc.perform(get("/api/events/{id}", event.getId())
+            .with(user("user").password("user").roles("USER")))
             .andExpect(status().isOk())
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
             .andExpect(jsonPath("$.id").value(event.getId().intValue()))
@@ -285,17 +325,26 @@ public class EventResourceIT {
     @Transactional
     public void getNonExistingEvent() throws Exception {
         // Get the event
-        restEventMockMvc.perform(get("/api/events/{id}", Long.MAX_VALUE))
+        restEventMockMvc.perform(get("/api/events/{id}", Long.MAX_VALUE)
+            .with(user("user").password("user").roles("USER")))
             .andExpect(status().isNotFound());
     }
 
     @Test
     @Transactional
+    @WithMockUser(username = "user", password = "user", roles = "ADMIN")
     public void updateEvent() throws Exception {
         // Initialize the database
         eventRepository.saveAndFlush(event);
 
         int databaseSizeBeforeUpdate = eventRepository.findAll().size();
+
+        // Mock user for Authorization Checking
+        Optional<User> currentUser = userService.getUserWithAuthorities();
+        EventCrewDTO eventCrewDTO = new EventCrewDTO();
+        eventCrewDTO.setEventId(event.getId());
+        eventCrewDTO.setUserId(currentUser.get().getId());
+        eventCrewService.save(eventCrewDTO);
 
         // Update the event
         Event updatedEvent = eventRepository.findById(event.getId()).get();
@@ -363,17 +412,25 @@ public class EventResourceIT {
             .andExpect(status().isBadRequest());
     }
 
-
     @Test
     @Transactional
+    @WithMockUser(username = "user", password = "user", roles = "ADMIN")
     public void updateNonExistingEvent() throws Exception {
         int databaseSizeBeforeUpdate = eventRepository.findAll().size();
 
         // Create the Event
         EventDTO eventDTO = eventMapper.toDto(event);
 
+        // Mock user for Authorization Checking
+        Optional<User> currentUser = userService.getUserWithAuthorities();
+        EventCrewDTO eventCrewDTO = new EventCrewDTO();
+        eventCrewDTO.setEventId(event.getId());
+        eventCrewDTO.setUserId(currentUser.get().getId());
+        eventCrewService.save(eventCrewDTO);
+
         // If the entity doesn't have an ID, it will throw BadRequestAlertException
         restEventMockMvc.perform(put("/api/events")
+            .with(user("user").password("user").roles("USER"))
             .contentType(TestUtil.APPLICATION_JSON_UTF8)
             .content(TestUtil.convertObjectToJsonBytes(eventDTO)))
             .andExpect(status().isBadRequest());
@@ -393,6 +450,7 @@ public class EventResourceIT {
 
         // Delete the event
         restEventMockMvc.perform(delete("/api/events/{id}", event.getId())
+            .with(user("user").password("user").roles("USER"))
             .accept(TestUtil.APPLICATION_JSON_UTF8))
             .andExpect(status().isNoContent());
 

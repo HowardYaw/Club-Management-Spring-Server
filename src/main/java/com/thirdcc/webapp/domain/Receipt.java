@@ -29,6 +29,9 @@ public class Receipt implements Serializable {
     @Column(name = "file_type")
     private String fileType;
 
+    @Column(name = "receipt_unique_id")
+    private String receiptUniqueId;
+
     // jhipster-needle-entity-add-field - JHipster will add fields here, do not remove
     public Long getId() {
         return id;
@@ -102,5 +105,13 @@ public class Receipt implements Serializable {
             ", fileName='" + getFileName() + "'" +
             ", fileType='" + getFileType() + "'" +
             "}";
+    }
+
+    public String getReceiptUniqueId() {
+        return receiptUniqueId;
+    }
+
+    public void setReceiptUniqueId(String receiptUniqueId) {
+        this.receiptUniqueId = receiptUniqueId;
     }
 }

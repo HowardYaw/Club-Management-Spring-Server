@@ -9,6 +9,7 @@ import com.thirdcc.webapp.web.rest.vm.LoginVM;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -28,6 +29,7 @@ import static org.hamcrest.Matchers.not;
  * Integration tests for the {@link UserJWTController} REST controller.
  */
 @SpringBootTest(classes = ClubmanagementApp.class)
+@AutoConfigureMockMvc
 public class UserJWTControllerIT {
 
     @Autowired
@@ -45,14 +47,15 @@ public class UserJWTControllerIT {
     @Autowired
     private ExceptionTranslator exceptionTranslator;
 
+    @Autowired
     private MockMvc mockMvc;
 
     @BeforeEach
     public void setup() {
-        UserJWTController userJWTController = new UserJWTController(tokenProvider, authenticationManager);
-        this.mockMvc = MockMvcBuilders.standaloneSetup(userJWTController)
-            .setControllerAdvice(exceptionTranslator)
-            .build();
+//        UserJWTController userJWTController = new UserJWTController(tokenProvider, authenticationManager);
+//        this.mockMvc = MockMvcBuilders.standaloneSetup(userJWTController)
+//            .setControllerAdvice(exceptionTranslator)
+//            .build();
     }
 
     @Test

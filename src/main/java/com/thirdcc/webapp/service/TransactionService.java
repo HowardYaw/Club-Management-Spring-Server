@@ -20,6 +20,8 @@ public interface TransactionService {
      */
     TransactionDTO save(TransactionDTO transactionDTO);
 
+    TransactionDTO update(TransactionDTO transactionDTO);
+
     /**
      * Get all the transactions.
      *
