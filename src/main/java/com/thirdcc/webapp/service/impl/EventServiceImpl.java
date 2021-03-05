@@ -122,6 +122,7 @@ public class EventServiceImpl implements EventService {
      *
      * @param id the id of the entity.
      */
+    @Override
     public EventDTO cancelEventById(Long id) {
         log.debug("Request to cancel Event : {}", id);
         Set<EventStatus> eventStatuses = new HashSet<EventStatus>() {{
