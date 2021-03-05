@@ -1,5 +1,6 @@
 package com.thirdcc.webapp.web.rest;
 
+import com.thirdcc.webapp.security.AuthoritiesConstants;
 import com.thirdcc.webapp.service.EventService;
 import com.thirdcc.webapp.web.rest.errors.BadRequestAlertException;
 import com.thirdcc.webapp.service.dto.EventDTO;
@@ -14,6 +15,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.springframework.http.ResponseEntity;
@@ -137,6 +139,7 @@ public class EventResource {
      * @param eventId the id of the eventDTO to cancel.
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and 400 ()}.
      */
+    @PreAuthorize("hasRole(\"" + AuthoritiesConstants.ADMIN + "\")")
     @PutMapping("/event/{eventId}/deactivate")
     public ResponseEntity<EventDTO> cancelEvent(@PathVariable Long eventId ){
         log.debug("REST request to cancel Event: {}", eventId);
