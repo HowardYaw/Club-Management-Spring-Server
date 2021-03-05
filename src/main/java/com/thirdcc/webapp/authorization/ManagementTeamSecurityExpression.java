@@ -10,17 +10,14 @@ import com.thirdcc.webapp.repository.UserRepository;
 import com.thirdcc.webapp.repository.YearSessionRepository;
 import com.thirdcc.webapp.security.AuthoritiesConstants;
 import com.thirdcc.webapp.security.SecurityUtils;
-import com.thirdcc.webapp.security.jwt.TokenProvider;
 import com.thirdcc.webapp.service.UserService;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
 public class ManagementTeamSecurityExpression {
-    private final TokenProvider tokenProvider;
     private final UserService userService;
     private final UserRepository userRepository;
     private final EventCrewRepository eventCrewRepository;
@@ -29,14 +26,12 @@ public class ManagementTeamSecurityExpression {
 
 
     public ManagementTeamSecurityExpression(
-        TokenProvider tokenProvider,
         UserService userService,
         UserRepository userRepository,
         EventCrewRepository eventCrewRepository,
         AdministratorRepository administratorRepository,
         YearSessionRepository yearSessionRepository
     ) {
-        this.tokenProvider = tokenProvider;
         this.userService = userService;
         this.userRepository = userRepository;
         this.eventCrewRepository = eventCrewRepository;
@@ -74,6 +69,14 @@ public class ManagementTeamSecurityExpression {
             .findByUserIdAndAndEventId(currentUser.getId(), eventId)
             .orElse(null);
         return eventCrew != null && eventCrew.getRole().equals(EventCrewRole.HEAD);
+    }
+
+    public boolean hasRoleAdminOrIsEventHead(Long eventId) {
+        if (getUserAuthRole().contains(AuthoritiesConstants.ADMIN)) {
+            return true;
+        } else {
+            return isEventHead(eventId);
+        }
     }
 
     private List<String> getUserAuthRole() {

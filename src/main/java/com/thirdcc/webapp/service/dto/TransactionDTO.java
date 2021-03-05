@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.Objects;
 
+import com.thirdcc.webapp.domain.enumeration.TransactionStatus;
 import com.thirdcc.webapp.domain.enumeration.TransactionType;
 
 /**
@@ -22,6 +23,8 @@ public class TransactionDTO implements Serializable {
     private BigDecimal amount;
 
     private String details;
+
+    private TransactionStatus status;
 
     private String createdBy;
 
@@ -167,5 +170,13 @@ public class TransactionDTO implements Serializable {
 
     public void setReceiptDTO(ReceiptDTO receiptDTO) {
         this.receiptDTO = receiptDTO;
+    }
+
+    public TransactionStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(TransactionStatus status) {
+        this.status = status;
     }
 }
