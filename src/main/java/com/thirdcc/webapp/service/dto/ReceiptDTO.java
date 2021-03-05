@@ -15,6 +15,9 @@ public class ReceiptDTO implements Serializable {
 
     private String fileType;
 
+    private String receiptContent;
+
+    private String receiptUniqueId;
 
     public Long getId() {
         return id;
@@ -77,5 +80,21 @@ public class ReceiptDTO implements Serializable {
             ", fileName='" + getFileName() + "'" +
             ", fileType='" + getFileType() + "'" +
             "}";
+    }
+
+    public String getReceiptContent() {
+        return receiptContent;
+    }
+
+    public void setReceiptContent(String receiptContent) {
+        this.receiptContent = receiptContent;
+    }
+
+    public String getReceiptUniqueId() {
+        return receiptUniqueId;
+    }
+
+    public void setReceiptUniqueId(String receiptUniqueId) {
+        this.receiptUniqueId = receiptUniqueId;
     }
 }
