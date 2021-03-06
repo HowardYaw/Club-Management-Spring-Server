@@ -17,6 +17,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
 import org.springframework.http.MediaType;
@@ -26,7 +27,6 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Base64Utils;
-import org.springframework.validation.Validator;
 
 import javax.persistence.EntityManager;
 import java.math.BigDecimal;
@@ -49,6 +49,8 @@ import org.springframework.web.context.WebApplicationContext;
 /**
  * Integration tests for the {@Link EventResource} REST controller.
  */
+@AutoConfigureMockMvc
+@WithMockUser(username="admin", roles = "ADMIN")
 @SpringBootTest(classes = ClubmanagementApp.class)
 public class EventResourceIT {
 
@@ -108,11 +110,9 @@ public class EventResourceIT {
     private EntityManager em;
 
     @Autowired
-    private Validator validator;
-
-    @Autowired
     private WebApplicationContext context;
 
+    @Autowired
     private MockMvc restEventMockMvc;
 
     private Event event;
@@ -121,11 +121,11 @@ public class EventResourceIT {
     public void setup() {
         MockitoAnnotations.initMocks(this);
         final EventResource eventResource = new EventResource(eventService);
-        this.restEventMockMvc = MockMvcBuilders
-            .webAppContextSetup(context)
-            .defaultRequest(get("/").with(user("user").roles("ADMIN")))
-            .apply(springSecurity())
-            .build();
+//        this.restEventMockMvc = MockMvcBuilders
+//            .webAppContextSetup(context)
+//            .defaultRequest(get("/").with(user("user").roles("ADMIN")))
+//            .apply(springSecurity())
+//            .build();
     }
 
     /**
@@ -403,6 +403,19 @@ public class EventResourceIT {
             .andExpect(jsonPath("$.requiredTransport").value(DEFAULT_REQUIRED_TRANSPORT.booleanValue()))
             .andExpect(jsonPath("$.status").value(CANCELLED_STATUS.toString()));
     }
+
+    @Test
+    @Transactional
+    @WithMockUser(username="user", roles="USER")
+    public void cancelEvent_AsNonAdminUser_ShouldReturn403() throws Exception {
+        // Initialize the database
+        eventRepository.saveAndFlush(event);
+
+        // Cancel the event
+        restEventMockMvc.perform(put("/api/event/{eventId}/deactivate", event.getId()))
+            .andExpect(status().isForbidden());
+    }
+
 
     @Test
     @Transactional

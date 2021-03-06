@@ -140,8 +140,9 @@ public class EventResource {
      * @param eventId the id of the eventDTO to cancel.
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and 400 ()}.
      */
-    @PreAuthorize("@managementTeamSecurityExpression.hasRoleAdminOrIsEventHead(eventId)")
+
     @PutMapping("/event/{eventId}/deactivate")
+    @PreAuthorize("@managementTeamSecurityExpression.hasRoleAdminOrIsEventHead(#eventId)")
     public ResponseEntity<EventDTO> cancelEvent(@PathVariable Long eventId ){
         log.debug("REST request to cancel Event: {}", eventId);
         EventDTO eventDTO = eventService.cancelEventById(eventId);
