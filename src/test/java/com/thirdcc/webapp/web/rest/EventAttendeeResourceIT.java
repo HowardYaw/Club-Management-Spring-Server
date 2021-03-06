@@ -17,7 +17,6 @@ import com.thirdcc.webapp.service.impl.EventAttendeeServiceImpl;
 import com.thirdcc.webapp.service.mapper.EventAttendeeMapper;
 import com.thirdcc.webapp.web.rest.errors.ExceptionTranslator;
 
-import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,26 +24,20 @@ import org.mockito.MockitoAnnotations;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.validation.Validator;
+
 
 import javax.persistence.EntityManager;
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
-import java.util.stream.Collectors;
-
-import static com.thirdcc.webapp.web.rest.TestUtil.createFormattingConversionService;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.hasItem;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -54,7 +47,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * Integration tests for the {@Link EventAttendeeResource} REST controller.
  */
 @SpringBootTest(classes = ClubmanagementApp.class)
-@WithMockUser
+@AutoConfigureMockMvc
+@WithMockUser(username = "admin", roles = "ADMIN")
+
 public class EventAttendeeResourceIT {
     private final Logger log = LoggerFactory.getLogger(EventAttendeeServiceImpl.class);
 
@@ -107,8 +102,6 @@ public class EventAttendeeResourceIT {
     private EntityManager em;
 
     @Autowired
-    private Validator validator;
-
     private MockMvc restEventAttendeeMockMvc;
 
     private EventAttendee eventAttendee;
@@ -121,13 +114,13 @@ public class EventAttendeeResourceIT {
     @BeforeEach
     public void setup() {
         MockitoAnnotations.initMocks(this);
-        final EventAttendeeResource eventAttendeeResource = new EventAttendeeResource(eventAttendeeService);
-        this.restEventAttendeeMockMvc = MockMvcBuilders.standaloneSetup(eventAttendeeResource)
-            .setCustomArgumentResolvers(pageableArgumentResolver)
-            .setControllerAdvice(exceptionTranslator)
-            .setConversionService(createFormattingConversionService())
-            .setMessageConverters(jacksonMessageConverter)
-            .setValidator(validator).build();
+//        final EventAttendeeResource eventAttendeeResource = new EventAttendeeResource(eventAttendeeService);
+//        this.restEventAttendeeMockMvc = MockMvcBuilders.standaloneSetup(eventAttendeeResource)
+//            .setCustomArgumentResolvers(pageableArgumentResolver)
+//            .setControllerAdvice(exceptionTranslator)
+//            .setConversionService(createFormattingConversionService())
+//            .setMessageConverters(jacksonMessageConverter)
+//            .setValidator(validator).build();
     }
 
     /**
@@ -406,6 +399,23 @@ public class EventAttendeeResourceIT {
     public void getAllEventAttendees_WithNonExistingEventId_ShouldThrow400() throws Exception {
         restEventAttendeeMockMvc.perform(get("/api/event-attendees/event/{eventId}?sort=id,desc", Long.MAX_VALUE))
             .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @WithMockUser(username = "admin", roles = "USER")
+    public void getAllEventAttendees_WithEventId_NonAdmin_ShouldThrow400() throws Exception {
+        // Initialize the database
+        Event savedEvent = initEventDB();
+        EventAttendee savedEventAttendee = initEventAttendeeDB();
+
+        // Get the eventAttendee
+        restEventAttendeeMockMvc.perform(get("/api/event-attendees/event/{eventId}?sort=id,desc", savedEvent.getId()))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
+            .andExpect(jsonPath("$.[*].id").value(savedEventAttendee.getId().intValue()))
+            .andExpect(jsonPath("$.[*].userId").value(user.getId().intValue()))
+            .andExpect(jsonPath("$.[*].eventId").value(savedEvent.getId().intValue()))
+            .andExpect(jsonPath("$.[*].provideTransport").value(DEFAULT_PROVIDE_TRANSPORT.booleanValue()));
     }
 
     @Test

@@ -122,7 +122,7 @@ public class EventAttendeeResource {
      * @return the {@link ResponseEntity} with status {@code 200 (OK) or 400 (BadRequest)}.
      */
     @GetMapping("/event-attendees/event/{eventId}")
-    @PreAuthorize("@managementTeamSecurityExpression.hasRoleAdminOrIsEventCrew(eventId)")
+    @PreAuthorize("@managementTeamSecurityExpression.hasRoleAdminOrIsEventCrew(#eventId)")
     public ResponseEntity<List<EventAttendeeDTO>> getAllEventAttendeeByEventId(Pageable pageable, @PathVariable Long eventId, @RequestParam MultiValueMap<String, String> queryParams, UriComponentsBuilder uriBuilder) {
         log.debug("REST request to get a page of EventAttendees");
         Page<EventAttendeeDTO> page = eventAttendeeService.findAllByEventId(pageable, eventId);
