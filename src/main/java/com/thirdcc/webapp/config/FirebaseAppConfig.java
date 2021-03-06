@@ -21,6 +21,7 @@ public class FirebaseAppConfig {
 
     @Bean
     public Firestore firebaseInit(ResourceLoader resourceLoader) throws IOException {
+        if (!FirebaseApp.getApps().isEmpty()) return FirestoreClient.getFirestore();
         LOGGER.debug("Init FirebaseApp");
         Resource resource = resourceLoader.getResource("classpath:ccclubmanagement-firebase-adminsdk-h8s4n-bfd52e02b9.json");
         FirebaseOptions options = FirebaseOptions.builder()
