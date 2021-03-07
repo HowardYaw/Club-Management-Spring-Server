@@ -1,10 +1,9 @@
 package com.thirdcc.webapp.web.rest;
 
+import com.thirdcc.webapp.security.jwt.AccessTokenProvider;
 import com.thirdcc.webapp.security.jwt.JWTFilter;
-import com.thirdcc.webapp.security.jwt.TokenProvider;
+import com.thirdcc.webapp.security.jwt.RefreshTokenProvider;
 import com.thirdcc.webapp.web.rest.vm.LoginVM;
-
-import com.fasterxml.jackson.annotation.JsonProperty;
 
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -24,12 +23,19 @@ import javax.validation.Valid;
 @RequestMapping("/api")
 public class UserJWTController {
 
-    private final TokenProvider tokenProvider;
+    private final AccessTokenProvider accessTokenProvider;
+
+    private final RefreshTokenProvider refreshTokenProvider;
 
     private final AuthenticationManagerBuilder authenticationManagerBuilder;
 
-    public UserJWTController(TokenProvider tokenProvider, AuthenticationManagerBuilder authenticationManagerBuilder) {
-        this.tokenProvider = tokenProvider;
+    public UserJWTController(
+        AccessTokenProvider accessTokenProvider,
+        RefreshTokenProvider refreshTokenProvider,
+        AuthenticationManagerBuilder authenticationManagerBuilder
+    ) {
+        this.accessTokenProvider = accessTokenProvider;
+        this.refreshTokenProvider = refreshTokenProvider;
         this.authenticationManagerBuilder = authenticationManagerBuilder;
     }
 
@@ -42,10 +48,11 @@ public class UserJWTController {
         Authentication authentication = authenticationManagerBuilder.getObject().authenticate(authenticationToken);
         SecurityContextHolder.getContext().setAuthentication(authentication);
         boolean rememberMe = (loginVM.isRememberMe() == null) ? false : loginVM.isRememberMe();
-        String jwt = tokenProvider.createToken(authentication, rememberMe);
+        String accessToken = accessTokenProvider.createToken(authentication);
+        String refreshToken = refreshTokenProvider.createToken(authentication);
         HttpHeaders httpHeaders = new HttpHeaders();
-        httpHeaders.add(JWTFilter.AUTHORIZATION_HEADER, "Bearer " + jwt);
-        return new ResponseEntity<>(new JWTToken(jwt), httpHeaders, HttpStatus.OK);
+        httpHeaders.add(JWTFilter.AUTHORIZATION_HEADER, "Bearer " + accessToken);
+        return new ResponseEntity<>(new JWTToken(accessToken, refreshToken), httpHeaders, HttpStatus.OK);
     }
 
     /**
@@ -53,19 +60,28 @@ public class UserJWTController {
      */
     static class JWTToken {
 
-        private String idToken;
+        private String accessToken;
+        private String refreshToken;
 
-        JWTToken(String idToken) {
-            this.idToken = idToken;
+        public JWTToken(String accessToken, String refreshToken) {
+            this.accessToken = accessToken;
+            this.refreshToken = refreshToken;
         }
 
-        @JsonProperty("id_token")
-        String getIdToken() {
-            return idToken;
+        public String getAccessToken() {
+            return accessToken;
         }
 
-        void setIdToken(String idToken) {
-            this.idToken = idToken;
+        public void setAccessToken(String accessToken) {
+            this.accessToken = accessToken;
+        }
+
+        public String getRefreshToken() {
+            return refreshToken;
+        }
+
+        public void setRefreshToken(String refreshToken) {
+            this.refreshToken = refreshToken;
         }
     }
 }
