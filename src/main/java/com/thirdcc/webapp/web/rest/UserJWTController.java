@@ -1,5 +1,6 @@
 package com.thirdcc.webapp.web.rest;
 
+import com.thirdcc.webapp.exception.BadRequestException;
 import com.thirdcc.webapp.security.firebase.FirebaseService;
 import com.thirdcc.webapp.security.jwt.AccessTokenProvider;
 import com.thirdcc.webapp.security.jwt.JWTFilter;
@@ -8,9 +9,6 @@ import com.thirdcc.webapp.utils.FirebaseUtils;
 import com.thirdcc.webapp.security.jwt.RefreshTokenProvider;
 import com.thirdcc.webapp.web.rest.vm.LoginVM;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,6 +16,8 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.util.MultiValueMap;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
@@ -63,13 +63,22 @@ public class UserJWTController {
             new UsernamePasswordAuthenticationToken(loginVM.getUsername(), loginVM.getPassword());
 
         Authentication authentication = authenticationManagerBuilder.getObject().authenticate(authenticationToken);
-        SecurityContextHolder.getContext().setAuthentication(authentication);
         return generateJwtToken(authentication);
     }
 
-    @PostMapping("/firebase/authenticate")
+    @PostMapping("/authenticate/firebase")
     public ResponseEntity<JWTToken> firebaseAuthorize(HttpServletRequest request, HttpServletResponse response) throws IOException {
         Authentication authentication = FirebaseUtils.authenticateOrRegisterFirebaseUser(FirebaseUtils.getAuthentication(request, response, firebaseService), userService);
+        return generateJwtToken(authentication);
+    }
+
+    @PostMapping("/authenticate/refresh")
+    public ResponseEntity<JWTToken> refresh(@RequestParam("refreshToken") String refreshToken) {
+        if (StringUtils.isEmpty(refreshToken) || !refreshTokenProvider.validateToken(refreshToken)) {
+            throw new BadRequestException("Invalid refresh token");
+        }
+        Authentication authentication = refreshTokenProvider.getAuthentication(refreshToken);
+        SecurityContextHolder.getContext().setAuthentication(authentication);
         return generateJwtToken(authentication);
     }
 
