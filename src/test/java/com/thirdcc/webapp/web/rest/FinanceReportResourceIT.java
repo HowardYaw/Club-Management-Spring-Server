@@ -8,22 +8,19 @@ import com.thirdcc.webapp.repository.*;
 import com.thirdcc.webapp.service.FinanceReportService;
 import com.thirdcc.webapp.service.YearSessionService;
 import com.thirdcc.webapp.utils.YearSessionUtils;
-import com.thirdcc.webapp.web.rest.errors.ExceptionTranslator;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.auditing.DateTimeProvider;
-import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
 import org.springframework.http.MediaType;
-import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.validation.Validator;
 
 import javax.persistence.EntityManager;
 
@@ -32,13 +29,14 @@ import java.time.*;
 import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 
-import static com.thirdcc.webapp.web.rest.TestUtil.createFormattingConversionService;
 import static org.hamcrest.Matchers.hasItem;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 
 @SpringBootTest(classes = ClubmanagementApp.class)
+@AutoConfigureMockMvc
+@WithMockUser(value = "user")
 class FinanceReportResourceIT {
 
     private static final BigDecimal DEFAULT_TRANSACTION_AMOUNT = new BigDecimal(11);
@@ -91,20 +89,9 @@ class FinanceReportResourceIT {
     private TransactionRepository transactionRepository;
 
     @Autowired
-    private MappingJackson2HttpMessageConverter jacksonMessageConverter;
-
-    @Autowired
-    private PageableHandlerMethodArgumentResolver pageableArgumentResolver;
-
-    @Autowired
-    private ExceptionTranslator exceptionTranslator;
-
-    @Autowired
     private EntityManager em;
 
     @Autowired
-    private Validator validator;
-
     private MockMvc restFinanceReportMockMvc;
 
     private Event event;
@@ -112,13 +99,6 @@ class FinanceReportResourceIT {
     @BeforeEach
     public void setup() {
         MockitoAnnotations.initMocks(this);
-        final FinanceReportResource financeReportResource = new FinanceReportResource(financeReportService, yearSessionService);
-        this.restFinanceReportMockMvc = MockMvcBuilders.standaloneSetup(financeReportResource)
-            .setCustomArgumentResolvers(pageableArgumentResolver)
-            .setControllerAdvice(exceptionTranslator)
-            .setConversionService(createFormattingConversionService())
-            .setMessageConverters(jacksonMessageConverter)
-            .setValidator(validator).build();
     }
 
     public static Event createEventEntity(EntityManager em) {

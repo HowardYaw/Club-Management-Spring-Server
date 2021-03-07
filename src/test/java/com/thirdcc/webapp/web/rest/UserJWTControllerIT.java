@@ -4,17 +4,15 @@ import com.thirdcc.webapp.ClubmanagementApp;
 import com.thirdcc.webapp.domain.User;
 import com.thirdcc.webapp.repository.UserRepository;
 import com.thirdcc.webapp.security.jwt.TokenProvider;
-import com.thirdcc.webapp.web.rest.errors.ExceptionTranslator;
 import com.thirdcc.webapp.web.rest.vm.LoginVM;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.transaction.annotation.Transactional;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -30,6 +28,7 @@ import static org.hamcrest.Matchers.not;
  */
 @SpringBootTest(classes = ClubmanagementApp.class)
 @AutoConfigureMockMvc
+@WithMockUser(value = "user")
 public class UserJWTControllerIT {
 
     @Autowired
@@ -45,18 +44,7 @@ public class UserJWTControllerIT {
     private PasswordEncoder passwordEncoder;
 
     @Autowired
-    private ExceptionTranslator exceptionTranslator;
-
-    @Autowired
     private MockMvc mockMvc;
-
-    @BeforeEach
-    public void setup() {
-//        UserJWTController userJWTController = new UserJWTController(tokenProvider, authenticationManager);
-//        this.mockMvc = MockMvcBuilders.standaloneSetup(userJWTController)
-//            .setControllerAdvice(exceptionTranslator)
-//            .build();
-    }
 
     @Test
     @Transactional
