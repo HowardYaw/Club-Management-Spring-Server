@@ -1,5 +1,6 @@
 package com.thirdcc.webapp.security.jwt;
 
+import com.thirdcc.webapp.config.ApplicationProperties;
 import com.thirdcc.webapp.security.AuthoritiesConstants;
 
 import java.security.Key;
@@ -26,21 +27,21 @@ public class TokenProviderTest {
     private static final long ONE_MINUTE = 60000;
 
     private Key key;
-    private TokenProvider tokenProvider;
+    private AccessTokenProvider accessTokenProvider;
 
     @BeforeEach
     public void setup() {
-        tokenProvider = new TokenProvider( new JHipsterProperties());
+        accessTokenProvider = new AccessTokenProvider( new ApplicationProperties());
         key = Keys.hmacShaKeyFor(Decoders.BASE64
             .decode("fd54a45s65fds737b9aafcb3412e07ed99b267f33413274720ddbb7f6c5e64e9f14075f2d7ed041592f0b7657baf8"));
 
-        ReflectionTestUtils.setField(tokenProvider, "key", key);
-        ReflectionTestUtils.setField(tokenProvider, "tokenValidityInMilliseconds", ONE_MINUTE);
+        ReflectionTestUtils.setField(accessTokenProvider, "key", key);
+        ReflectionTestUtils.setField(accessTokenProvider, "tokenValidityInMilliseconds", ONE_MINUTE);
     }
 
     @Test
     public void testReturnFalseWhenJWThasInvalidSignature() {
-        boolean isTokenValid = tokenProvider.validateToken(createTokenWithDifferentSignature());
+        boolean isTokenValid = accessTokenProvider.validateToken(createTokenWithDifferentSignature());
 
         assertThat(isTokenValid).isEqualTo(false);
     }
@@ -48,21 +49,21 @@ public class TokenProviderTest {
     @Test
     public void testReturnFalseWhenJWTisMalformed() {
         Authentication authentication = createAuthentication();
-        String token = tokenProvider.createToken(authentication, false);
+        String token = accessTokenProvider.createToken(authentication);
         String invalidToken = token.substring(1);
-        boolean isTokenValid = tokenProvider.validateToken(invalidToken);
+        boolean isTokenValid = accessTokenProvider.validateToken(invalidToken);
 
         assertThat(isTokenValid).isEqualTo(false);
     }
 
     @Test
     public void testReturnFalseWhenJWTisExpired() {
-        ReflectionTestUtils.setField(tokenProvider, "tokenValidityInMilliseconds", -ONE_MINUTE);
+        ReflectionTestUtils.setField(accessTokenProvider, "tokenValidityInMilliseconds", -ONE_MINUTE);
 
         Authentication authentication = createAuthentication();
-        String token = tokenProvider.createToken(authentication, false);
+        String token = accessTokenProvider.createToken(authentication);
 
-        boolean isTokenValid = tokenProvider.validateToken(token);
+        boolean isTokenValid = accessTokenProvider.validateToken(token);
 
         assertThat(isTokenValid).isEqualTo(false);
     }
@@ -71,14 +72,14 @@ public class TokenProviderTest {
     public void testReturnFalseWhenJWTisUnsupported() {
         String unsupportedToken = createUnsupportedToken();
 
-        boolean isTokenValid = tokenProvider.validateToken(unsupportedToken);
+        boolean isTokenValid = accessTokenProvider.validateToken(unsupportedToken);
 
         assertThat(isTokenValid).isEqualTo(false);
     }
 
     @Test
     public void testReturnFalseWhenJWTisInvalid() {
-        boolean isTokenValid = tokenProvider.validateToken("");
+        boolean isTokenValid = accessTokenProvider.validateToken("");
 
         assertThat(isTokenValid).isEqualTo(false);
     }
