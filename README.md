@@ -16,6 +16,19 @@ To start your application in the dev profile, simply run:
 
 For further instructions on how to develop with JHipster, have a look at [Using JHipster in development][].
 
+### Setup Firebase Credentials
+if you just want to run the test, you do not need to follow the instructions in this section. However, if you want to run the application, please follow the instructions below.
+1. Get the private key JSON file from Ka Chun
+2. Store the private key is some place and get its path. e.g. `D:\code\credentials\ccclubmanagement-firebase-adminsdk-7lbr4-924a830b45.json`
+3. Configure Environment variable. Add a new System Variable. 
+```
+variable name: GOOGLE_APPLICATION_CREDENTIALS // must be the same!
+variable value: D:\code\credentials\ccclubmanagement-firebase-adminsdk-7lbr4-924a830b45.json // the path
+```
+4. restart your IDE, or better yet, restart your machine
+
+resources: https://firebase.google.com/docs/admin/setup#windows
+
 ## Building for production
 
 ### Packaging as jar

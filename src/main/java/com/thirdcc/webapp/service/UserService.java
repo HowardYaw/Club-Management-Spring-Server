@@ -11,6 +11,7 @@ import com.thirdcc.webapp.service.dto.UserDTO;
 import com.thirdcc.webapp.service.util.RandomUtil;
 import com.thirdcc.webapp.web.rest.errors.*;
 
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cache.CacheManager;
@@ -292,5 +293,39 @@ public class UserService {
     private void clearUserCaches(User user) {
         Objects.requireNonNull(cacheManager.getCache(UserRepository.USERS_BY_LOGIN_CACHE)).evict(user.getLogin());
         Objects.requireNonNull(cacheManager.getCache(UserRepository.USERS_BY_EMAIL_CACHE)).evict(user.getEmail());
+    }
+
+    public User registerFirebaseUser(String fullName, String uid, String email, String picture) {
+        User newUser = null;
+        Optional<User> findOneByEmail = userRepository.findOneByEmail(email);
+        if (findOneByEmail.isPresent()) {
+            newUser = findOneByEmail.get();
+            newUser.setLogin(uid);
+            if (StringUtils.isBlank(newUser.getImageUrl())) {
+                newUser.setImageUrl(picture);
+            }
+            if (StringUtils.isBlank(newUser.getFirstName())) {
+                newUser.setFirstName(fullName);
+            }
+            userRepository.save(newUser);
+            return newUser;
+        }
+
+        newUser = new User();
+        Authority authority = authorityRepository.findById(AuthoritiesConstants.USER).get();
+        Set<Authority> authorities = new HashSet<>();
+
+        String encryptedPassword = passwordEncoder.encode(UUID.randomUUID().toString());
+        // firebase user gets a generated password
+        newUser.setPassword(encryptedPassword);
+        newUser.setFirstName(fullName);
+        newUser.setImageUrl(picture);
+        newUser.setLogin(uid);
+        newUser.setEmail(email);
+        authorities.add(authority);
+        newUser.setAuthorities(authorities);
+        userRepository.save(newUser);
+        log.debug("Created Information for User: {}", newUser);
+        return newUser;
     }
 }
