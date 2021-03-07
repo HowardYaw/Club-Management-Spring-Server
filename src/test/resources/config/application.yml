@@ -121,8 +121,8 @@ jhipster:
 # ===================================================================
 
 # application:
-
 application:
+  shouldInitFirebase: false
   access-token:
     # This token must be encoded using Base64 and be at least 256 bits long (you can type `openssl rand -base64 64` on your command line to generate a 512 bits one)
     base64-secret: 1u1VdaBx1lBpoS+5WtIbS4cb066o5rz5PSkXGHRS1eI7FvEYN7qh68qaz6RaQ8Y8XCLicSzDwMztvVSl7lVGEw==

@@ -1,10 +1,16 @@
 package com.thirdcc.webapp.web.rest;
 
+import com.thirdcc.webapp.security.firebase.FirebaseService;
 import com.thirdcc.webapp.security.jwt.AccessTokenProvider;
 import com.thirdcc.webapp.security.jwt.JWTFilter;
+import com.thirdcc.webapp.service.UserService;
+import com.thirdcc.webapp.utils.FirebaseUtils;
 import com.thirdcc.webapp.security.jwt.RefreshTokenProvider;
 import com.thirdcc.webapp.web.rest.vm.LoginVM;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -14,7 +20,10 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
+import java.io.IOException;
 
 /**
  * Controller to authenticate users.
@@ -29,14 +38,22 @@ public class UserJWTController {
 
     private final AuthenticationManagerBuilder authenticationManagerBuilder;
 
+    private final FirebaseService firebaseService;
+
+    private final UserService userService;
+
     public UserJWTController(
         AccessTokenProvider accessTokenProvider,
         RefreshTokenProvider refreshTokenProvider,
-        AuthenticationManagerBuilder authenticationManagerBuilder
+        AuthenticationManagerBuilder authenticationManagerBuilder,
+        FirebaseService firebaseService,
+        UserService userService
     ) {
         this.accessTokenProvider = accessTokenProvider;
         this.refreshTokenProvider = refreshTokenProvider;
         this.authenticationManagerBuilder = authenticationManagerBuilder;
+        this.firebaseService = firebaseService;
+        this.userService = userService;
     }
 
     @PostMapping("/authenticate")
@@ -47,7 +64,17 @@ public class UserJWTController {
 
         Authentication authentication = authenticationManagerBuilder.getObject().authenticate(authenticationToken);
         SecurityContextHolder.getContext().setAuthentication(authentication);
-        boolean rememberMe = (loginVM.isRememberMe() == null) ? false : loginVM.isRememberMe();
+        return generateJwtToken(authentication);
+    }
+
+    @PostMapping("/firebase/authenticate")
+    public ResponseEntity<JWTToken> firebaseAuthorize(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        Authentication authentication = FirebaseUtils.authenticateOrRegisterFirebaseUser(FirebaseUtils.getAuthentication(request, response, firebaseService), userService);
+        return generateJwtToken(authentication);
+    }
+
+    private ResponseEntity<JWTToken> generateJwtToken(Authentication authentication) {
+        SecurityContextHolder.getContext().setAuthentication(authentication);
         String accessToken = accessTokenProvider.createToken(authentication);
         String refreshToken = refreshTokenProvider.createToken(authentication);
         HttpHeaders httpHeaders = new HttpHeaders();
