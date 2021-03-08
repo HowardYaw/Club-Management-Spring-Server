@@ -2,6 +2,7 @@ package com.thirdcc.webapp.authorization;
 
 import com.thirdcc.webapp.domain.*;
 import com.thirdcc.webapp.domain.enumeration.AdministratorRole;
+import com.thirdcc.webapp.domain.enumeration.AdministratorStatus;
 import com.thirdcc.webapp.domain.enumeration.EventCrewRole;
 import com.thirdcc.webapp.exception.BadRequestException;
 import com.thirdcc.webapp.repository.AdministratorRepository;
@@ -39,12 +40,27 @@ public class ManagementTeamSecurityExpression {
         this.yearSessionRepository = yearSessionRepository;
     }
 
+    /**
+     * Check if User is CC Head only
+     */
     public boolean isCurrentCCHead() {
         User currentUser = getCurrentUserWithLogin();
         YearSession currentYearSession = yearSessionRepository.findFirstByOrderByIdDesc()
             .orElseThrow(() -> new BadRequestException("Year Session not found"));
         return administratorRepository
-            .findByUserIdAndYearSessionAndRole(currentUser.getId(), currentYearSession, AdministratorRole.CC_HEAD)
+            .findByUserIdAndYearSessionAndRoleAndStatus(currentUser.getId(), currentYearSession, AdministratorRole.CC_HEAD, AdministratorStatus.ACTIVE)
+            .isPresent();
+    }
+
+    /**
+     * Check if User is Administrator
+     */
+    public boolean isCurrentAdministrator() {
+        User currentUser = getCurrentUserWithLogin();
+        YearSession currentYearSession = yearSessionRepository.findFirstByOrderByIdDesc()
+            .orElseThrow(() -> new BadRequestException("Year Session not found"));
+        return administratorRepository
+            .findByUserIdAndYearSessionAndStatus(currentUser.getId(), currentYearSession, AdministratorStatus.ACTIVE)
             .isPresent();
     }
 
@@ -56,6 +72,10 @@ public class ManagementTeamSecurityExpression {
         }
     }
 
+    /**
+     * Check if User is Event Crew
+     * @param eventId
+     */
     public boolean isEventCrew(Long eventId) {
         User currentUser = getCurrentUserWithLogin();
         return eventCrewRepository
@@ -63,12 +83,15 @@ public class ManagementTeamSecurityExpression {
             .isPresent();
     }
 
+    /**
+     * Check if User is Event Head only
+     * @param eventId
+     */
     public boolean isEventHead(Long eventId) {
         User currentUser = getCurrentUserWithLogin();
-        EventCrew eventCrew = eventCrewRepository
-            .findByUserIdAndAndEventId(currentUser.getId(), eventId)
-            .orElse(null);
-        return eventCrew != null && eventCrew.getRole().equals(EventCrewRole.HEAD);
+        return eventCrewRepository
+            .findByUserIdAndAndEventIdAndRole(currentUser.getId(), eventId, EventCrewRole.HEAD)
+            .isPresent();
     }
 
     public boolean hasRoleAdminOrIsEventHead(Long eventId) {
@@ -77,6 +100,22 @@ public class ManagementTeamSecurityExpression {
         } else {
             return isEventHead(eventId);
         }
+    }
+
+    /**
+     * Check if User is Administrator role or Event Head
+     * @param eventId
+     */
+    public boolean isEventHeadOrAdministrator(Long eventId) {
+        return isCurrentAdministrator() || isEventHead(eventId);
+    }
+
+    /**
+     * Check if User is Administrator role or Event Crew
+     * @param eventId
+     */
+    public boolean isEventCrewOrAdministrator(Long eventId) {
+        return isCurrentAdministrator() || isEventCrew(eventId);
     }
 
     private List<String> getUserAuthRole() {
