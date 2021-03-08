@@ -7,7 +7,6 @@ import com.thirdcc.webapp.security.AuthoritiesConstants;
 import com.thirdcc.webapp.security.jwt.RefreshTokenProvider;
 import com.thirdcc.webapp.web.rest.errors.ExceptionTranslator;
 import com.thirdcc.webapp.web.rest.vm.LoginVM;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -16,6 +15,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,6 +34,7 @@ import static org.hamcrest.Matchers.not;
  */
 @SpringBootTest(classes = ClubmanagementApp.class)
 @AutoConfigureMockMvc
+@WithMockUser(value = "user")
 public class UserJWTControllerIT {
 
     @Autowired
