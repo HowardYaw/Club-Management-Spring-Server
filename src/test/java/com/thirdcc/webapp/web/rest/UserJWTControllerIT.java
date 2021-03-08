@@ -116,4 +116,14 @@ public class UserJWTControllerIT {
             .andExpect(jsonPath("$.refreshToken").doesNotExist())
             .andExpect(header().doesNotExist("Authorization"));
     }
+
+    @Test
+    public void testRefreshTokenFails() throws Exception {
+        mockMvc.perform(post("/api/authenticate/refresh")
+            .param("refreshToken", "fakeRefreshToken"))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.accessToken").doesNotExist())
+            .andExpect(jsonPath("$.refreshToken").doesNotExist())
+            .andExpect(header().doesNotExist("Authorization"));
+    }
 }

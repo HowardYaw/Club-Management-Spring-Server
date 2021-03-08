@@ -17,6 +17,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.security.Key;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -36,6 +37,19 @@ public class RefreshTokenProviderTest {
 
         ReflectionTestUtils.setField(refreshTokenProvider, "key", key);
         ReflectionTestUtils.setField(refreshTokenProvider, "tokenValidityInMilliseconds", ONE_MINUTE);
+    }
+
+    @Test
+    public void validateRefreshToken_WithValidRefreshToken_ShouldReturnTrue() {
+        UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+            "test-user",
+            "test-password",
+            Collections.singletonList(new SimpleGrantedAuthority(AuthoritiesConstants.USER))
+        );
+        String refreshToken = refreshTokenProvider.createToken(authentication);
+        boolean isTokenValid = refreshTokenProvider.validateToken(refreshToken);
+
+        assertThat(isTokenValid).isTrue();
     }
 
     @Test

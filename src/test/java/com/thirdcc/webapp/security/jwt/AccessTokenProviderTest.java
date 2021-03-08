@@ -40,6 +40,19 @@ public class AccessTokenProviderTest {
     }
 
     @Test
+    public void validateAccessToken_WithValidAccessToken_ShouldReturnTrue() {
+        UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+            "test-user",
+            "test-password",
+            Collections.singletonList(new SimpleGrantedAuthority(AuthoritiesConstants.USER))
+        );
+        String refreshToken = accessTokenProvider.createToken(authentication);
+        boolean isTokenValid = accessTokenProvider.validateToken(refreshToken);
+
+        assertThat(isTokenValid).isTrue();
+    }
+
+    @Test
     public void testReturnFalseWhenJWThasInvalidSignature() {
         boolean isTokenValid = accessTokenProvider.validateToken(createTokenWithDifferentSignature());
 
