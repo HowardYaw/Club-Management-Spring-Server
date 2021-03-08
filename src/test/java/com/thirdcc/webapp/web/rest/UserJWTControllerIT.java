@@ -5,7 +5,6 @@ import com.thirdcc.webapp.domain.User;
 import com.thirdcc.webapp.repository.UserRepository;
 import com.thirdcc.webapp.security.AuthoritiesConstants;
 import com.thirdcc.webapp.security.jwt.RefreshTokenProvider;
-import com.thirdcc.webapp.web.rest.errors.ExceptionTranslator;
 import com.thirdcc.webapp.web.rest.vm.LoginVM;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -52,10 +51,6 @@ public class UserJWTControllerIT {
 
     @Autowired
     private RefreshTokenProvider refreshTokenProvider;
-
-    @BeforeEach
-    public void setup() {
-    }
 
     @Test
     @Transactional
