@@ -1,12 +1,10 @@
 package com.thirdcc.webapp.web.rest;
 
 import com.thirdcc.webapp.ClubmanagementApp;
-import com.thirdcc.webapp.domain.Authority;
 import com.thirdcc.webapp.domain.Event;
 import com.thirdcc.webapp.domain.EventAttendee;
 import com.thirdcc.webapp.domain.User;
 import com.thirdcc.webapp.domain.enumeration.EventStatus;
-import com.thirdcc.webapp.exception.BadRequestException;
 import com.thirdcc.webapp.repository.EventAttendeeRepository;
 import com.thirdcc.webapp.repository.EventRepository;
 import com.thirdcc.webapp.repository.UserRepository;
@@ -15,7 +13,6 @@ import com.thirdcc.webapp.service.UserService;
 import com.thirdcc.webapp.service.dto.EventAttendeeDTO;
 import com.thirdcc.webapp.service.impl.EventAttendeeServiceImpl;
 import com.thirdcc.webapp.service.mapper.EventAttendeeMapper;
-import com.thirdcc.webapp.web.rest.errors.ExceptionTranslator;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -26,9 +23,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
 import org.springframework.http.MediaType;
-import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -49,7 +44,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest(classes = ClubmanagementApp.class)
 @AutoConfigureMockMvc
 @WithMockUser(username = "admin", roles = "ADMIN")
-
 public class EventAttendeeResourceIT {
     private final Logger log = LoggerFactory.getLogger(EventAttendeeServiceImpl.class);
 
@@ -90,15 +84,6 @@ public class EventAttendeeResourceIT {
     private EventAttendeeService eventAttendeeService;
 
     @Autowired
-    private MappingJackson2HttpMessageConverter jacksonMessageConverter;
-
-    @Autowired
-    private PageableHandlerMethodArgumentResolver pageableArgumentResolver;
-
-    @Autowired
-    private ExceptionTranslator exceptionTranslator;
-
-    @Autowired
     private EntityManager em;
 
     @Autowired
@@ -114,13 +99,6 @@ public class EventAttendeeResourceIT {
     @BeforeEach
     public void setup() {
         MockitoAnnotations.initMocks(this);
-//        final EventAttendeeResource eventAttendeeResource = new EventAttendeeResource(eventAttendeeService);
-//        this.restEventAttendeeMockMvc = MockMvcBuilders.standaloneSetup(eventAttendeeResource)
-//            .setCustomArgumentResolvers(pageableArgumentResolver)
-//            .setControllerAdvice(exceptionTranslator)
-//            .setConversionService(createFormattingConversionService())
-//            .setMessageConverters(jacksonMessageConverter)
-//            .setValidator(validator).build();
     }
 
     /**

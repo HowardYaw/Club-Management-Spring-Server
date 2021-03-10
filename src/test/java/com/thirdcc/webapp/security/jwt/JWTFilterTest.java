@@ -1,5 +1,6 @@
 package com.thirdcc.webapp.security.jwt;
 
+import com.thirdcc.webapp.config.ApplicationProperties;
 import com.thirdcc.webapp.security.AuthoritiesConstants;
 import io.github.jhipster.config.JHipsterProperties;
 import io.jsonwebtoken.io.Decoders;
@@ -22,20 +23,20 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class JWTFilterTest {
 
-    private TokenProvider tokenProvider;
+    private AccessTokenProvider accessTokenProvider;
 
     private JWTFilter jwtFilter;
 
     @BeforeEach
     public void setup() {
-        JHipsterProperties jHipsterProperties = new JHipsterProperties();
-        tokenProvider = new TokenProvider(jHipsterProperties);
-        ReflectionTestUtils.setField(tokenProvider, "key",
+        ApplicationProperties applicationProperties = new ApplicationProperties();
+        accessTokenProvider = new AccessTokenProvider(applicationProperties);
+        ReflectionTestUtils.setField(accessTokenProvider, "key",
             Keys.hmacShaKeyFor(Decoders.BASE64
                 .decode("fd54a45s65fds737b9aafcb3412e07ed99b267f33413274720ddbb7f6c5e64e9f14075f2d7ed041592f0b7657baf8")));
 
-        ReflectionTestUtils.setField(tokenProvider, "tokenValidityInMilliseconds", 60000);
-        jwtFilter = new JWTFilter(tokenProvider);
+        ReflectionTestUtils.setField(accessTokenProvider, "tokenValidityInMilliseconds", 60000);
+        jwtFilter = new JWTFilter(accessTokenProvider);
         SecurityContextHolder.getContext().setAuthentication(null);
     }
 
@@ -46,7 +47,7 @@ public class JWTFilterTest {
             "test-password",
             Collections.singletonList(new SimpleGrantedAuthority(AuthoritiesConstants.USER))
         );
-        String jwt = tokenProvider.createToken(authentication, false);
+        String jwt = accessTokenProvider.createToken(authentication);
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.addHeader(JWTFilter.AUTHORIZATION_HEADER, "Bearer " + jwt);
         request.setRequestURI("/api/test");
@@ -101,7 +102,7 @@ public class JWTFilterTest {
             "test-password",
             Collections.singletonList(new SimpleGrantedAuthority(AuthoritiesConstants.USER))
         );
-        String jwt = tokenProvider.createToken(authentication, false);
+        String jwt = accessTokenProvider.createToken(authentication);
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.addHeader(JWTFilter.AUTHORIZATION_HEADER, "Basic " + jwt);
         request.setRequestURI("/api/test");

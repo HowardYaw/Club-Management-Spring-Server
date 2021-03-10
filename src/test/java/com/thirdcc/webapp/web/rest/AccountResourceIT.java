@@ -2,7 +2,6 @@ package com.thirdcc.webapp.web.rest;
 
 import com.thirdcc.webapp.ClubmanagementApp;
 import com.thirdcc.webapp.config.Constants;
-import com.thirdcc.webapp.domain.Authority;
 import com.thirdcc.webapp.domain.User;
 import com.thirdcc.webapp.repository.AuthorityRepository;
 import com.thirdcc.webapp.repository.UserRepository;
@@ -11,7 +10,6 @@ import com.thirdcc.webapp.service.MailService;
 import com.thirdcc.webapp.service.UserService;
 import com.thirdcc.webapp.service.dto.PasswordChangeDTO;
 import com.thirdcc.webapp.service.dto.UserDTO;
-import com.thirdcc.webapp.web.rest.errors.ExceptionTranslator;
 import com.thirdcc.webapp.web.rest.vm.KeyAndPasswordVM;
 import com.thirdcc.webapp.web.rest.vm.ManagedUserVM;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -21,13 +19,12 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
-import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
@@ -44,7 +41,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * Integration tests for the {@link AccountResource} REST controller.
  */
 @SpringBootTest(classes = ClubmanagementApp.class)
+@AutoConfigureMockMvc
+@WithMockUser(value = AccountResourceIT.TEST_USER_LOGIN)
 public class AccountResourceIT {
+
+    static final String TEST_USER_LOGIN = "test";
 
     @Autowired
     private UserRepository userRepository;
@@ -58,43 +59,25 @@ public class AccountResourceIT {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-    @Autowired
-    private HttpMessageConverter<?>[] httpMessageConverters;
-
-    @Autowired
-    private ExceptionTranslator exceptionTranslator;
-
     @Mock
     private UserService mockUserService;
 
     @Mock
     private MailService mockMailService;
 
+    @Autowired
     private MockMvc restMvc;
-
-    private MockMvc restUserMockMvc;
 
     @BeforeEach
     public void setup() {
         MockitoAnnotations.initMocks(this);
         doNothing().when(mockMailService).sendActivationEmail(any());
-        AccountResource accountResource =
-            new AccountResource(userRepository, userService, mockMailService);
-
-        AccountResource accountUserMockResource =
-            new AccountResource(userRepository, mockUserService, mockMailService);
-        this.restMvc = MockMvcBuilders.standaloneSetup(accountResource)
-            .setMessageConverters(httpMessageConverters)
-            .setControllerAdvice(exceptionTranslator)
-            .build();
-        this.restUserMockMvc = MockMvcBuilders.standaloneSetup(accountUserMockResource)
-            .setControllerAdvice(exceptionTranslator)
-            .build();
     }
 
     @Test
+    @WithUnauthenticatedMockUser
     public void testNonAuthenticatedUser() throws Exception {
-        restUserMockMvc.perform(get("/api/authenticate")
+        restMvc.perform(get("/api/authenticate")
             .accept(MediaType.APPLICATION_JSON))
             .andExpect(status().isOk())
             .andExpect(content().string(""));
@@ -102,38 +85,36 @@ public class AccountResourceIT {
 
     @Test
     public void testAuthenticatedUser() throws Exception {
-        restUserMockMvc.perform(get("/api/authenticate")
+        restMvc.perform(get("/api/authenticate")
             .with(request -> {
-                request.setRemoteUser("test");
+                request.setRemoteUser(TEST_USER_LOGIN);
                 return request;
             })
             .accept(MediaType.APPLICATION_JSON))
             .andExpect(status().isOk())
-            .andExpect(content().string("test"));
+            .andExpect(content().string(TEST_USER_LOGIN));
     }
 
     @Test
     public void testGetExistingAccount() throws Exception {
-        Set<Authority> authorities = new HashSet<>();
-        Authority authority = new Authority();
-        authority.setName(AuthoritiesConstants.ADMIN);
-        authorities.add(authority);
+        Set<String> authorities = new HashSet<>();
+        authorities.add(AuthoritiesConstants.ADMIN);
 
-        User user = new User();
-        user.setLogin("test");
+        UserDTO user = new UserDTO();
+        user.setLogin(TEST_USER_LOGIN);
         user.setFirstName("john");
         user.setLastName("doe");
         user.setEmail("john.doe@jhipster.com");
         user.setImageUrl("http://placehold.it/50x50");
         user.setLangKey("en");
         user.setAuthorities(authorities);
-        when(mockUserService.getUserWithAuthorities()).thenReturn(Optional.of(user));
+        userService.createUser(user);
 
-        restUserMockMvc.perform(get("/api/account")
+        restMvc.perform(get("/api/account")
             .accept(MediaType.APPLICATION_JSON))
             .andExpect(status().isOk())
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
-            .andExpect(jsonPath("$.login").value("test"))
+            .andExpect(jsonPath("$.login").value(TEST_USER_LOGIN))
             .andExpect(jsonPath("$.firstName").value("john"))
             .andExpect(jsonPath("$.lastName").value("doe"))
             .andExpect(jsonPath("$.email").value("john.doe@jhipster.com"))
@@ -144,9 +125,9 @@ public class AccountResourceIT {
 
     @Test
     public void testGetUnknownAccount() throws Exception {
-        when(mockUserService.getUserWithAuthorities()).thenReturn(Optional.empty());
+//        when(mockUserService.getUserWithAuthorities()).thenReturn(Optional.empty());
 
-        restUserMockMvc.perform(get("/api/account")
+        restMvc.perform(get("/api/account")
             .accept(MediaType.APPLICATION_PROBLEM_JSON))
             .andExpect(status().isInternalServerError());
     }
@@ -188,7 +169,7 @@ public class AccountResourceIT {
         invalidUser.setLangKey(Constants.DEFAULT_LANGUAGE);
         invalidUser.setAuthorities(Collections.singleton(AuthoritiesConstants.USER));
 
-        restUserMockMvc.perform(
+        restMvc.perform(
             post("/api/register")
                 .contentType(TestUtil.APPLICATION_JSON_UTF8)
                 .content(TestUtil.convertObjectToJsonBytes(invalidUser)))
@@ -212,7 +193,7 @@ public class AccountResourceIT {
         invalidUser.setLangKey(Constants.DEFAULT_LANGUAGE);
         invalidUser.setAuthorities(Collections.singleton(AuthoritiesConstants.USER));
 
-        restUserMockMvc.perform(
+        restMvc.perform(
             post("/api/register")
                 .contentType(TestUtil.APPLICATION_JSON_UTF8)
                 .content(TestUtil.convertObjectToJsonBytes(invalidUser)))
@@ -236,7 +217,7 @@ public class AccountResourceIT {
         invalidUser.setLangKey(Constants.DEFAULT_LANGUAGE);
         invalidUser.setAuthorities(Collections.singleton(AuthoritiesConstants.USER));
 
-        restUserMockMvc.perform(
+        restMvc.perform(
             post("/api/register")
                 .contentType(TestUtil.APPLICATION_JSON_UTF8)
                 .content(TestUtil.convertObjectToJsonBytes(invalidUser)))
@@ -260,7 +241,7 @@ public class AccountResourceIT {
         invalidUser.setLangKey(Constants.DEFAULT_LANGUAGE);
         invalidUser.setAuthorities(Collections.singleton(AuthoritiesConstants.USER));
 
-        restUserMockMvc.perform(
+        restMvc.perform(
             post("/api/register")
                 .contentType(TestUtil.APPLICATION_JSON_UTF8)
                 .content(TestUtil.convertObjectToJsonBytes(invalidUser)))

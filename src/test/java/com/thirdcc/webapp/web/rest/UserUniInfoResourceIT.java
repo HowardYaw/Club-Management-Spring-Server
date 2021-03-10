@@ -6,26 +6,22 @@ import com.thirdcc.webapp.repository.UserUniInfoRepository;
 import com.thirdcc.webapp.service.UserUniInfoService;
 import com.thirdcc.webapp.service.dto.UserUniInfoDTO;
 import com.thirdcc.webapp.service.mapper.UserUniInfoMapper;
-import com.thirdcc.webapp.web.rest.errors.ExceptionTranslator;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
 import org.springframework.http.MediaType;
-import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.validation.Validator;
 
 import javax.persistence.EntityManager;
 import java.math.BigDecimal;
 import java.util.List;
 
-import static com.thirdcc.webapp.web.rest.TestUtil.createFormattingConversionService;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.hasItem;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -36,6 +32,8 @@ import com.thirdcc.webapp.domain.enumeration.UserUniStatus;
  * Integration tests for the {@Link UserUniInfoResource} REST controller.
  */
 @SpringBootTest(classes = ClubmanagementApp.class)
+@AutoConfigureMockMvc
+@WithMockUser(value = "user")
 public class UserUniInfoResourceIT {
 
     private static final Long DEFAULT_USER_ID = 1L;
@@ -72,20 +70,9 @@ public class UserUniInfoResourceIT {
     private UserUniInfoService userUniInfoService;
 
     @Autowired
-    private MappingJackson2HttpMessageConverter jacksonMessageConverter;
-
-    @Autowired
-    private PageableHandlerMethodArgumentResolver pageableArgumentResolver;
-
-    @Autowired
-    private ExceptionTranslator exceptionTranslator;
-
-    @Autowired
     private EntityManager em;
 
     @Autowired
-    private Validator validator;
-
     private MockMvc restUserUniInfoMockMvc;
 
     private UserUniInfo userUniInfo;
@@ -93,13 +80,6 @@ public class UserUniInfoResourceIT {
     @BeforeEach
     public void setup() {
         MockitoAnnotations.initMocks(this);
-        final UserUniInfoResource userUniInfoResource = new UserUniInfoResource(userUniInfoService);
-        this.restUserUniInfoMockMvc = MockMvcBuilders.standaloneSetup(userUniInfoResource)
-            .setCustomArgumentResolvers(pageableArgumentResolver)
-            .setControllerAdvice(exceptionTranslator)
-            .setConversionService(createFormattingConversionService())
-            .setMessageConverters(jacksonMessageConverter)
-            .setValidator(validator).build();
     }
 
     /**
@@ -211,7 +191,7 @@ public class UserUniInfoResourceIT {
             .andExpect(jsonPath("$.[*].stayIn").value(hasItem(DEFAULT_STAY_IN.toString())))
             .andExpect(jsonPath("$.[*].status").value(hasItem(DEFAULT_STATUS.toString())));
     }
-    
+
     @Test
     @Transactional
     public void getUserUniInfo() throws Exception {
