@@ -3,20 +3,22 @@ package com.thirdcc.webapp.web.rest;
 import com.thirdcc.webapp.ClubmanagementApp;
 import com.thirdcc.webapp.domain.User;
 import com.thirdcc.webapp.repository.UserRepository;
-import com.thirdcc.webapp.security.firebase.FirebaseService;
-import com.thirdcc.webapp.security.jwt.TokenProvider;
-import com.thirdcc.webapp.service.UserService;
-import com.thirdcc.webapp.web.rest.errors.ExceptionTranslator;
+import com.thirdcc.webapp.security.AuthoritiesConstants;
+import com.thirdcc.webapp.security.jwt.RefreshTokenProvider;
 import com.thirdcc.webapp.web.rest.vm.LoginVM;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Collections;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -35,16 +37,7 @@ import static org.hamcrest.Matchers.not;
 public class UserJWTControllerIT {
 
     @Autowired
-    private TokenProvider tokenProvider;
-
-    @Autowired
     private AuthenticationManagerBuilder authenticationManager;
-
-    @Autowired
-    private FirebaseService firebaseService;
-
-    @Autowired
-    private UserService userService;
 
     @Autowired
     private UserRepository userRepository;
@@ -54,6 +47,10 @@ public class UserJWTControllerIT {
 
     @Autowired
     private MockMvc mockMvc;
+
+
+    @Autowired
+    private RefreshTokenProvider refreshTokenProvider;
 
     @Test
     @Transactional
@@ -73,33 +70,31 @@ public class UserJWTControllerIT {
             .contentType(TestUtil.APPLICATION_JSON_UTF8)
             .content(TestUtil.convertObjectToJsonBytes(login)))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.id_token").isString())
-            .andExpect(jsonPath("$.id_token").isNotEmpty())
+            .andExpect(jsonPath("$.accessToken").isString())
+            .andExpect(jsonPath("$.accessToken").isNotEmpty())
+            .andExpect(jsonPath("$.refreshToken").isString())
+            .andExpect(jsonPath("$.refreshToken").isNotEmpty())
             .andExpect(header().string("Authorization", not(nullValue())))
             .andExpect(header().string("Authorization", not(isEmptyString())));
     }
 
     @Test
     @Transactional
-    public void testAuthorizeWithRememberMe() throws Exception {
-        User user = new User();
-        user.setLogin("user-jwt-controller-remember-me");
-        user.setEmail("user-jwt-controller-remember-me@example.com");
-        user.setActivated(true);
-        user.setPassword(passwordEncoder.encode("test"));
+    public void testRefreshToken() throws Exception {
+        UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+            "test-user",
+            "test-password",
+            Collections.singletonList(new SimpleGrantedAuthority(AuthoritiesConstants.USER))
+        );
+        String refreshToken = refreshTokenProvider.createToken(authentication);
 
-        userRepository.saveAndFlush(user);
-
-        LoginVM login = new LoginVM();
-        login.setUsername("user-jwt-controller-remember-me");
-        login.setPassword("test");
-        login.setRememberMe(true);
-        mockMvc.perform(post("/api/authenticate")
-            .contentType(TestUtil.APPLICATION_JSON_UTF8)
-            .content(TestUtil.convertObjectToJsonBytes(login)))
+        mockMvc.perform(post("/api/authenticate/refresh")
+            .param("refreshToken", refreshToken))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.id_token").isString())
-            .andExpect(jsonPath("$.id_token").isNotEmpty())
+            .andExpect(jsonPath("$.accessToken").isString())
+            .andExpect(jsonPath("$.accessToken").isNotEmpty())
+            .andExpect(jsonPath("$.refreshToken").isString())
+            .andExpect(jsonPath("$.refreshToken").isNotEmpty())
             .andExpect(header().string("Authorization", not(nullValue())))
             .andExpect(header().string("Authorization", not(isEmptyString())));
     }
@@ -113,7 +108,18 @@ public class UserJWTControllerIT {
             .contentType(TestUtil.APPLICATION_JSON_UTF8)
             .content(TestUtil.convertObjectToJsonBytes(login)))
             .andExpect(status().isUnauthorized())
-            .andExpect(jsonPath("$.id_token").doesNotExist())
+            .andExpect(jsonPath("$.accessToken").doesNotExist())
+            .andExpect(jsonPath("$.refreshToken").doesNotExist())
+            .andExpect(header().doesNotExist("Authorization"));
+    }
+
+    @Test
+    public void testRefreshTokenFails() throws Exception {
+        mockMvc.perform(post("/api/authenticate/refresh")
+            .param("refreshToken", "fakeRefreshToken"))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.accessToken").doesNotExist())
+            .andExpect(jsonPath("$.refreshToken").doesNotExist())
             .andExpect(header().doesNotExist("Authorization"));
     }
 }
