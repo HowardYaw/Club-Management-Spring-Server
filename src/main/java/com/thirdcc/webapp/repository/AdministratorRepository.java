@@ -17,7 +17,7 @@ import java.util.Optional;
 @Repository
 public interface AdministratorRepository extends JpaRepository<Administrator, Long> {
 
-    Optional<Administrator> findByUserIdAndYearSessionAndRoleAndStatus(Long userId, YearSession yearSession, AdministratorRole administratorRole, AdministratorStatus status);
+    Optional<Administrator> findByUserIdAndYearSessionAndRoleAndStatus(Long userId, String yearSession, AdministratorRole administratorRole, AdministratorStatus status);
 
-    Optional<Administrator> findByUserIdAndYearSessionAndStatus(Long id, YearSession currentYearSession, AdministratorStatus status);
+    Optional<Administrator> findByUserIdAndYearSessionAndStatus(Long id, String currentYearSession, AdministratorStatus status);
 }

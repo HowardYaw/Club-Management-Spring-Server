@@ -48,7 +48,7 @@ public class ManagementTeamSecurityExpression {
         YearSession currentYearSession = yearSessionRepository.findFirstByOrderByIdDesc()
             .orElseThrow(() -> new BadRequestException("Year Session not found"));
         return administratorRepository
-            .findByUserIdAndYearSessionAndRoleAndStatus(currentUser.getId(), currentYearSession, AdministratorRole.CC_HEAD, AdministratorStatus.ACTIVE)
+            .findByUserIdAndYearSessionAndRoleAndStatus(currentUser.getId(), currentYearSession.getValue(), AdministratorRole.CC_HEAD, AdministratorStatus.ACTIVE)
             .isPresent();
     }
 
@@ -60,7 +60,7 @@ public class ManagementTeamSecurityExpression {
         YearSession currentYearSession = yearSessionRepository.findFirstByOrderByIdDesc()
             .orElseThrow(() -> new BadRequestException("Year Session not found"));
         return administratorRepository
-            .findByUserIdAndYearSessionAndStatus(currentUser.getId(), currentYearSession, AdministratorStatus.ACTIVE)
+            .findByUserIdAndYearSessionAndStatus(currentUser.getId(), currentYearSession.getValue(), AdministratorStatus.ACTIVE)
             .isPresent();
     }
 
