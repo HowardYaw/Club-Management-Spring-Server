@@ -358,6 +358,40 @@ public class EventAttendeeResourceIT {
     }
 
     @Test
+    public void getAllEventAttendees_WithEventId() throws Exception {
+        // Initialize the database
+        Event savedEvent = initEventDB();
+        EventAttendee savedEventAttendee = initEventAttendeeDB();
+
+        // Get the eventAttendee
+        restEventAttendeeMockMvc.perform(get("/api/event-attendees/event/{eventId}?sort=id,desc", savedEvent.getId()))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
+            .andExpect(jsonPath("$.[*].id").value(savedEventAttendee.getId().intValue()))
+            .andExpect(jsonPath("$.[*].userId").value(user.getId().intValue()))
+            .andExpect(jsonPath("$.[*].eventId").value(savedEvent.getId().intValue()))
+            .andExpect(jsonPath("$.[*].provideTransport").value(DEFAULT_PROVIDE_TRANSPORT.booleanValue()));
+    }
+
+    @Test
+    public void getAllEventAttendees_WithNonExistingEventId_ShouldThrow400() throws Exception {
+        restEventAttendeeMockMvc.perform(get("/api/event-attendees/event/{eventId}?sort=id,desc", Long.MAX_VALUE))
+            .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @WithMockUser(username = "user", roles = "USER")
+    public void getAllEventAttendees_WithEventId_NonAdmin_ShouldThrow403() throws Exception {
+        // Initialize the database
+        Event savedEvent = initEventDB();
+        EventAttendee savedEventAttendee = initEventAttendeeDB();
+
+        // Get the eventAttendee
+        restEventAttendeeMockMvc.perform(get("/api/event-attendees/event/{eventId}?sort=id,desc", savedEvent.getId()))
+            .andExpect(status().isForbidden());
+    }
+
+    @Test
     public void getNonExistingEventAttendee() throws Exception {
         // Get the eventAttendee
         restEventAttendeeMockMvc.perform(get("/api/event-attendees/{id}", Long.MAX_VALUE))
