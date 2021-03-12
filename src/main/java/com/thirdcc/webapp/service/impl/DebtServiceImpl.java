@@ -2,11 +2,14 @@ package com.thirdcc.webapp.service.impl;
 
 import com.thirdcc.webapp.service.DebtService;
 import com.thirdcc.webapp.domain.Debt;
+import com.thirdcc.webapp.domain.EventAttendee;
 import com.thirdcc.webapp.domain.enumeration.DebtStatus;
 import com.thirdcc.webapp.exception.BadRequestException;
 import com.thirdcc.webapp.repository.DebtRepository;
+import com.thirdcc.webapp.repository.EventAttendeeRepository;
 import com.thirdcc.webapp.service.dto.DebtDTO;
 import com.thirdcc.webapp.service.mapper.DebtMapper;
+import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * Service Implementation for managing {@link Debt}.
@@ -27,12 +31,15 @@ public class DebtServiceImpl implements DebtService {
     private final Logger log = LoggerFactory.getLogger(DebtServiceImpl.class);
 
     private final DebtRepository debtRepository;
+    
+    private final EventAttendeeRepository eventAttendeeRepository;
 
     private final DebtMapper debtMapper;
 
-    public DebtServiceImpl(DebtRepository debtRepository, DebtMapper debtMapper) {
+    public DebtServiceImpl(DebtRepository debtRepository, DebtMapper debtMapper, EventAttendeeRepository eventAttendeeRepository) {
         this.debtRepository = debtRepository;
         this.debtMapper = debtMapper;
+        this.eventAttendeeRepository = eventAttendeeRepository;
     }
 
 //    /**
@@ -121,7 +128,7 @@ public class DebtServiceImpl implements DebtService {
         log.debug("Request to update status of debt: {}, to {}", id, debtStatus);
         Debt debt = debtRepository.findById(id)
             .orElseThrow(() -> new BadRequestException("Debt not exists: " + id));
-        if(!debt.getStatus().equals(DebtStatus.OPEN)){
+        if(!DebtStatus.OPEN.equals(debt.getStatus())){
             throw new BadRequestException("Debt is not open, not allow to update");
         }
         debt.setStatus(debtStatus);
@@ -131,18 +138,17 @@ public class DebtServiceImpl implements DebtService {
     }
     
     /**
-     * Get all the debts.
+     * Get all the debts which is under "eventId" event.
      *
      * @param pageable the pagination information.
      * @return the list of entities.
      */
     @Override
     @Transactional(readOnly = true)
-    public Page<DebtDTO> findAllByEventId(Pageable pageable, Long eventId) {
-        log.debug("Request to get all Debts");
-        //TODO implement the method to use getEventAttendeeById
-        //TODO currently will just return all debts
-        return debtRepository.findAll(pageable)
+    public Page<DebtDTO> findAllDebtsByEventId(Pageable pageable, Long eventId) {
+        log.debug("Request to get all Debts By event Id : {}", eventId);
+        List<Long> eventAttendeeIdlist = eventAttendeeRepository.findAllByEventId(Pageable.unpaged(), eventId).stream().map(EventAttendee::getId).collect(Collectors.toList());
+        return debtRepository.findAllByEventAttendeeIdIn(pageable, eventAttendeeIdlist)
             .map(debtMapper::toDto);
     }
 }

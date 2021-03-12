@@ -69,5 +69,5 @@ public interface DebtService {
      * @param eventId the event id of the event
      * @return the list of entities.
      */
-    Page<DebtDTO> findAllByEventId(Pageable pageable, Long eventId);
+    Page<DebtDTO> findAllDebtsByEventId(Pageable pageable, Long eventId);
 }

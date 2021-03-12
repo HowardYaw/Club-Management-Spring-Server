@@ -25,6 +25,7 @@ import java.net.URISyntaxException;
 
 import java.util.List;
 import java.util.Optional;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 /**
  * REST controller for managing {@link com.thirdcc.webapp.domain.Debt}.
@@ -46,9 +47,10 @@ public class DebtResource {
         this.debtService = debtService;
     }
 
-    @PutMapping("/debts/{id}/status/{debtStatus}")
-    public ResponseEntity<DebtDTO> updateDebtStatus(@PathVariable Long id, @PathVariable DebtStatus debtStatus) {
-        log.debug("REST request to update debt: {} with status: {}", id, debtStatus);
+    @PutMapping("/debts/{id}/status/{debtStatus}/event/{eventId}")
+    @PreAuthorize("@managementTeamSecurityExpression.hasRoleAdminOrIsEventCrew(#eventId)")
+    public ResponseEntity<DebtDTO> updateDebtStatus(@PathVariable Long id, @PathVariable Long eventId, @PathVariable DebtStatus debtStatus) {
+        log.debug("REST request to update debt: {} with status: {} for eventId: {}", id, debtStatus, eventId);
         DebtDTO result = debtService.updateStatus(id, debtStatus);
         return ResponseEntity.ok()
             .headers(HeaderUtil.createEntityUpdateAlert(applicationName, true, ENTITY_NAME, id.toString()))
@@ -56,9 +58,10 @@ public class DebtResource {
     }
     
     @GetMapping("/debts/event/{eventId}")
+    @PreAuthorize("@managementTeamSecurityExpression.hasRoleAdminOrIsEventCrew(#eventId)")
     public ResponseEntity<List<DebtDTO>> getAllDebtsByEventId(Pageable pageable, @PathVariable Long eventId, @RequestParam MultiValueMap<String, String> queryParams, UriComponentsBuilder uriBuilder) {
-        log.debug("REST request to get a page of Debts");
-        Page<DebtDTO> page = debtService.findAllByEventId(pageable, eventId);
+        log.debug("REST request to get a page of Debts with event id: {}", eventId);
+        Page<DebtDTO> page = debtService.findAllDebtsByEventId(pageable, eventId);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(uriBuilder.queryParams(queryParams), page);
         return ResponseEntity.ok().headers(headers).body(page.getContent());
     }
