@@ -171,3 +171,5 @@ jhipster:
 # ===================================================================
 
 # application:
+application:
+  shouldInitFirebase: true
