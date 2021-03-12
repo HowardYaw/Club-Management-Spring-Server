@@ -10,23 +10,17 @@ import com.thirdcc.webapp.service.UserService;
 import com.thirdcc.webapp.service.dto.EventCrewDTO;
 import com.thirdcc.webapp.service.dto.EventDTO;
 import com.thirdcc.webapp.service.mapper.EventMapper;
-import com.thirdcc.webapp.web.rest.errors.ExceptionTranslator;
 
-import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
 import org.springframework.http.MediaType;
-import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.Base64Utils;
 
 import javax.persistence.EntityManager;
 import java.math.BigDecimal;
@@ -35,23 +29,20 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
 
-import static com.thirdcc.webapp.web.rest.TestUtil.createFormattingConversionService;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.*;
-import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import com.thirdcc.webapp.domain.enumeration.EventStatus;
-import org.springframework.web.context.WebApplicationContext;
 
 /**
  * Integration tests for the {@Link EventResource} REST controller.
  */
-@AutoConfigureMockMvc
-@WithMockUser(username="admin", roles = "ADMIN")
 @SpringBootTest(classes = ClubmanagementApp.class)
+@AutoConfigureMockMvc
+@WithMockUser(value = "user")
 public class EventResourceIT {
 
     private static final String DEFAULT_NAME = "AAAAAAAAAA";
@@ -98,19 +89,7 @@ public class EventResourceIT {
     private UserService userService;
 
     @Autowired
-    private MappingJackson2HttpMessageConverter jacksonMessageConverter;
-
-    @Autowired
-    private PageableHandlerMethodArgumentResolver pageableArgumentResolver;
-
-    @Autowired
-    private ExceptionTranslator exceptionTranslator;
-
-    @Autowired
     private EntityManager em;
-
-    @Autowired
-    private WebApplicationContext context;
 
     @Autowired
     private MockMvc restEventMockMvc;
@@ -120,7 +99,7 @@ public class EventResourceIT {
     @BeforeEach
     public void setup() {
         MockitoAnnotations.initMocks(this);
-        final EventResource eventResource = new EventResource(eventService);
+//        final EventResource eventResource = new EventResource(eventService);
 //        this.restEventMockMvc = MockMvcBuilders
 //            .webAppContextSetup(context)
 //            .defaultRequest(get("/").with(user("user").roles("ADMIN")))
@@ -172,13 +151,13 @@ public class EventResourceIT {
 
     @Test
     @Transactional
+    @WithMockUser(username = "admin", password = "admin", roles = "ADMIN")
     public void createEvent() throws Exception {
         int databaseSizeBeforeCreate = eventRepository.findAll().size();
 
         // Create the Event
         EventDTO eventDTO = eventMapper.toDto(event);
         restEventMockMvc.perform(post("/api/events")
-            .with(user("admin").password("admin").roles("ADMIN"))
             .contentType(TestUtil.APPLICATION_JSON_UTF8)
             .content(TestUtil.convertObjectToJsonBytes(eventDTO)))
             .andExpect(status().isCreated());
@@ -215,6 +194,7 @@ public class EventResourceIT {
 
     @Test
     @Transactional
+    @WithMockUser(username = "admin", password = "admin", roles = "ADMIN")
     public void createEventWithExistingId() throws Exception {
         int databaseSizeBeforeCreate = eventRepository.findAll().size();
 
@@ -224,7 +204,6 @@ public class EventResourceIT {
 
         // An entity with an existing ID cannot be created, so this API call must fail
         restEventMockMvc.perform(post("/api/events")
-            .with(user("admin").password("admin").roles("ADMIN"))
             .contentType(TestUtil.APPLICATION_JSON_UTF8)
             .content(TestUtil.convertObjectToJsonBytes(eventDTO)))
             .andExpect(status().isBadRequest());
@@ -384,6 +363,7 @@ public class EventResourceIT {
 
     @Test
     @Transactional
+    @WithMockUser(username = "admin", password = "admin", roles = "ADMIN")
     public void cancelEvent() throws Exception {
         // Initialize the database
         eventRepository.saveAndFlush(event);
@@ -419,6 +399,7 @@ public class EventResourceIT {
 
     @Test
     @Transactional
+    @WithMockUser(username = "admin", password = "admin", roles = "ADMIN")
     public void cancelEvent_WithNonExistingEventId_ShouldReturn400() throws Exception {
 
         restEventMockMvc.perform(put("/api/event/{eventId}/deactivate", Long.MAX_VALUE))
@@ -427,7 +408,7 @@ public class EventResourceIT {
 
     @Test
     @Transactional
-    @WithMockUser(username = "user", password = "user", roles = "ADMIN")
+    @WithMockUser(username = "admin", password = "admin", roles = "ADMIN")
     public void updateNonExistingEvent() throws Exception {
         int databaseSizeBeforeUpdate = eventRepository.findAll().size();
 
@@ -443,7 +424,6 @@ public class EventResourceIT {
 
         // If the entity doesn't have an ID, it will throw BadRequestAlertException
         restEventMockMvc.perform(put("/api/events")
-            .with(user("user").password("user").roles("USER"))
             .contentType(TestUtil.APPLICATION_JSON_UTF8)
             .content(TestUtil.convertObjectToJsonBytes(eventDTO)))
             .andExpect(status().isBadRequest());
@@ -509,6 +489,4 @@ public class EventResourceIT {
         assertThat(eventMapper.fromId(42L).getId()).isEqualTo(42);
         assertThat(eventMapper.fromId(null)).isNull();
     }
-
-
 }

@@ -103,6 +103,17 @@ public class EventAttendeeServiceImpl implements EventAttendeeService {
             .map(eventAttendeeMapper::toDto);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public Page<EventAttendeeDTO> findAllByEventId(Pageable pageable, Long eventId) {
+        log.debug("Request to get all EventAttendee by Event Id: {}", eventId);
+        eventRepository
+            .findById(eventId)
+            .orElseThrow(() -> new BadRequestException("Event not found"));
+
+        return eventAttendeeRepository.findAllByEventId(pageable, eventId)
+            .map(eventAttendeeMapper::toDto);
+    }
 
     /**
      * Get one eventAttendee by id.

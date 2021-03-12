@@ -14,6 +14,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.springframework.http.ResponseEntity;
@@ -112,6 +113,21 @@ public class EventAttendeeResource {
         log.debug("REST request to get EventAttendee : {}", id);
         Optional<EventAttendeeDTO> eventAttendeeDTO = eventAttendeeService.findOne(id);
         return ResponseUtil.wrapOrNotFound(eventAttendeeDTO);
+    }
+
+    /**
+     * {@code GET  /event-attendees/event/{eventId}} : GET the eventAttendee in "eventId" event.
+     *
+     * @param eventId the id of the event to retrieve list of eventAttendeeDTO.
+     * @return the {@link ResponseEntity} with status {@code 200 (OK) or 400 (BadRequest)}.
+     */
+    @GetMapping("/event-attendees/event/{eventId}")
+    @PreAuthorize("@managementTeamSecurityExpression.hasRoleAdminOrIsEventCrew(#eventId)")
+    public ResponseEntity<List<EventAttendeeDTO>> getAllEventAttendeeByEventId(Pageable pageable, @PathVariable Long eventId, @RequestParam MultiValueMap<String, String> queryParams, UriComponentsBuilder uriBuilder) {
+        log.debug("REST request to get a page of EventAttendees");
+        Page<EventAttendeeDTO> page = eventAttendeeService.findAllByEventId(pageable, eventId);
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(uriBuilder.queryParams(queryParams), page);
+        return ResponseEntity.ok().headers(headers).body(page.getContent());
     }
 
     /**

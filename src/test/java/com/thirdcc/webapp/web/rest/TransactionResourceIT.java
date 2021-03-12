@@ -599,7 +599,6 @@ public class TransactionResourceIT {
         transaction.setId(Long.MAX_VALUE);
         TransactionDTO transactionDTO = transactionMapper.toDto(transaction);
 
-
         System.out.println("USER AUTH :: " + getLoggedInUser().getAuthorities());
         // If the entity doesn't have an ID, it will throw BadRequestAlertException
         restTransactionMockMvc.perform(put("/api/transactions")
