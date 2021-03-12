@@ -9,6 +9,7 @@ import com.thirdcc.webapp.repository.DebtRepository;
 import com.thirdcc.webapp.repository.EventAttendeeRepository;
 import com.thirdcc.webapp.service.dto.DebtDTO;
 import com.thirdcc.webapp.service.mapper.DebtMapper;
+import java.util.HashSet;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -148,7 +149,10 @@ public class DebtServiceImpl implements DebtService {
     public Page<DebtDTO> findAllDebtsByEventId(Pageable pageable, Long eventId) {
         log.debug("Request to get all Debts By event Id : {}", eventId);
         List<Long> eventAttendeeIdlist = eventAttendeeRepository.findAllByEventId(Pageable.unpaged(), eventId).stream().map(EventAttendee::getId).collect(Collectors.toList());
-        return debtRepository.findAllByEventAttendeeIdIn(pageable, eventAttendeeIdlist)
+        HashSet<DebtStatus> openDebtStatus = new HashSet<DebtStatus>() {{
+            add(DebtStatus.OPEN);
+        }};
+        return debtRepository.findAllByStatusAndEventAttendeeIdIn(pageable, openDebtStatus, eventAttendeeIdlist)
             .map(debtMapper::toDto);
     }
 }

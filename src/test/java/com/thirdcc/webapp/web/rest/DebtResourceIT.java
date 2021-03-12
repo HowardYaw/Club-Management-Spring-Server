@@ -220,6 +220,23 @@ public class DebtResourceIT {
     }
     
     @Test
+    public void getAllDebtsByEventId_UserWithRoleAdmin_NoDebtWithOpenStatus() throws Exception {
+        // Initialize the database
+        Event savedEvent = initEventDB();
+        eventAttendee.setEventId(savedEvent.getId());
+        EventAttendee savedEventAttendee = initEventAttendeeDB();
+        debt.setEventAttendeeId(savedEventAttendee.getId());
+        debt.setStatus(UPDATED_STATUS);
+        initDebtDB();
+
+        // Get all the debt in the event
+        restDebtMockMvc.perform(get("/api/debts/event/{eventId}?sort=id,desc", savedEvent.getId()))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
+            .andExpect(content().string("[]"));
+    }
+    
+    @Test
     @WithMockUser
     public void getAllDebtsByEventId_UserIsEventCrew() throws Exception {
         // Initialize the database
@@ -231,7 +248,7 @@ public class DebtResourceIT {
         currentUser = getLoggedInUser();
         eventCrew.setUserId(currentUser.getId());
         eventCrew.setEventId(savedEvent.getId());
-        EventCrew savedEventCrew = initEventCrewDB();
+        initEventCrewDB();
         
         // Get all the debt in the event
         restDebtMockMvc.perform(get("/api/debts/event/{eventId}?sort=id,desc", event.getId()))
@@ -253,7 +270,7 @@ public class DebtResourceIT {
         eventAttendee.setEventId(savedEvent.getId());
         EventAttendee savedEventAttendee = initEventAttendeeDB();
         debt.setEventAttendeeId(savedEventAttendee.getId());
-        Debt savedDebt = initDebtDB();
+        initDebtDB();
         
         // Get all the debt in the event
         restDebtMockMvc.perform(get("/api/debts/event/{eventId}?sort=id,desc", event.getId()))
@@ -302,7 +319,7 @@ public class DebtResourceIT {
         currentUser = getLoggedInUser();
         eventCrew.setUserId(currentUser.getId());
         eventCrew.setEventId(savedEvent.getId());
-        EventCrew savedEventCrew = initEventCrewDB();
+        initEventCrewDB();
 
         int databaseSizeBeforeUpdate = debtRepository.findAll().size();
 

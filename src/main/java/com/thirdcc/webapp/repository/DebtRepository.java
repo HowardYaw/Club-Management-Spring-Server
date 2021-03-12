@@ -1,8 +1,9 @@
 package com.thirdcc.webapp.repository;
 
 import com.thirdcc.webapp.domain.Debt;
-import com.thirdcc.webapp.service.dto.DebtDTO;
+import com.thirdcc.webapp.domain.enumeration.DebtStatus;
 import java.util.List;
+import java.util.Set;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.*;
@@ -16,5 +17,5 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface DebtRepository extends JpaRepository<Debt, Long> {
     
-    Page<Debt> findAllByEventAttendeeIdIn(Pageable pageable, List<Long> eventAttendeeIdList);
+    Page<Debt> findAllByStatusAndEventAttendeeIdIn(Pageable pageable, Set<DebtStatus> debtStatus, List<Long> eventAttendeeIdList);
 }
