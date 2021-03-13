@@ -2,6 +2,7 @@ package com.thirdcc.webapp.repository;
 
 import com.thirdcc.webapp.domain.Budget;
 import com.thirdcc.webapp.domain.enumeration.TransactionType;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.*;
 import org.springframework.stereotype.Repository;
 
@@ -16,5 +17,7 @@ import java.util.List;
 public interface BudgetRepository extends JpaRepository<Budget, Long> {
 
     List<Budget> findAllByEventIdAndType(Long eventId, TransactionType type);
+
+    List<Budget> findAllByEventId(Pageable pageable, Long eventId);
 
 }

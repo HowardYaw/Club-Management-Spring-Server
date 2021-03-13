@@ -9,7 +9,9 @@ import io.github.jhipster.web.util.ResponseUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
@@ -38,14 +40,8 @@ public class BudgetResource {
         this.budgetService = budgetService;
     }
 
-    /**
-     * {@code POST  /budgets} : Create a new budget.
-     *
-     * @param budgetDTO the budgetDTO to create.
-     * @return the {@link ResponseEntity} with status {@code 201 (Created)} and with body the new budgetDTO, or with status {@code 400 (Bad Request)} if the budget has already an ID.
-     * @throws URISyntaxException if the Location URI syntax is incorrect.
-     */
-    @PostMapping("/budgets")
+    @PostMapping("/event-budget")
+    @PreAuthorize("hasRole('ROLE_ADMIN') || @managementTeamSecurityExpression.isEventHead(#budgetDTO.eventId)")
     public ResponseEntity<BudgetDTO> createBudget(@RequestBody BudgetDTO budgetDTO) throws URISyntaxException {
         log.debug("REST request to save Budget : {}", budgetDTO);
         if (budgetDTO.getId() != null) {
@@ -57,58 +53,38 @@ public class BudgetResource {
             .body(result);
     }
 
-    /**
-     * {@code PUT  /budgets} : Updates an existing budget.
-     *
-     * @param budgetDTO the budgetDTO to update.
-     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the updated budgetDTO,
-     * or with status {@code 400 (Bad Request)} if the budgetDTO is not valid,
-     * or with status {@code 500 (Internal Server Error)} if the budgetDTO couldn't be updated.
-     * @throws URISyntaxException if the Location URI syntax is incorrect.
-     */
-    @PutMapping("/budgets")
+    @PutMapping("/event-budget")
+    @PreAuthorize("hasRole('ROLE_ADMIN') || @managementTeamSecurityExpression.isEventHead(#budgetDTO.eventId)")
     public ResponseEntity<BudgetDTO> updateBudget(@RequestBody BudgetDTO budgetDTO) throws URISyntaxException {
         log.debug("REST request to update Budget : {}", budgetDTO);
         if (budgetDTO.getId() == null) {
             throw new BadRequestAlertException("Invalid id", ENTITY_NAME, "idnull");
         }
-        BudgetDTO result = budgetService.save(budgetDTO);
+        BudgetDTO result = budgetService.update(budgetDTO);
         return ResponseEntity.ok()
             .headers(HeaderUtil.createEntityUpdateAlert(applicationName, true, ENTITY_NAME, budgetDTO.getId().toString()))
             .body(result);
     }
 
-    /**
-     * {@code GET  /budgets} : get all the budgets.
-     *
-     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the list of budgets in body.
-     */
-    @GetMapping("/budgets")
-    public List<BudgetDTO> getAllBudgets() {
-        log.debug("REST request to get all Budgets");
-        return budgetService.findAll();
+    @GetMapping("/event-budget/event/{eventId}")
+    @PreAuthorize("hasRole('ROLE_ADMIN') || @managementTeamSecurityExpression.isEventHead(#budgetDTO.eventId) " +
+        "|| @managementTeamSecurityExpression.isEventCrew(#budgetDTO.eventId)")
+    public List<BudgetDTO> getAllBudgetsByEventId(Pageable pageable, @PathVariable Long eventId) {
+        log.debug("REST request to get all Budgets by eventId {}", eventId);
+        return budgetService.findAllByEventId(pageable, eventId);
     }
 
-    /**
-     * {@code GET  /budgets/:id} : get the "id" budget.
-     *
-     * @param id the id of the budgetDTO to retrieve.
-     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the budgetDTO, or with status {@code 404 (Not Found)}.
-     */
-    @GetMapping("/budgets/{id}")
+    @GetMapping("/event-budget/{id}")
+    @PreAuthorize("hasRole('ROLE_ADMIN') || @managementTeamSecurityExpression.isEventHead(#budgetDTO.eventId) " +
+        "|| @managementTeamSecurityExpression.isEventCrew(#budgetDTO.eventId)")
     public ResponseEntity<BudgetDTO> getBudget(@PathVariable Long id) {
         log.debug("REST request to get Budget : {}", id);
         Optional<BudgetDTO> budgetDTO = budgetService.findOne(id);
         return ResponseUtil.wrapOrNotFound(budgetDTO);
     }
 
-    /**
-     * {@code DELETE  /budgets/:id} : delete the "id" budget.
-     *
-     * @param id the id of the budgetDTO to delete.
-     * @return the {@link ResponseEntity} with status {@code 204 (NO_CONTENT)}.
-     */
-    @DeleteMapping("/budgets/{id}")
+    @DeleteMapping("/event-budget/{id}")
+    @PreAuthorize("hasRole('ROLE_ADMIN') || @managementTeamSecurityExpression.isEventHead(#budgetDTO.eventId)")
     public ResponseEntity<Void> deleteBudget(@PathVariable Long id) {
         log.debug("REST request to delete Budget : {}", id);
         budgetService.delete(id);
