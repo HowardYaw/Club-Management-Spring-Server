@@ -38,7 +38,7 @@ public interface YearSessionService {
 
     String getYearSessionStringById(Long id);
 
-    Optional<YearSession> findLatestYearSession();
+    Optional<YearSession> getCurrentYearSession();
 
     /**
      * Delete the "id" yearSession.

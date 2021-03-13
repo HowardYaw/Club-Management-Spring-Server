@@ -87,7 +87,7 @@ public class YearSessionServiceImpl implements YearSessionService {
     }
 
     @Override
-    public Optional<YearSession> findLatestYearSession() {
+    public Optional<YearSession> getCurrentYearSession() {
         return yearSessionRepository.findFirstByOrderByIdDesc();
     }
 

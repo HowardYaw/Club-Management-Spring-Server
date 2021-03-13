@@ -5,6 +5,7 @@ import com.thirdcc.webapp.domain.enumeration.AdministratorRole;
 import com.thirdcc.webapp.domain.enumeration.AdministratorStatus;
 import com.thirdcc.webapp.domain.enumeration.EventCrewRole;
 import com.thirdcc.webapp.exception.BadRequestException;
+import com.thirdcc.webapp.exception.InternalServerErrorException;
 import com.thirdcc.webapp.repository.AdministratorRepository;
 import com.thirdcc.webapp.repository.EventCrewRepository;
 import com.thirdcc.webapp.repository.UserRepository;
@@ -45,8 +46,8 @@ public class ManagementTeamSecurityExpression {
      */
     public boolean isCurrentCCHead() {
         User currentUser = getCurrentUserWithLogin();
-        YearSession currentYearSession = yearSessionService.findLatestYearSession()
-            .orElseThrow(() -> new BadRequestException("Year Session not found"));
+        YearSession currentYearSession = yearSessionService.getCurrentYearSession()
+            .orElseThrow(() -> new InternalServerErrorException("Year Session not found"));
         return administratorRepository
             .findByUserIdAndYearSessionAndRoleAndStatus(currentUser.getId(), currentYearSession.getValue(), AdministratorRole.CC_HEAD, AdministratorStatus.ACTIVE)
             .isPresent();
@@ -57,8 +58,8 @@ public class ManagementTeamSecurityExpression {
      */
     public boolean isCurrentAdministrator() {
         User currentUser = getCurrentUserWithLogin();
-        YearSession currentYearSession = yearSessionService.findLatestYearSession()
-            .orElseThrow(() -> new BadRequestException("Year Session not found"));
+        YearSession currentYearSession = yearSessionService.getCurrentYearSession()
+            .orElseThrow(() -> new InternalServerErrorException("Year Session not found"));
         return administratorRepository
             .findByUserIdAndYearSessionAndStatus(currentUser.getId(), currentYearSession.getValue(), AdministratorStatus.ACTIVE)
             .isPresent();
