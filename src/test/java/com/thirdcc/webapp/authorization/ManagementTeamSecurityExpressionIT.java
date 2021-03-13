@@ -18,7 +18,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.test.context.support.WithMockUser;
 
@@ -44,9 +43,6 @@ public class ManagementTeamSecurityExpressionIT {
     private UserService userService;
 
     private User currentUser;
-    private Administrator administrator;
-    private EventCrew eventCrew;
-    private YearSession yearSession;
 
     private static final String DEFAULT_YEAR_SESSION_VALUE = "2021/2022";
     private static final Long DEFAULT_EVENT_ID = 1L;
@@ -66,26 +62,19 @@ public class ManagementTeamSecurityExpressionIT {
         MockitoAnnotations.initMocks(this);
     }
 
-    @BeforeEach
-    public void init() {
-        createYearSession();
-        createAdministrator();
-        createEventCrew();
-    }
-
-    private void createYearSession() {
-        yearSession = new YearSession()
+    private YearSession createYearSession() {
+        return new YearSession()
             .value(DEFAULT_YEAR_SESSION_VALUE);
     }
 
-    private void createEventCrew() {
-        eventCrew = new EventCrew()
+    private EventCrew createEventCrew() {
+        return new EventCrew()
             .eventId(DEFAULT_EVENT_ID)
             .userId(DEFAULT_USER_ID);
     }
 
-    private void createAdministrator() {
-        administrator = new Administrator()
+    private Administrator createAdministrator() {
+        return new Administrator()
             .role(DEFAULT_ADMINISTRATOR_ROLE)
             .status(DEFAULT_ADMINISTRATOR_STATUS)
             .yearSession(DEFAULT_YEAR_SESSION_VALUE)
@@ -106,11 +95,12 @@ public class ManagementTeamSecurityExpressionIT {
     public void isCurrentCCHead_ShouldReturnTrue() {
         currentUser = getLoggedInUser();
 
-        initYearSessionDB();
+        insertYearSessionToDB(createYearSession());
 
-        administrator.setRole(CC_HEAD_ROLE);
-        administrator.setUserId(currentUser.getId());
-        initAdministratorDB();
+        Administrator savedAdministrator = createAdministrator();
+        savedAdministrator.setRole(CC_HEAD_ROLE);
+        savedAdministrator.setUserId(currentUser.getId());
+        insertAdministratorToDB(savedAdministrator);
 
         Boolean result = managementTeamSecurityExpression.isCurrentCCHead();
         assertThat(result).isTrue();
@@ -120,10 +110,11 @@ public class ManagementTeamSecurityExpressionIT {
     public void isCurrentCCHead_UserIsNotCCHead_ShouldReturnFalse() {
         currentUser = getLoggedInUser();
 
-        initYearSessionDB();
+        insertYearSessionToDB(createYearSession());
 
-        administrator.setUserId(currentUser.getId());
-        initAdministratorDB();
+        Administrator savedAdministrator = createAdministrator();
+        savedAdministrator.setUserId(currentUser.getId());
+        insertAdministratorToDB(savedAdministrator);
 
         Boolean result = managementTeamSecurityExpression.isCurrentCCHead();
         assertThat(result).isFalse();
@@ -134,12 +125,13 @@ public class ManagementTeamSecurityExpressionIT {
         currentUser = getLoggedInUser();
 
         yearSessionRepository.save(new YearSession().value(PREVIOUS_YEAR_SESSION_VALUE));
-        initYearSessionDB();
+        insertYearSessionToDB(createYearSession());
 
-        administrator.setRole(CC_HEAD_ROLE);
-        administrator.setUserId(currentUser.getId());
-        administrator.setYearSession(PREVIOUS_YEAR_SESSION_VALUE);
-        initAdministratorDB();
+        Administrator savedAdministrator = createAdministrator();
+        savedAdministrator.setRole(CC_HEAD_ROLE);
+        savedAdministrator.setUserId(currentUser.getId());
+        savedAdministrator.setYearSession(PREVIOUS_YEAR_SESSION_VALUE);
+        insertAdministratorToDB(savedAdministrator);
 
         Boolean result = managementTeamSecurityExpression.isCurrentCCHead();
         assertThat(result).isFalse();
@@ -149,12 +141,13 @@ public class ManagementTeamSecurityExpressionIT {
     public void isCurrentCCHead_UserIsNotActiveCCHead_ShouldReturnFalse() {
         currentUser = getLoggedInUser();
 
-        initYearSessionDB();
+        insertYearSessionToDB(createYearSession());
 
-        administrator.setRole(CC_HEAD_ROLE);
-        administrator.setUserId(currentUser.getId());
-        administrator.setStatus(AdministratorStatus.DEACTIVATE);
-        initAdministratorDB();
+        Administrator savedAdministrator = createAdministrator();
+        savedAdministrator.setRole(CC_HEAD_ROLE);
+        savedAdministrator.setUserId(currentUser.getId());
+        savedAdministrator.setStatus(AdministratorStatus.DEACTIVATE);
+        insertAdministratorToDB(savedAdministrator);
 
         Boolean result = managementTeamSecurityExpression.isCurrentCCHead();
         assertThat(result).isFalse();
@@ -167,10 +160,11 @@ public class ManagementTeamSecurityExpressionIT {
     public void isCurrentAdministrator_ShouldReturnTrue() {
         currentUser = getLoggedInUser();
 
-        initYearSessionDB();
+        insertYearSessionToDB(createYearSession());
 
-        administrator.setUserId(currentUser.getId());
-        initAdministratorDB();
+        Administrator savedAdministrator = createAdministrator();
+        savedAdministrator.setUserId(currentUser.getId());
+        insertAdministratorToDB(savedAdministrator);
 
         Boolean result = managementTeamSecurityExpression.isCurrentAdministrator();
         assertThat(result).isTrue();
@@ -180,7 +174,7 @@ public class ManagementTeamSecurityExpressionIT {
     public void isCurrentAdministrator_UserIsNotAdministrator_ShouldReturnFalse() {
         currentUser = getLoggedInUser();
 
-        initYearSessionDB();
+        insertYearSessionToDB(createYearSession());
 
         Boolean result = managementTeamSecurityExpression.isCurrentAdministrator();
         assertThat(result).isFalse();
@@ -191,11 +185,12 @@ public class ManagementTeamSecurityExpressionIT {
         currentUser = getLoggedInUser();
 
         yearSessionRepository.save(new YearSession().value(PREVIOUS_YEAR_SESSION_VALUE));
-        initYearSessionDB();
+        insertYearSessionToDB(createYearSession());
 
-        administrator.setUserId(currentUser.getId());
-        administrator.setYearSession(PREVIOUS_YEAR_SESSION_VALUE);
-        initAdministratorDB();
+        Administrator savedAdministrator = createAdministrator();
+        savedAdministrator.setUserId(currentUser.getId());
+        savedAdministrator.setYearSession(PREVIOUS_YEAR_SESSION_VALUE);
+        insertAdministratorToDB(savedAdministrator);
 
         Boolean result = managementTeamSecurityExpression.isCurrentAdministrator();
         assertThat(result).isFalse();
@@ -205,11 +200,12 @@ public class ManagementTeamSecurityExpressionIT {
     public void isCurrentAdministrator_UserIsNotActiveAdministrator_ShouldReturnFalse() {
         currentUser = getLoggedInUser();
 
-        initYearSessionDB();
+        insertYearSessionToDB(createYearSession());
 
-        administrator.setUserId(currentUser.getId());
-        administrator.setStatus(AdministratorStatus.DEACTIVATE);
-        initAdministratorDB();
+        Administrator savedAdministrator = createAdministrator();
+        savedAdministrator.setUserId(currentUser.getId());
+        savedAdministrator.setStatus(AdministratorStatus.DEACTIVATE);
+        insertAdministratorToDB(savedAdministrator);
 
         Boolean result = managementTeamSecurityExpression.isCurrentAdministrator();
         assertThat(result).isFalse();
@@ -222,9 +218,10 @@ public class ManagementTeamSecurityExpressionIT {
     public void isEventHead_ShouldReturnTrue() {
         currentUser = getLoggedInUser();
 
-        eventCrew.setUserId(currentUser.getId());
-        eventCrew.setRole(EVENT_HEAD_ROLE);
-        initEventCrewDB();
+        EventCrew savedEventCrew = createEventCrew();
+        savedEventCrew.setUserId(currentUser.getId());
+        savedEventCrew.setRole(EVENT_HEAD_ROLE);
+        insertEventCrewToDB(savedEventCrew);
 
         Boolean result = managementTeamSecurityExpression.isEventHead(DEFAULT_EVENT_ID);
         assertThat(result).isTrue();
@@ -234,8 +231,9 @@ public class ManagementTeamSecurityExpressionIT {
     public void isEventHead_UserIsNotEventHead_ShouldReturnFalse() {
         currentUser = getLoggedInUser();
 
-        eventCrew.setUserId(currentUser.getId());
-        initEventCrewDB();
+        EventCrew savedEventCrew = createEventCrew();
+        savedEventCrew.setUserId(currentUser.getId());
+        insertEventCrewToDB(savedEventCrew);
 
         Boolean result = managementTeamSecurityExpression.isEventHead(DEFAULT_EVENT_ID);
         assertThat(result).isFalse();
@@ -245,9 +243,10 @@ public class ManagementTeamSecurityExpressionIT {
     public void isEventHead_UserIsEventHeadOfAnotherEvent_ShouldReturnFalse() {
         currentUser = getLoggedInUser();
 
-        eventCrew.setUserId(currentUser.getId());
-        eventCrew.setRole(EVENT_HEAD_ROLE);
-        initEventCrewDB();
+        EventCrew savedEventCrew = createEventCrew();
+        savedEventCrew.setUserId(currentUser.getId());
+        savedEventCrew.setRole(EVENT_HEAD_ROLE);
+        insertEventCrewToDB(savedEventCrew);
 
         Boolean result = managementTeamSecurityExpression.isEventHead(OTHER_EVENT_ID);
         assertThat(result).isFalse();
@@ -260,8 +259,9 @@ public class ManagementTeamSecurityExpressionIT {
     public void isEventCrew_ShouldReturnTrue() {
         currentUser = getLoggedInUser();
 
-        eventCrew.setUserId(currentUser.getId());
-        initEventCrewDB();
+        EventCrew savedEventCrew = createEventCrew();
+        savedEventCrew.setUserId(currentUser.getId());
+        insertEventCrewToDB(savedEventCrew);
 
         Boolean result = managementTeamSecurityExpression.isEventCrew(DEFAULT_EVENT_ID);
         assertThat(result).isTrue();
@@ -279,8 +279,9 @@ public class ManagementTeamSecurityExpressionIT {
     public void isEventCrew_UserIsEventCrewOfAnotherEvent_ShouldReturnFalse() {
         currentUser = getLoggedInUser();
 
-        eventCrew.setUserId(currentUser.getId());
-        initEventCrewDB();
+        EventCrew savedEventCrew = createEventCrew();
+        savedEventCrew.setUserId(currentUser.getId());
+        insertEventCrewToDB(savedEventCrew);
 
         Boolean result = managementTeamSecurityExpression.isEventCrew(OTHER_EVENT_ID);
         assertThat(result).isFalse();
@@ -291,15 +292,15 @@ public class ManagementTeamSecurityExpressionIT {
             .orElseThrow(() -> new BadRequestException("User not login"));
     }
 
-    private YearSession initYearSessionDB() {
-        return yearSessionRepository.saveAndFlush(yearSession);
+    private YearSession insertYearSessionToDB(YearSession yearSession) {
+        return yearSessionRepository.save(yearSession);
     }
 
-    private EventCrew initEventCrewDB() {
-        return eventCrewRepository.saveAndFlush(eventCrew);
+    private EventCrew insertEventCrewToDB(EventCrew eventCrew) {
+        return eventCrewRepository.save(eventCrew);
     }
 
-    private Administrator initAdministratorDB() {
-        return administratorRepository.saveAndFlush(administrator);
+    private Administrator insertAdministratorToDB(Administrator administrator) {
+        return administratorRepository.save(administrator);
     }
 }
