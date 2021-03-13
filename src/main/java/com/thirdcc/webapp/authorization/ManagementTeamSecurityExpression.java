@@ -46,8 +46,7 @@ public class ManagementTeamSecurityExpression {
      */
     public boolean isCurrentCCHead() {
         User currentUser = getCurrentUserWithLogin();
-        YearSession currentYearSession = yearSessionService.getCurrentYearSession()
-            .orElseThrow(() -> new InternalServerErrorException("Year Session not found"));
+        YearSession currentYearSession = yearSessionService.getCurrentYearSession();
         return administratorRepository
             .findByUserIdAndYearSessionAndRoleAndStatus(currentUser.getId(), currentYearSession.getValue(), AdministratorRole.CC_HEAD, AdministratorStatus.ACTIVE)
             .isPresent();
@@ -58,8 +57,7 @@ public class ManagementTeamSecurityExpression {
      */
     public boolean isCurrentAdministrator() {
         User currentUser = getCurrentUserWithLogin();
-        YearSession currentYearSession = yearSessionService.getCurrentYearSession()
-            .orElseThrow(() -> new InternalServerErrorException("Year Session not found"));
+        YearSession currentYearSession = yearSessionService.getCurrentYearSession();
         return administratorRepository
             .findByUserIdAndYearSessionAndStatus(currentUser.getId(), currentYearSession.getValue(), AdministratorStatus.ACTIVE)
             .isPresent();
