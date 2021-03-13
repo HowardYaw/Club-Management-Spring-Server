@@ -8,10 +8,10 @@ import com.thirdcc.webapp.exception.BadRequestException;
 import com.thirdcc.webapp.repository.AdministratorRepository;
 import com.thirdcc.webapp.repository.EventCrewRepository;
 import com.thirdcc.webapp.repository.UserRepository;
-import com.thirdcc.webapp.repository.YearSessionRepository;
 import com.thirdcc.webapp.security.AuthoritiesConstants;
 import com.thirdcc.webapp.security.SecurityUtils;
 import com.thirdcc.webapp.service.UserService;
+import com.thirdcc.webapp.service.YearSessionService;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -23,7 +23,7 @@ public class ManagementTeamSecurityExpression {
     private final UserRepository userRepository;
     private final EventCrewRepository eventCrewRepository;
     private final AdministratorRepository administratorRepository;
-    private final YearSessionRepository yearSessionRepository;
+    private final YearSessionService yearSessionService;
 
 
     public ManagementTeamSecurityExpression(
@@ -31,13 +31,13 @@ public class ManagementTeamSecurityExpression {
         UserRepository userRepository,
         EventCrewRepository eventCrewRepository,
         AdministratorRepository administratorRepository,
-        YearSessionRepository yearSessionRepository
+        YearSessionService yearSessionService
     ) {
         this.userService = userService;
         this.userRepository = userRepository;
         this.eventCrewRepository = eventCrewRepository;
         this.administratorRepository = administratorRepository;
-        this.yearSessionRepository = yearSessionRepository;
+        this.yearSessionService = yearSessionService;
     }
 
     /**
@@ -45,7 +45,7 @@ public class ManagementTeamSecurityExpression {
      */
     public boolean isCurrentCCHead() {
         User currentUser = getCurrentUserWithLogin();
-        YearSession currentYearSession = yearSessionRepository.findFirstByOrderByIdDesc()
+        YearSession currentYearSession = yearSessionService.findLatestYearSession()
             .orElseThrow(() -> new BadRequestException("Year Session not found"));
         return administratorRepository
             .findByUserIdAndYearSessionAndRoleAndStatus(currentUser.getId(), currentYearSession.getValue(), AdministratorRole.CC_HEAD, AdministratorStatus.ACTIVE)
@@ -57,19 +57,11 @@ public class ManagementTeamSecurityExpression {
      */
     public boolean isCurrentAdministrator() {
         User currentUser = getCurrentUserWithLogin();
-        YearSession currentYearSession = yearSessionRepository.findFirstByOrderByIdDesc()
+        YearSession currentYearSession = yearSessionService.findLatestYearSession()
             .orElseThrow(() -> new BadRequestException("Year Session not found"));
         return administratorRepository
             .findByUserIdAndYearSessionAndStatus(currentUser.getId(), currentYearSession.getValue(), AdministratorStatus.ACTIVE)
             .isPresent();
-    }
-
-    public boolean hasRoleAdminOrIsEventCrew(Long eventId) {
-        if (getUserAuthRole().contains(AuthoritiesConstants.ADMIN)) {
-            return true;
-        } else {
-            return isEventCrew(eventId);
-        }
     }
 
     /**
@@ -94,28 +86,22 @@ public class ManagementTeamSecurityExpression {
             .isPresent();
     }
 
+    @Deprecated
+    public boolean hasRoleAdminOrIsEventCrew(Long eventId) {
+        if (getUserAuthRole().contains(AuthoritiesConstants.ADMIN)) {
+            return true;
+        } else {
+            return isEventCrew(eventId);
+        }
+    }
+
+    @Deprecated
     public boolean hasRoleAdminOrIsEventHead(Long eventId) {
         if (getUserAuthRole().contains(AuthoritiesConstants.ADMIN)) {
             return true;
         } else {
             return isEventHead(eventId);
         }
-    }
-
-    /**
-     * Check if User is Administrator role or Event Head
-     * @param eventId
-     */
-    public boolean isEventHeadOrAdministrator(Long eventId) {
-        return isCurrentAdministrator() || isEventHead(eventId);
-    }
-
-    /**
-     * Check if User is Administrator role or Event Crew
-     * @param eventId
-     */
-    public boolean isEventCrewOrAdministrator(Long eventId) {
-        return isCurrentAdministrator() || isEventCrew(eventId);
     }
 
     private List<String> getUserAuthRole() {

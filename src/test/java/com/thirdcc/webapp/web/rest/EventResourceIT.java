@@ -1,9 +1,13 @@
 package com.thirdcc.webapp.web.rest;
 
 import com.thirdcc.webapp.ClubmanagementApp;
+import com.thirdcc.webapp.domain.Administrator;
 import com.thirdcc.webapp.domain.Event;
 import com.thirdcc.webapp.domain.User;
+import com.thirdcc.webapp.domain.YearSession;
+import com.thirdcc.webapp.repository.AdministratorRepository;
 import com.thirdcc.webapp.repository.EventRepository;
+import com.thirdcc.webapp.repository.YearSessionRepository;
 import com.thirdcc.webapp.service.EventCrewService;
 import com.thirdcc.webapp.service.EventService;
 import com.thirdcc.webapp.service.UserService;
@@ -42,7 +46,7 @@ import com.thirdcc.webapp.domain.enumeration.EventStatus;
  */
 @SpringBootTest(classes = ClubmanagementApp.class)
 @AutoConfigureMockMvc
-@WithMockUser(value = "user")
+@WithMockUser()
 public class EventResourceIT {
 
     private static final String DEFAULT_NAME = "AAAAAAAAAA";
@@ -72,6 +76,8 @@ public class EventResourceIT {
     private static final EventStatus DEFAULT_STATUS = EventStatus.OPEN;
     private static final EventStatus UPDATED_STATUS = EventStatus.CLOSED;
 
+    private static final String DEFAULT_YEAR_SESSION_VALUE = "2021/2022";
+
     @Autowired
     private EventRepository eventRepository;
 
@@ -79,7 +85,7 @@ public class EventResourceIT {
     private EventMapper eventMapper;
 
     @Autowired
-    private EventService eventService;
+    private YearSessionRepository yearSessionRepository;
 
     @Autowired
     private EventCrewService eventCrewService;
@@ -98,12 +104,6 @@ public class EventResourceIT {
     @BeforeEach
     public void setup() {
         MockitoAnnotations.initMocks(this);
-//        final EventResource eventResource = new EventResource(eventService);
-//        this.restEventMockMvc = MockMvcBuilders
-//            .webAppContextSetup(context)
-//            .defaultRequest(get("/").with(user("user").roles("ADMIN")))
-//            .apply(springSecurity())
-//            .build();
     }
 
     /**
@@ -141,6 +141,11 @@ public class EventResourceIT {
             .fee(UPDATED_FEE)
             .requiredTransport(UPDATED_REQUIRED_TRANSPORT)
             .status(UPDATED_STATUS);
+    }
+
+    private YearSession initYearSessionDB() {
+        return yearSessionRepository.saveAndFlush(new YearSession()
+            .value(DEFAULT_YEAR_SESSION_VALUE));
     }
 
     @BeforeEach
@@ -313,6 +318,7 @@ public class EventResourceIT {
     @WithMockUser(username = "user", password = "user", roles = "ADMIN")
     public void updateEvent() throws Exception {
         // Initialize the database
+        YearSession savedYearSession = initYearSessionDB();
         eventRepository.saveAndFlush(event);
 
         int databaseSizeBeforeUpdate = eventRepository.findAll().size();
@@ -378,7 +384,6 @@ public class EventResourceIT {
 
         // If the entity doesn't have an ID, it will throw BadRequestAlertException
         restEventMockMvc.perform(put("/api/events")
-            .with(user("user").password("user").roles("USER"))
             .contentType(TestUtil.APPLICATION_JSON_UTF8)
             .content(TestUtil.convertObjectToJsonBytes(eventDTO)))
             .andExpect(status().isBadRequest());
@@ -390,15 +395,16 @@ public class EventResourceIT {
 
     @Test
     @Transactional
+    @WithMockUser(username = "user", password = "user", roles = "ADMIN")
     public void deleteEvent() throws Exception {
         // Initialize the database
+        YearSession savedYearSession = initYearSessionDB();
         eventRepository.saveAndFlush(event);
 
         int databaseSizeBeforeDelete = eventRepository.findAll().size();
 
         // Delete the event
         restEventMockMvc.perform(delete("/api/events/{id}", event.getId())
-            .with(user("user").password("user").roles("USER"))
             .accept(TestUtil.APPLICATION_JSON_UTF8))
             .andExpect(status().isNoContent());
 

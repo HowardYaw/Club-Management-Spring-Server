@@ -86,6 +86,11 @@ public class YearSessionServiceImpl implements YearSessionService {
             .getValue();
     }
 
+    @Override
+    public Optional<YearSession> findLatestYearSession() {
+        return yearSessionRepository.findFirstByOrderByIdDesc();
+    }
+
     /**
      * Delete the yearSession by id.
      *
