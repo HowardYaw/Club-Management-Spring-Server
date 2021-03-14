@@ -1,11 +1,18 @@
 package com.thirdcc.webapp.web.rest;
 
 import com.thirdcc.webapp.ClubmanagementApp;
+import com.thirdcc.webapp.annotations.authorization.WithCurrentCCAdministrator;
+import com.thirdcc.webapp.annotations.authorization.WithEventCrew;
+import com.thirdcc.webapp.annotations.authorization.WithEventHead;
+import com.thirdcc.webapp.annotations.init.InitYearSession;
 import com.thirdcc.webapp.domain.Budget;
 import com.thirdcc.webapp.domain.Event;
+import com.thirdcc.webapp.domain.EventCrew;
+import com.thirdcc.webapp.domain.User;
 import com.thirdcc.webapp.domain.enumeration.EventStatus;
-import com.thirdcc.webapp.repository.BudgetRepository;
-import com.thirdcc.webapp.repository.EventRepository;
+import com.thirdcc.webapp.exception.BadRequestException;
+import com.thirdcc.webapp.repository.*;
+import com.thirdcc.webapp.security.SecurityUtils;
 import com.thirdcc.webapp.service.BudgetService;
 import com.thirdcc.webapp.service.dto.BudgetDTO;
 import com.thirdcc.webapp.service.mapper.BudgetMapper;
@@ -39,7 +46,7 @@ import com.thirdcc.webapp.domain.enumeration.TransactionType;
  */
 @SpringBootTest(classes = ClubmanagementApp.class)
 @AutoConfigureMockMvc
-@WithMockUser(value = "user")
+@InitYearSession
 public class BudgetResourceIT {
 
     private static final Long DEFAULT_EVENT_ID = 1L;
@@ -68,7 +75,13 @@ public class BudgetResourceIT {
     private static final EventStatus DEFAULT_EVENT_STATUS = EventStatus.OPEN;
 
     @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
     private EventRepository eventRepository;
+
+    @Autowired
+    private EventCrewRepository eventCrewRepository;
 
     @Autowired
     private BudgetRepository budgetRepository;
@@ -131,7 +144,8 @@ public class BudgetResourceIT {
     }
 
     @Test
-    public void createBudget() throws Exception {
+    @WithCurrentCCAdministrator
+    public void createBudget_WithCurrentCCAdministrator() throws Exception {
         int databaseSizeBeforeCreate = budgetRepository.findAll().size();
 
         Event savedEvent = initEventDB(createEventEntity());
@@ -144,7 +158,6 @@ public class BudgetResourceIT {
             .content(TestUtil.convertObjectToJsonBytes(budgetDTO)))
             .andExpect(status().isCreated());
 
-        // Validate the Budget in the database
         List<Budget> budgetList = budgetRepository.findAll();
         assertThat(budgetList).hasSize(databaseSizeBeforeCreate + 1);
         Budget testBudget = budgetList.get(budgetList.size() - 1);
@@ -156,6 +169,47 @@ public class BudgetResourceIT {
     }
 
     @Test
+    @WithEventHead
+    public void createBudget_WithEventHead() throws Exception {
+        int databaseSizeBeforeCreate = budgetRepository.findAll().size();
+
+        EventCrew savedEventCrew = getEventCrewByCurrentLoginUser();
+        Budget budget = createBudgetEntity();
+        budget.setEventId(savedEventCrew.getEventId());
+        BudgetDTO budgetDTO = budgetMapper.toDto(budget);
+
+        restBudgetMockMvc.perform(post("/api/event-budget")
+            .contentType(TestUtil.APPLICATION_JSON_UTF8)
+            .content(TestUtil.convertObjectToJsonBytes(budgetDTO)))
+            .andExpect(status().isCreated());
+
+        List<Budget> budgetList = budgetRepository.findAll();
+        assertThat(budgetList).hasSize(databaseSizeBeforeCreate + 1);
+        Budget testBudget = budgetList.get(budgetList.size() - 1);
+        assertThat(testBudget.getEventId()).isEqualTo(savedEventCrew.getEventId());
+        assertThat(testBudget.getAmount()).isEqualTo(DEFAULT_AMOUNT);
+        assertThat(testBudget.getType()).isEqualTo(DEFAULT_TYPE);
+        assertThat(testBudget.getName()).isEqualTo(DEFAULT_NAME);
+        assertThat(testBudget.getDetails()).isEqualTo(DEFAULT_DETAILS);
+    }
+
+    @Test
+    @WithEventCrew
+    public void createBudget_WithEventCrew_ShouldThrow403() throws Exception {
+        EventCrew savedEventCrew = getEventCrewByCurrentLoginUser();
+        Budget budget = createBudgetEntity();
+        budget.setEventId(savedEventCrew.getEventId());
+        BudgetDTO budgetDTO = budgetMapper.toDto(budget);
+
+        restBudgetMockMvc.perform(post("/api/event-budget")
+            .contentType(TestUtil.APPLICATION_JSON_UTF8)
+            .content(TestUtil.convertObjectToJsonBytes(budgetDTO)))
+            .andExpect(status().isForbidden());
+
+    }
+
+    @Test
+    @WithCurrentCCAdministrator
     public void createBudget_WithIdInDTO_ShouldThrow400() throws Exception {
         int databaseSizeBeforeCreate = budgetRepository.findAll().size();
 
@@ -168,12 +222,12 @@ public class BudgetResourceIT {
             .content(TestUtil.convertObjectToJsonBytes(budgetDTO)))
             .andExpect(status().isBadRequest());
 
-        // Validate the Budget in the database
         List<Budget> budgetList = budgetRepository.findAll();
         assertThat(budgetList).hasSize(databaseSizeBeforeCreate);
     }
 
     @Test
+    @WithCurrentCCAdministrator
     public void createBudget_WithEventCancelled_ShouldThrow400() throws Exception {
         int databaseSizeBeforeCreate = budgetRepository.findAll().size();
 
@@ -197,6 +251,7 @@ public class BudgetResourceIT {
     }
 
     @Test
+    @WithCurrentCCAdministrator
     public void createBudget_WithEventEnded_ShouldThrow400() throws Exception {
         int databaseSizeBeforeCreate = budgetRepository.findAll().size();
 
@@ -220,13 +275,13 @@ public class BudgetResourceIT {
     }
 
     @Test
-    public void getAllBudgetsByEventId() throws Exception {
+    @WithCurrentCCAdministrator
+    public void getAllBudgetsByEventId_WithCurrentCCAdministrator() throws Exception {
         Event savedEvent = initEventDB(createEventEntity());
         Budget budget = createBudgetEntity();
         budget.setEventId(savedEvent.getId());
         Budget savedBudget = initBudgetDB(budget);
 
-        // Get all the budgetList
         restBudgetMockMvc.perform(
             get("/api/event-budget/event/{eventId}?sort=id,desc", savedEvent.getId())
         )
@@ -241,13 +296,54 @@ public class BudgetResourceIT {
     }
 
     @Test
-    public void getBudget() throws Exception {
+    @WithEventCrew
+    public void getAllBudgetsByEventId_WithEventCrew() throws Exception {
+        EventCrew savedEventCrew = getEventCrewByCurrentLoginUser();
+        Budget budget = createBudgetEntity();
+        budget.setEventId(savedEventCrew.getEventId());
+        Budget savedBudget = initBudgetDB(budget);
+
+        restBudgetMockMvc.perform(
+            get("/api/event-budget/event/{eventId}?sort=id,desc", savedEventCrew.getEventId())
+        )
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
+            .andExpect(jsonPath("$.[*].id").value(hasItem(savedBudget.getId().intValue())))
+            .andExpect(jsonPath("$.[*].eventId").value(hasItem(savedEventCrew.getEventId().intValue())))
+            .andExpect(jsonPath("$.[*].amount").value(hasItem(DEFAULT_AMOUNT.doubleValue())))
+            .andExpect(jsonPath("$.[*].type").value(hasItem(DEFAULT_TYPE.toString())))
+            .andExpect(jsonPath("$.[*].name").value(hasItem(DEFAULT_NAME.toString())))
+            .andExpect(jsonPath("$.[*].details").value(hasItem(DEFAULT_DETAILS.toString())));
+    }
+
+    @Test
+    @WithMockUser
+    public void getAllBudgetsByEventId_WithMockUser_ShouldThrow403() throws Exception {
         Event savedEvent = initEventDB(createEventEntity());
         Budget budget = createBudgetEntity();
         budget.setEventId(savedEvent.getId());
         Budget savedBudget = initBudgetDB(budget);
 
-        restBudgetMockMvc.perform(get("/api/event-budget/{id}", savedBudget.getId()))
+        restBudgetMockMvc.perform(
+            get("/api/event-budget/event/{eventId}?sort=id,desc", savedEvent.getId())
+        )
+            .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithCurrentCCAdministrator
+    public void getBudget_WithCurrentCCAdministrator() throws Exception {
+        Event savedEvent = initEventDB(createEventEntity());
+        Budget budget = createBudgetEntity();
+        budget.setEventId(savedEvent.getId());
+        Budget savedBudget = initBudgetDB(budget);
+
+        restBudgetMockMvc.perform(
+            get(
+                "/api/event-budget/{id}/event/{eventId}",
+                savedBudget.getId(),
+                savedEvent.getId()
+            ))
             .andExpect(status().isOk())
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
             .andExpect(jsonPath("$.id").value(savedBudget.getId().intValue()))
@@ -259,13 +355,82 @@ public class BudgetResourceIT {
     }
 
     @Test
-    public void getBudget_WithBudgetNotExist_ShouldThrow404() throws Exception {
-        restBudgetMockMvc.perform(get("/api/event-budget/{id}", Long.MAX_VALUE))
+    @WithEventCrew
+    public void getBudget_WithEventCrew() throws Exception {
+        EventCrew savedEventCrew = getEventCrewByCurrentLoginUser();
+        Budget budget = createBudgetEntity();
+        budget.setEventId(savedEventCrew.getEventId());
+        Budget savedBudget = initBudgetDB(budget);
+
+        restBudgetMockMvc.perform(
+            get(
+                "/api/event-budget/{id}/event/{eventId}",
+                savedBudget.getId(),
+                savedEventCrew.getEventId()
+            ))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
+            .andExpect(jsonPath("$.id").value(savedBudget.getId().intValue()))
+            .andExpect(jsonPath("$.eventId").value(savedEventCrew.getEventId().intValue()))
+            .andExpect(jsonPath("$.amount").value(DEFAULT_AMOUNT.doubleValue()))
+            .andExpect(jsonPath("$.type").value(DEFAULT_TYPE.toString()))
+            .andExpect(jsonPath("$.name").value(DEFAULT_NAME.toString()))
+            .andExpect(jsonPath("$.details").value(DEFAULT_DETAILS.toString()));
+    }
+
+    @Test
+    @WithMockUser
+    public void getBudget_WithMockUser() throws Exception {
+        Event savedEvent = initEventDB(createEventEntity());
+        Budget budget = createBudgetEntity();
+        budget.setEventId(savedEvent.getId());
+        Budget savedBudget = initBudgetDB(budget);
+
+        restBudgetMockMvc.perform(
+            get(
+                "/api/event-budget/{id}/event/{eventId}",
+                savedBudget.getId(),
+                savedEvent.getId()
+            ))
+            .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithCurrentCCAdministrator
+    public void getBudget_WithBudgetNotExist_ShouldThrow400() throws Exception {
+        Event savedEvent = initEventDB(createEventEntity());
+        restBudgetMockMvc.perform(
+            get(
+                "/api/event-budget/{id}/event/{eventId}",
+                Long.MAX_VALUE,
+                savedEvent.getId()
+            ).accept(TestUtil.APPLICATION_JSON_UTF8))
             .andExpect(status().isNotFound());
     }
 
     @Test
-    public void updateBudget() throws Exception {
+    @WithCurrentCCAdministrator
+    public void getBudget_WithWrongEventId_ShouldThrow404() throws Exception {
+
+        Event savedEvent = initEventDB(createEventEntity());
+        Budget budget = createBudgetEntity();
+        budget.setEventId(Long.MAX_VALUE);
+        Budget savedBudget = initBudgetDB(budget);
+
+        assertThat(savedBudget.getEventId()).isNotEqualTo(savedEvent.getId());
+
+        restBudgetMockMvc.perform(
+            get(
+                "/api/event-budget/{id}/event/{eventId}",
+                savedBudget.getId(),
+                savedEvent.getId()
+            ).accept(TestUtil.APPLICATION_JSON_UTF8))
+            .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @WithCurrentCCAdministrator
+    public void updateBudget_WithCurrentCCAdministrator() throws Exception {
         Event savedEvent = initEventDB(createEventEntity());
         Budget savedBudget = createUpdateBudgetEntity();
         savedBudget.setEventId(savedEvent.getId());
@@ -291,6 +456,50 @@ public class BudgetResourceIT {
     }
 
     @Test
+    @WithEventHead
+    public void updateBudget_WithEventHead() throws Exception {
+        EventCrew savedEventCrew = getEventCrewByCurrentLoginUser();
+        Budget savedBudget = createUpdateBudgetEntity();
+        savedBudget.setEventId(savedEventCrew.getEventId());
+        savedBudget = initBudgetDB(savedBudget);
+
+        int databaseSizeBeforeUpdate = budgetRepository.findAll().size();
+
+        BudgetDTO budgetDTO = budgetMapper.toDto(savedBudget);
+
+        restBudgetMockMvc.perform(put("/api/event-budget")
+            .contentType(TestUtil.APPLICATION_JSON_UTF8)
+            .content(TestUtil.convertObjectToJsonBytes(budgetDTO)))
+            .andExpect(status().isOk());
+
+        List<Budget> budgetList = budgetRepository.findAll();
+        assertThat(budgetList).hasSize(databaseSizeBeforeUpdate);
+        Budget testBudget = budgetList.get(budgetList.size() - 1);
+        assertThat(testBudget.getEventId()).isEqualTo(savedEventCrew.getEventId());
+        assertThat(testBudget.getAmount()).isEqualTo(UPDATED_AMOUNT);
+        assertThat(testBudget.getType()).isEqualTo(UPDATED_TYPE);
+        assertThat(testBudget.getName()).isEqualTo(UPDATED_NAME);
+        assertThat(testBudget.getDetails()).isEqualTo(UPDATED_DETAILS);
+    }
+
+    @Test
+    @WithEventCrew
+    public void updateBudget_WithEventCrew_ShouldThrow403() throws Exception {
+        EventCrew savedEventCrew = getEventCrewByCurrentLoginUser();
+        Budget savedBudget = createUpdateBudgetEntity();
+        savedBudget.setEventId(savedEventCrew.getEventId());
+        savedBudget = initBudgetDB(savedBudget);
+
+        BudgetDTO budgetDTO = budgetMapper.toDto(savedBudget);
+
+        restBudgetMockMvc.perform(put("/api/event-budget")
+            .contentType(TestUtil.APPLICATION_JSON_UTF8)
+            .content(TestUtil.convertObjectToJsonBytes(budgetDTO)))
+            .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithCurrentCCAdministrator
     public void updateBudget_WithBudgetNotExist_ShouldThrow400() throws Exception {
         int databaseSizeBeforeUpdate = budgetRepository.findAll().size();
 
@@ -309,6 +518,7 @@ public class BudgetResourceIT {
     }
 
     @Test
+    @WithCurrentCCAdministrator
     public void updateBudget_WithEventCancelled_ShouldThrow400() throws Exception {
 
         Event event = createEventEntity();
@@ -334,6 +544,7 @@ public class BudgetResourceIT {
     }
 
     @Test
+    @WithCurrentCCAdministrator
     public void updateBudget_WithEventEnded_ShouldThrow400() throws Exception {
 
         Event event = createEventEntity();
@@ -359,7 +570,8 @@ public class BudgetResourceIT {
     }
 
     @Test
-    public void deleteBudget() throws Exception {
+    @WithCurrentCCAdministrator
+    public void deleteBudget_WithCurrentCCAdministrator() throws Exception {
         Event savedEvent = initEventDB(createEventEntity());
         Budget budget = createBudgetEntity();
         budget.setEventId(savedEvent.getId());
@@ -367,8 +579,11 @@ public class BudgetResourceIT {
 
         int databaseSizeBeforeDelete = budgetRepository.findAll().size();
 
-        restBudgetMockMvc.perform(delete("/api/event-budget/{id}", savedBudget.getId())
-            .accept(TestUtil.APPLICATION_JSON_UTF8))
+        restBudgetMockMvc.perform(delete(
+                "/api/event-budget/{id}/event/{eventId}",
+                savedBudget.getId(),
+                savedEvent.getId()
+            ).accept(TestUtil.APPLICATION_JSON_UTF8))
             .andExpect(status().isNoContent());
 
         List<Budget> budgetList = budgetRepository.findAll();
@@ -376,9 +591,74 @@ public class BudgetResourceIT {
     }
 
     @Test
+    @WithEventHead
+    public void deleteBudget_WithEventHead() throws Exception {
+        EventCrew savedEventCrew = getEventCrewByCurrentLoginUser();
+        Budget budget = createBudgetEntity();
+        budget.setEventId(savedEventCrew.getEventId());
+        Budget savedBudget = initBudgetDB(budget);
+
+        int databaseSizeBeforeDelete = budgetRepository.findAll().size();
+
+        restBudgetMockMvc.perform(
+            delete(
+                "/api/event-budget/{id}/event/{eventId}",
+                savedBudget.getId(),
+                savedEventCrew.getEventId()
+            ).accept(TestUtil.APPLICATION_JSON_UTF8))
+            .andExpect(status().isNoContent());
+
+        List<Budget> budgetList = budgetRepository.findAll();
+        assertThat(budgetList).hasSize(databaseSizeBeforeDelete - 1);
+    }
+
+    @Test
+    @WithEventCrew
+    public void deleteBudget_WithEventCrew_ShouldThrow403() throws Exception {
+        EventCrew savedEventCrew = getEventCrewByCurrentLoginUser();
+        Budget budget = createBudgetEntity();
+        budget.setEventId(savedEventCrew.getEventId());
+        Budget savedBudget = initBudgetDB(budget);
+
+        restBudgetMockMvc.perform(
+            delete(
+                "/api/event-budget/{id}/event/{eventId}",
+                savedBudget.getId(),
+                savedEventCrew.getEventId()
+            ).accept(TestUtil.APPLICATION_JSON_UTF8))
+            .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithCurrentCCAdministrator
     public void deleteBudget_WithBudgetNotExist_ShouldThrow400() throws Exception {
-        restBudgetMockMvc.perform(delete("/api/event-budget/{id}", Long.MAX_VALUE)
-            .accept(TestUtil.APPLICATION_JSON_UTF8))
+        Event savedEvent = initEventDB(createEventEntity());
+        restBudgetMockMvc.perform(
+            delete(
+                "/api/event-budget/{id}/event/{eventId}",
+                Long.MAX_VALUE,
+                savedEvent.getId()
+            ).accept(TestUtil.APPLICATION_JSON_UTF8))
+            .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @WithCurrentCCAdministrator
+    public void deleteBudget_WithWrongEventId_ShouldThrow400() throws Exception {
+
+        Event savedEvent = initEventDB(createEventEntity());
+        Budget budget = createBudgetEntity();
+        budget.setEventId(Long.MAX_VALUE);
+        Budget savedBudget = initBudgetDB(budget);
+
+        assertThat(savedBudget.getEventId()).isNotEqualTo(savedEvent.getId());
+
+        restBudgetMockMvc.perform(
+            delete(
+                "/api/event-budget/{id}/event/{eventId}",
+                savedBudget.getId(),
+                savedEvent.getId()
+            ).accept(TestUtil.APPLICATION_JSON_UTF8))
             .andExpect(status().isBadRequest());
     }
 
@@ -419,6 +699,17 @@ public class BudgetResourceIT {
 
     private Event initEventDB(Event event) {
         return eventRepository.saveAndFlush(event);
+    }
+
+    private EventCrew getEventCrewByCurrentLoginUser() {
+        User currentUser = SecurityUtils
+            .getCurrentUserLogin()
+            .flatMap(userRepository::findOneWithAuthoritiesByLogin)
+            .orElseThrow(() -> new BadRequestException("Cannot find user"));
+        List<EventCrew> eventCrewList = eventCrewRepository
+            .findAllByUserId(currentUser.getId());
+        assertThat(eventCrewList).hasSize(1);
+        return eventCrewList.get(0);
     }
 
     private Budget initBudgetDB(Budget budget) {
