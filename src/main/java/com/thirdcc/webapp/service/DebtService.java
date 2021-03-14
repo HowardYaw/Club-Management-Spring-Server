@@ -63,11 +63,10 @@ public interface DebtService {
     DebtDTO updateStatus(Long id, DebtStatus debtStatus);
     
     /**
-     * Get all the debts which is under "eventId" event.
+     * Get all debts with OPEN status.
      *
      * @param pageable the pagination information.
-     * @param eventId the event id of the event
      * @return the list of entities.
      */
-    Page<DebtDTO> findAllDebtsByEventId(Pageable pageable, Long eventId);
+    Page<DebtDTO> findAllOpenDebts(Pageable pageable);
 }

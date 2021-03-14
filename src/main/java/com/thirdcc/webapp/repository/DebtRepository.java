@@ -17,5 +17,5 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface DebtRepository extends JpaRepository<Debt, Long> {
     
-    Page<Debt> findAllByStatusAndEventAttendeeIdIn(Pageable pageable, Set<DebtStatus> debtStatus, List<Long> eventAttendeeIdList);
+    Page<Debt> findAllByStatusInOrderByEventAttendeeIdAscCreatedDateAsc(Pageable pageable, Set<DebtStatus> debtStatus);
 }

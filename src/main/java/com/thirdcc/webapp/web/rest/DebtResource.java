@@ -1,6 +1,7 @@
 package com.thirdcc.webapp.web.rest;
 
 import com.thirdcc.webapp.domain.enumeration.DebtStatus;
+import com.thirdcc.webapp.security.AuthoritiesConstants;
 import com.thirdcc.webapp.service.DebtService;
 import com.thirdcc.webapp.web.rest.errors.BadRequestAlertException;
 import com.thirdcc.webapp.service.dto.DebtDTO;
@@ -47,21 +48,21 @@ public class DebtResource {
         this.debtService = debtService;
     }
 
-    @PutMapping("/debts/{id}/status/{debtStatus}/event/{eventId}")
-    @PreAuthorize("@managementTeamSecurityExpression.hasRoleAdminOrIsEventCrew(#eventId)")
-    public ResponseEntity<DebtDTO> updateDebtStatus(@PathVariable Long id, @PathVariable Long eventId, @PathVariable DebtStatus debtStatus) {
-        log.debug("REST request to update debt: {} with status: {} for eventId: {}", id, debtStatus, eventId);
+    @PutMapping("/debts/{id}/status/{debtStatus}")
+    @PreAuthorize("hasRole(\"" + AuthoritiesConstants.ADMIN + "\") || @managementTeamSecurityExpression.isCurrentAdministrator()")
+    public ResponseEntity<DebtDTO> updateDebtStatus(@PathVariable Long id, @PathVariable DebtStatus debtStatus) {
+        log.debug("REST request to update debt: {} with status: {}", id, debtStatus);
         DebtDTO result = debtService.updateStatus(id, debtStatus);
         return ResponseEntity.ok()
             .headers(HeaderUtil.createEntityUpdateAlert(applicationName, true, ENTITY_NAME, id.toString()))
             .body(result);
     }
     
-    @GetMapping("/debts/event/{eventId}")
-    @PreAuthorize("@managementTeamSecurityExpression.hasRoleAdminOrIsEventCrew(#eventId)")
-    public ResponseEntity<List<DebtDTO>> getAllDebtsByEventId(Pageable pageable, @PathVariable Long eventId, @RequestParam MultiValueMap<String, String> queryParams, UriComponentsBuilder uriBuilder) {
-        log.debug("REST request to get a page of Debts with event id: {}", eventId);
-        Page<DebtDTO> page = debtService.findAllDebtsByEventId(pageable, eventId);
+    @GetMapping("/debts")
+    @PreAuthorize("hasRole(\"" + AuthoritiesConstants.ADMIN + "\") || @managementTeamSecurityExpression.isCurrentAdministrator()")
+    public ResponseEntity<List<DebtDTO>> getAllDebts(Pageable pageable, @RequestParam MultiValueMap<String, String> queryParams, UriComponentsBuilder uriBuilder) {
+        log.debug("REST request to get a page of Debts");
+        Page<DebtDTO> page = debtService.findAllOpenDebts(pageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(uriBuilder.queryParams(queryParams), page);
         return ResponseEntity.ok().headers(headers).body(page.getContent());
     }

@@ -139,20 +139,19 @@ public class DebtServiceImpl implements DebtService {
     }
     
     /**
-     * Get all the debts which is under "eventId" event.
+     * Get all debts with OPEN status.
      *
      * @param pageable the pagination information.
      * @return the list of entities.
      */
     @Override
     @Transactional(readOnly = true)
-    public Page<DebtDTO> findAllDebtsByEventId(Pageable pageable, Long eventId) {
-        log.debug("Request to get all Debts By event Id : {}", eventId);
-        List<Long> eventAttendeeIdlist = eventAttendeeRepository.findAllByEventId(Pageable.unpaged(), eventId).stream().map(EventAttendee::getId).collect(Collectors.toList());
+    public Page<DebtDTO> findAllOpenDebts(Pageable pageable) {
+        log.debug("Request to get all Debts");
         HashSet<DebtStatus> openDebtStatus = new HashSet<DebtStatus>() {{
             add(DebtStatus.OPEN);
         }};
-        return debtRepository.findAllByStatusAndEventAttendeeIdIn(pageable, openDebtStatus, eventAttendeeIdlist)
+        return debtRepository.findAllByStatusInOrderByEventAttendeeIdAscCreatedDateAsc(pageable, openDebtStatus)
             .map(debtMapper::toDto);
     }
 }
