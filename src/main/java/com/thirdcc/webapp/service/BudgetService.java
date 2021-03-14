@@ -17,7 +17,7 @@ public interface BudgetService {
 
     List<BudgetDTO> findAllByEventId(Pageable pageable, Long eventId);
 
-    Optional<BudgetDTO> findOne(Long id);
+    Optional<BudgetDTO> findOneByEventIdAndId(Long eventId, Long id);
 
-    void delete(Long id);
+    void delete(Long eventId, Long id);
 }

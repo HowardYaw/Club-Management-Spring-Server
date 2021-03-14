@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.*;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 
 /**
@@ -15,6 +16,8 @@ import java.util.List;
 @SuppressWarnings("unused")
 @Repository
 public interface BudgetRepository extends JpaRepository<Budget, Long> {
+
+    Optional<Budget> findOneByEventIdAndId(Long eventId, Long id);
 
     List<Budget> findAllByEventIdAndType(Long eventId, TransactionType type);
 

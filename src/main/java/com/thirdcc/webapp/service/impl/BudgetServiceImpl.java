@@ -87,17 +87,17 @@ public class BudgetServiceImpl implements BudgetService {
 
     @Override
     @Transactional(readOnly = true)
-    public Optional<BudgetDTO> findOne(Long id) {
-        log.debug("Request to get Budget : {}", id);
-        return budgetRepository.findById(id)
+    public Optional<BudgetDTO> findOneByEventIdAndId(Long eventId, Long id) {
+        log.debug("Request to get Budget eventId: {}, id: {}", eventId, id);
+        return budgetRepository.findOneByEventIdAndId(eventId, id)
             .map(budgetMapper::toDto);
     }
 
     @Override
-    public void delete(Long id) {
-        log.debug("Request to delete Budget : {}", id);
+    public void delete(Long eventId, Long id) {
+        log.debug("Request to delete Budget eventId: {}, id: {}", eventId, id);
         Budget budget = budgetRepository
-            .findById(id)
+            .findOneByEventIdAndId(eventId, id)
             .orElseThrow(() -> new BadRequestException("Cannot delete non existing budget"));
         budgetRepository.deleteById(id);
     }
