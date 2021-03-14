@@ -1,6 +1,7 @@
 package com.thirdcc.webapp.service.impl;
 
 import com.thirdcc.webapp.exception.BadRequestException;
+import com.thirdcc.webapp.exception.InternalServerErrorException;
 import com.thirdcc.webapp.service.YearSessionService;
 import com.thirdcc.webapp.domain.YearSession;
 import com.thirdcc.webapp.repository.YearSessionRepository;
@@ -84,6 +85,12 @@ public class YearSessionServiceImpl implements YearSessionService {
             .findById(id)
             .orElseThrow(() -> new BadRequestException("YearSession is not found"))
             .getValue();
+    }
+
+    @Override
+    public YearSession getCurrentYearSession() {
+        return yearSessionRepository.findFirstByOrderByIdDesc()
+            .orElseThrow(() -> new InternalServerErrorException("Year Session not found"));
     }
 
     /**
