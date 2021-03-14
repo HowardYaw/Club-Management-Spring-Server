@@ -41,7 +41,7 @@ public class BudgetResource {
     }
 
     @PostMapping("/event-budget")
-    @PreAuthorize("hasRole('ROLE_ADMIN') || @managementTeamSecurityExpression.isEventHead(#budgetDTO.eventId)")
+    @PreAuthorize("hasRole('ROLE_ADMIN') || @managementTeamSecurityExpression.isEventHead(#budgetDTO.getEventId())")
     public ResponseEntity<BudgetDTO> createBudget(@RequestBody BudgetDTO budgetDTO) throws URISyntaxException {
         log.debug("REST request to save Budget : {}", budgetDTO);
         if (budgetDTO.getId() != null) {
@@ -54,7 +54,7 @@ public class BudgetResource {
     }
 
     @PutMapping("/event-budget")
-    @PreAuthorize("hasRole('ROLE_ADMIN') || @managementTeamSecurityExpression.isEventHead(#budgetDTO.eventId)")
+    @PreAuthorize("hasRole('ROLE_ADMIN') || @managementTeamSecurityExpression.isEventHead(#budgetDTO.getEventId())")
     public ResponseEntity<BudgetDTO> updateBudget(@RequestBody BudgetDTO budgetDTO) throws URISyntaxException {
         log.debug("REST request to update Budget : {}", budgetDTO);
         if (budgetDTO.getId() == null) {
@@ -67,16 +67,16 @@ public class BudgetResource {
     }
 
     @GetMapping("/event-budget/event/{eventId}")
-    @PreAuthorize("hasRole('ROLE_ADMIN') || @managementTeamSecurityExpression.isEventHead(#budgetDTO.eventId) " +
-        "|| @managementTeamSecurityExpression.isEventCrew(#budgetDTO.eventId)")
+    @PreAuthorize("hasRole('ROLE_ADMIN') || @managementTeamSecurityExpression.isEventHead(#budgetDTO.getEventId()) " +
+        "|| @managementTeamSecurityExpression.isEventCrew(#budgetDTO.getEventId())")
     public List<BudgetDTO> getAllBudgetsByEventId(Pageable pageable, @PathVariable Long eventId) {
         log.debug("REST request to get all Budgets by eventId {}", eventId);
         return budgetService.findAllByEventId(pageable, eventId);
     }
 
     @GetMapping("/event-budget/{id}")
-    @PreAuthorize("hasRole('ROLE_ADMIN') || @managementTeamSecurityExpression.isEventHead(#budgetDTO.eventId) " +
-        "|| @managementTeamSecurityExpression.isEventCrew(#budgetDTO.eventId)")
+    @PreAuthorize("hasRole('ROLE_ADMIN') || @managementTeamSecurityExpression.isEventHead(#budgetDTO.getEventId()) " +
+        "|| @managementTeamSecurityExpression.isEventCrew(#budgetDTO.getEventId())")
     public ResponseEntity<BudgetDTO> getBudget(@PathVariable Long id) {
         log.debug("REST request to get Budget : {}", id);
         Optional<BudgetDTO> budgetDTO = budgetService.findOne(id);
@@ -84,7 +84,7 @@ public class BudgetResource {
     }
 
     @DeleteMapping("/event-budget/{id}")
-    @PreAuthorize("hasRole('ROLE_ADMIN') || @managementTeamSecurityExpression.isEventHead(#budgetDTO.eventId)")
+    @PreAuthorize("hasRole('ROLE_ADMIN') || @managementTeamSecurityExpression.isEventHead(#budgetDTO.getEventId())")
     public ResponseEntity<Void> deleteBudget(@PathVariable Long id) {
         log.debug("REST request to delete Budget : {}", id);
         budgetService.delete(id);
