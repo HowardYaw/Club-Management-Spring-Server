@@ -2,7 +2,6 @@ package com.thirdcc.webapp.service.impl;
 
 import com.thirdcc.webapp.service.DebtService;
 import com.thirdcc.webapp.domain.Debt;
-import com.thirdcc.webapp.domain.EventAttendee;
 import com.thirdcc.webapp.domain.enumeration.DebtStatus;
 import com.thirdcc.webapp.exception.BadRequestException;
 import com.thirdcc.webapp.repository.DebtRepository;
@@ -10,7 +9,6 @@ import com.thirdcc.webapp.repository.EventAttendeeRepository;
 import com.thirdcc.webapp.service.dto.DebtDTO;
 import com.thirdcc.webapp.service.mapper.DebtMapper;
 import java.util.HashSet;
-import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,9 +16,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 /**
  * Service Implementation for managing {@link Debt}.

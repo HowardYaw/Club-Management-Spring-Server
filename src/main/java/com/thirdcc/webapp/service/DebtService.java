@@ -6,8 +6,6 @@ import com.thirdcc.webapp.service.dto.DebtDTO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
-import java.util.Optional;
-
 /**
  * Service Interface for managing {@link com.thirdcc.webapp.domain.Debt}.
  */
