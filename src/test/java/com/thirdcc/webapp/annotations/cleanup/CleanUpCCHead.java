@@ -1,8 +1,6 @@
 package com.thirdcc.webapp.annotations.cleanup;
 
-import com.thirdcc.webapp.repository.EventCrewRepository;
-import com.thirdcc.webapp.repository.EventRepository;
-import com.thirdcc.webapp.repository.UserRepository;
+import com.thirdcc.webapp.repository.*;
 import org.springframework.context.ApplicationContext;
 import org.springframework.core.Ordered;
 import org.springframework.test.context.TestContext;
@@ -17,11 +15,11 @@ import java.lang.annotation.Target;
 @Target({ElementType.METHOD, ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @TestExecutionListeners(
-    value = { CleanUpEventHead.CleanUpEventHeadTestExecutionListener.class },
+    value = { CleanUpCCHead.CleanUpCCHeadTestExecutionListener.class },
     mergeMode = TestExecutionListeners.MergeMode.MERGE_WITH_DEFAULTS)
-public @interface CleanUpEventHead {
+public @interface CleanUpCCHead {
 
-    class CleanUpEventHeadTestExecutionListener implements TestExecutionListener, Ordered {
+    class CleanUpCCHeadTestExecutionListener implements TestExecutionListener, Ordered {
 
         @Override
         public void afterTestMethod(TestContext testContext) throws Exception {
@@ -30,11 +28,8 @@ public @interface CleanUpEventHead {
             UserRepository userRepository = applicationContext.getBean(UserRepository.class);
             userRepository.deleteAll();
 
-            EventCrewRepository eventCrewRepository = applicationContext.getBean(EventCrewRepository.class);
-            eventCrewRepository.deleteAll();
-
-            EventRepository eventRepository = applicationContext.getBean(EventRepository.class);
-            eventRepository.deleteAll();
+            AdministratorRepository administratorRepository = applicationContext.getBean(AdministratorRepository.class);
+            administratorRepository.deleteAll();
         }
 
         @Override

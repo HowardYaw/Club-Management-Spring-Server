@@ -58,7 +58,7 @@ public abstract class AbstractSecurityContextFactoryTemplate<A extends Annotatio
     }
 
     public String createUserEmail() {
-        return this.userLogin + "@testing.com";
+        return this.userLogin + "@localhost.testing";
     }
 
     public String createUserPassword() {

@@ -1,5 +1,6 @@
 package com.thirdcc.webapp.annotations.authorization;
 
+import com.thirdcc.webapp.annotations.cleanup.CleanUpEventHead;
 import com.thirdcc.webapp.domain.Event;
 import com.thirdcc.webapp.domain.EventCrew;
 import com.thirdcc.webapp.domain.enumeration.EventCrewRole;
@@ -21,14 +22,11 @@ import java.util.Set;
 
 @Target({ElementType.METHOD, ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
-@WithSecurityContext(factory = WithEventHeadMockUser.Factory.class)
-public @interface WithEventHeadMockUser {
+@WithSecurityContext(factory = WithEventHead.Factory.class)
+@CleanUpEventHead
+public @interface WithEventHead {
 
-//    String EVENT_HEAD_LOGIN = "event_head";
-//    String EVENT_HEAD_EMAIL = "event_head@testing.com";
-//    String EVENT_HEAD_PASS = RandomStringUtils.random(60);
-
-    class Factory extends AbstractSecurityContextFactoryTemplate<WithEventHeadMockUser> {
+    class Factory extends AbstractSecurityContextFactoryTemplate<WithEventHead> {
 
         private final EventCrewRepository eventCrewRepository;
         private final EventRepository eventRepository;
@@ -38,22 +36,6 @@ public @interface WithEventHeadMockUser {
             this.eventCrewRepository = eventCrewRepository;
             this.eventRepository = eventRepository;
         }
-
-//
-//        @Override
-//        public String configureUserLogin() {
-//            return EVENT_HEAD_LOGIN;
-//        }
-//
-//        @Override
-//        public String configureUserEmail() {
-//            return EVENT_HEAD_EMAIL;
-//        }
-//
-//        @Override
-//        public String configureUserPassword() {
-//            return EVENT_HEAD_PASS;
-//        }
 
         @Override
         public Set<String> configureAuthorityNames() {

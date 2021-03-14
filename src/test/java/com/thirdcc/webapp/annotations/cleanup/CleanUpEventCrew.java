@@ -17,11 +17,11 @@ import java.lang.annotation.Target;
 @Target({ElementType.METHOD, ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @TestExecutionListeners(
-    value = { CleanUpEventHead.CleanUpEventHeadTestExecutionListener.class },
+    value = { CleanUpEventCrew.CleanUpEventCrewTestExecutionListener.class },
     mergeMode = TestExecutionListeners.MergeMode.MERGE_WITH_DEFAULTS)
-public @interface CleanUpEventHead {
+public @interface CleanUpEventCrew {
 
-    class CleanUpEventHeadTestExecutionListener implements TestExecutionListener, Ordered {
+    class CleanUpEventCrewTestExecutionListener implements TestExecutionListener, Ordered {
 
         @Override
         public void afterTestMethod(TestContext testContext) throws Exception {
