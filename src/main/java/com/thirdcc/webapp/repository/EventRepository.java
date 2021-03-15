@@ -20,5 +20,6 @@ import java.util.Set;
 public interface EventRepository extends JpaRepository<Event, Long> {
 
     Optional<Event> findOneByIdAndStatusIn(Long id, Set<EventStatus> eventStatus);
+
     Page<Event> findEventsByStartDateBetween(Instant fromDate, Instant toDate, Pageable pageable);
 }
