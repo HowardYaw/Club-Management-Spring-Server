@@ -124,15 +124,15 @@ public class AccountResource {
             .collect(Collectors.toSet());
         boolean isCurrentCCHead = managementTeamSecurityExpression.isCurrentCCHead();
         boolean isCurrentAdministrator = managementTeamSecurityExpression.isCurrentAdministrator();
-        Set<Long> eventHeadIds = eventCrewRepository
+        Set<Long> eventHeadEventIds = eventCrewRepository
             .findAllByUserIdAndRole(user.getId(), EventCrewRole.HEAD)
             .stream()
-            .map(EventCrew::getId)
+            .map(EventCrew::getEventId)
             .collect(Collectors.toSet());
-        Set<Long> eventCrewIds = eventCrewRepository
+        Set<Long> eventCrewEventIds = eventCrewRepository
             .findAllByUserId(user.getId())
             .stream()
-            .map(EventCrew::getId)
+            .map(EventCrew::getEventId)
             .collect(Collectors.toSet());
 
         AccountDetailsDTO dto = new AccountDetailsDTO();
@@ -143,9 +143,8 @@ public class AccountResource {
         dto.setAuthorities(authorityNames);
         dto.setCurrentCCHead(isCurrentCCHead);
         dto.setCurrentAdministrator(isCurrentAdministrator);
-        dto.setEventHeadIds(eventHeadIds);
-        dto.setEventCrewIds(eventCrewIds);
-
+        dto.setEventHeadEventIds(eventHeadEventIds);
+        dto.setEventCrewEventIds(eventCrewEventIds);
         return dto;
     }
 

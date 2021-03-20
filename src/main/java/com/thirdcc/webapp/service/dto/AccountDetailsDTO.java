@@ -22,9 +22,9 @@ public class AccountDetailsDTO {
 
     private Boolean isCurrentAdministrator;
 
-    private Set<Long> eventHeadIds;
+    private Set<Long> eventHeadEventIds;
 
-    private Set<Long> eventCrewIds;
+    private Set<Long> eventCrewEventIds;
 
     public Long getId() {
         return id;
@@ -84,19 +84,19 @@ public class AccountDetailsDTO {
         isCurrentAdministrator = currentAdministrator;
     }
 
-    public Set<Long> getEventHeadIds() {
-        return eventHeadIds;
+    public Set<Long> getEventHeadEventIds() {
+        return eventHeadEventIds;
     }
 
-    public void setEventHeadIds(Set<Long> eventHeadIds) {
-        this.eventHeadIds = eventHeadIds;
+    public void setEventHeadEventIds(Set<Long> eventHeadEventIds) {
+        this.eventHeadEventIds = eventHeadEventIds;
     }
 
-    public Set<Long> getEventCrewIds() {
-        return eventCrewIds;
+    public Set<Long> getEventCrewEventIds() {
+        return eventCrewEventIds;
     }
 
-    public void setEventCrewIds(Set<Long> eventCrewIds) {
-        this.eventCrewIds = eventCrewIds;
+    public void setEventCrewEventIds(Set<Long> eventCrewEventIds) {
+        this.eventCrewEventIds = eventCrewEventIds;
     }
 }
