@@ -130,7 +130,7 @@ public class AccountResource {
             .map(EventCrew::getId)
             .collect(Collectors.toSet());
         Set<Long> eventCrewIds = eventCrewRepository
-            .findAllByUserIdAndRole(user.getId(), EventCrewRole.MEMBER)
+            .findAllByUserId(user.getId())
             .stream()
             .map(EventCrew::getId)
             .collect(Collectors.toSet());
