@@ -1,11 +1,17 @@
 package com.thirdcc.webapp.web.rest;
 
 
+import com.thirdcc.webapp.authorization.ManagementTeamSecurityExpression;
+import com.thirdcc.webapp.domain.Authority;
+import com.thirdcc.webapp.domain.EventCrew;
 import com.thirdcc.webapp.domain.User;
+import com.thirdcc.webapp.domain.enumeration.EventCrewRole;
+import com.thirdcc.webapp.repository.EventCrewRepository;
 import com.thirdcc.webapp.repository.UserRepository;
 import com.thirdcc.webapp.security.SecurityUtils;
 import com.thirdcc.webapp.service.MailService;
 import com.thirdcc.webapp.service.UserService;
+import com.thirdcc.webapp.service.dto.AccountDetailsDTO;
 import com.thirdcc.webapp.service.dto.PasswordChangeDTO;
 import com.thirdcc.webapp.service.dto.UserDTO;
 import com.thirdcc.webapp.web.rest.errors.*;
@@ -21,6 +27,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * REST controller for managing the current user's account.
@@ -43,18 +50,29 @@ public class AccountResource {
 
     private final MailService mailService;
 
-    public AccountResource(UserRepository userRepository, UserService userService, MailService mailService) {
+    private final ManagementTeamSecurityExpression managementTeamSecurityExpression;
 
+    private final EventCrewRepository eventCrewRepository;
+
+    public AccountResource(
+        UserRepository userRepository,
+        UserService userService,
+        MailService mailService,
+        ManagementTeamSecurityExpression managementTeamSecurityExpression,
+        EventCrewRepository eventCrewRepository
+    ) {
         this.userRepository = userRepository;
         this.userService = userService;
         this.mailService = mailService;
+        this.managementTeamSecurityExpression = managementTeamSecurityExpression;
+        this.eventCrewRepository = eventCrewRepository;
     }
 
     /**
      * {@code POST  /register} : register the user.
      *
      * @param managedUserVM the managed user View Model.
-     * @throws InvalidPasswordException {@code 400 (Bad Request)} if the password is incorrect.
+     * @throws InvalidPasswordException  {@code 400 (Bad Request)} if the password is incorrect.
      * @throws EmailAlreadyUsedException {@code 400 (Bad Request)} if the email is already used.
      * @throws LoginAlreadyUsedException {@code 400 (Bad Request)} if the login is already used.
      */
@@ -94,17 +112,41 @@ public class AccountResource {
         return request.getRemoteUser();
     }
 
-    /**
-     * {@code GET  /account} : get the current user.
-     *
-     * @return the current user.
-     * @throws RuntimeException {@code 500 (Internal Server Error)} if the user couldn't be returned.
-     */
     @GetMapping("/account")
-    public UserDTO getAccount() {
-        return userService.getUserWithAuthorities()
-            .map(UserDTO::new)
+    public AccountDetailsDTO getAccountDetails() {
+        User user = userService
+            .getUserWithAuthorities()
             .orElseThrow(() -> new AccountResourceException("User could not be found"));
+        Set<String> authorityNames = user
+            .getAuthorities()
+            .stream()
+            .map(Authority::getName)
+            .collect(Collectors.toSet());
+        boolean isCurrentCCHead = managementTeamSecurityExpression.isCurrentCCHead();
+        boolean isCurrentAdministrator = managementTeamSecurityExpression.isCurrentAdministrator();
+        Set<Long> eventHeadIds = eventCrewRepository
+            .findAllByUserIdAndRole(user.getId(), EventCrewRole.HEAD)
+            .stream()
+            .map(EventCrew::getId)
+            .collect(Collectors.toSet());
+        Set<Long> eventCrewIds = eventCrewRepository
+            .findAllByUserIdAndRole(user.getId(), EventCrewRole.MEMBER)
+            .stream()
+            .map(EventCrew::getId)
+            .collect(Collectors.toSet());
+
+        AccountDetailsDTO dto = new AccountDetailsDTO();
+        dto.setId(user.getId());
+        dto.setFirstName(user.getFirstName());
+        dto.setEmail(user.getEmail());
+        dto.setImageUrl(user.getImageUrl());
+        dto.setAuthorities(authorityNames);
+        dto.setCurrentCCHead(isCurrentCCHead);
+        dto.setCurrentAdministrator(isCurrentAdministrator);
+        dto.setEventHeadIds(eventHeadIds);
+        dto.setEventCrewIds(eventCrewIds);
+
+        return dto;
     }
 
     /**
@@ -112,7 +154,7 @@ public class AccountResource {
      *
      * @param userDTO the current user information.
      * @throws EmailAlreadyUsedException {@code 400 (Bad Request)} if the email is already used.
-     * @throws RuntimeException {@code 500 (Internal Server Error)} if the user login wasn't found.
+     * @throws RuntimeException          {@code 500 (Internal Server Error)} if the user login wasn't found.
      */
     @PostMapping("/account")
     public void saveAccount(@Valid @RequestBody UserDTO userDTO) {
@@ -151,10 +193,10 @@ public class AccountResource {
      */
     @PostMapping(path = "/account/reset-password/init")
     public void requestPasswordReset(@RequestBody String mail) {
-       mailService.sendPasswordResetMail(
-           userService.requestPasswordReset(mail)
-               .orElseThrow(EmailNotFoundException::new)
-       );
+        mailService.sendPasswordResetMail(
+            userService.requestPasswordReset(mail)
+                .orElseThrow(EmailNotFoundException::new)
+        );
     }
 
     /**
@@ -162,7 +204,7 @@ public class AccountResource {
      *
      * @param keyAndPassword the generated key and the new password.
      * @throws InvalidPasswordException {@code 400 (Bad Request)} if the password is incorrect.
-     * @throws RuntimeException {@code 500 (Internal Server Error)} if the password could not be reset.
+     * @throws RuntimeException         {@code 500 (Internal Server Error)} if the password could not be reset.
      */
     @PostMapping(path = "/account/reset-password/finish")
     public void finishPasswordReset(@RequestBody KeyAndPasswordVM keyAndPassword) {
