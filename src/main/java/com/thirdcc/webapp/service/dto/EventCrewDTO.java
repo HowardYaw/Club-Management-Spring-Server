@@ -16,6 +16,9 @@ public class EventCrewDTO implements Serializable {
 
     private EventCrewRole role;
 
+    private String name;
+
+    private String contactNumber;
 
     public Long getId() {
         return id;
@@ -47,6 +50,22 @@ public class EventCrewDTO implements Serializable {
 
     public void setRole(EventCrewRole role) {
         this.role = role;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getContactNumber() {
+        return contactNumber;
+    }
+
+    public void setContactNumber(String contactNumber) {
+        this.contactNumber = contactNumber;
     }
 
     @Override

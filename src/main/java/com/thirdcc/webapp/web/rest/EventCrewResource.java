@@ -9,7 +9,10 @@ import io.github.jhipster.web.util.ResponseUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
@@ -101,6 +104,20 @@ public class EventCrewResource {
         Optional<EventCrewDTO> eventCrewDTO = eventCrewService.findOne(id);
         return ResponseUtil.wrapOrNotFound(eventCrewDTO);
     }
+
+    /**
+     * {@code GET  /event-crews/event/:eventId} : get the eventCrew from "eventId" event.
+     *
+     * @param eventId the id of the event to retrieve eventCrewDTO.
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the eventCrewDTO, or with status {@code 404 (Not Found)}.
+     */
+    @GetMapping("/event-crews/event/{eventId}")
+    @PreAuthorize("@managementTeamSecurityExpression.isCurrentAdministrator() || @managementTeamSecurityExpression.isEventHead(#eventId)")
+    public Page<EventCrewDTO> getEventCrewWithEventId(Pageable pageable, @PathVariable Long eventId) {
+        log.debug("REST request to get EventCrew with Event Id: {}", eventId);
+        return eventCrewService.findAllByEventId(pageable, eventId);
+    }
+
 
     /**
      * {@code DELETE  /event-crews/:id} : delete the "id" eventCrew.
