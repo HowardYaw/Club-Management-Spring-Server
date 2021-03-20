@@ -20,7 +20,15 @@ import java.util.*;
 @CleanUpCCHead
 public @interface WithCurrentCCHead {
 
-    class Factory extends AbstractSecurityContextFactoryTemplate<WithCurrentCCAdministrator> {
+    String firstName() default "";
+
+    String email() default "";
+
+    String imageUrl() default "";
+
+    String[] authorities() default {AuthoritiesConstants.ADMIN, AuthoritiesConstants.USER};
+
+    class Factory extends AbstractSecurityContextFactoryTemplate<WithCurrentCCHead> {
 
         private final AdministratorRepository administratorRepository;
         private final YearSessionService yearSessionService;
@@ -36,8 +44,27 @@ public @interface WithCurrentCCHead {
         }
 
         @Override
-        public Set<String> configureAuthorityNames() {
-            return new HashSet<>(Arrays.asList(AuthoritiesConstants.ADMIN, AuthoritiesConstants.USER));
+        public Set<String> configureAuthorityNames(WithCurrentCCHead annotation) {
+            return new HashSet<>(Arrays.asList(annotation.authorities()));
+        }
+
+        @Override
+        public String createUserEmail(WithCurrentCCHead annotation) {
+            boolean hasEmail = !annotation.email().isEmpty();
+            if (hasEmail) {
+                return annotation.email();
+            }
+            return super.createUserEmail(annotation);
+        }
+
+        @Override
+        public String configureFirstName(WithCurrentCCHead annotation) {
+            return annotation.firstName();
+        }
+
+        @Override
+        public String configureImageUrl(WithCurrentCCHead annotation) {
+            return annotation.imageUrl();
         }
 
         @Override

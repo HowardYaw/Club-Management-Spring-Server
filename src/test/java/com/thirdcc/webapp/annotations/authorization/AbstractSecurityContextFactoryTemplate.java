@@ -24,6 +24,8 @@ public abstract class AbstractSecurityContextFactoryTemplate<A extends Annotatio
     private String userLogin;
     private String userEmail;
     private String userPassword;
+    private String firstName;
+    private String imageUrl;
     private Set<Authority> authorities;
     private List<GrantedAuthority> grantedAuthorities;
     private User user;
@@ -35,10 +37,12 @@ public abstract class AbstractSecurityContextFactoryTemplate<A extends Annotatio
 
     @Override
     public final SecurityContext createSecurityContext(A annotation) {
-        this.authorityNames = configureAuthorityNames();
+        this.authorityNames = configureAuthorityNames(annotation);
         this.userLogin = createUserLogin();
-        this.userEmail = createUserEmail();
+        this.userEmail = createUserEmail(annotation);
         this.userPassword = createUserPassword();
+        this.firstName = configureFirstName(annotation);
+        this.imageUrl = configureImageUrl(annotation);
         this.authorities = createAuthorities();
         this.grantedAuthorities = createGrantedAuthorities();
         this.user = createUser();
@@ -51,19 +55,23 @@ public abstract class AbstractSecurityContextFactoryTemplate<A extends Annotatio
         return securityContext;
     }
 
-    public abstract Set<String> configureAuthorityNames();
+    public abstract Set<String> configureAuthorityNames(A annotation);
 
     public String createUserLogin() {
         return RandomStringUtils.randomAlphanumeric(50).toLowerCase();
     }
 
-    public String createUserEmail() {
+    public String createUserEmail(A annotation) {
         return this.userLogin + "@localhost.testing";
     }
 
     public String createUserPassword() {
         return RandomStringUtils.random(60);
     }
+
+    public abstract String configureFirstName(A annotation);
+
+    public abstract String configureImageUrl(A annotation);
 
     public Set<Authority> createAuthorities() {
         return this.authorityNames
@@ -90,6 +98,8 @@ public abstract class AbstractSecurityContextFactoryTemplate<A extends Annotatio
         user.setPassword(this.userPassword);
         user.setActivated(true);
         user.setAuthorities(this.authorities);
+        user.setFirstName(this.firstName);
+        user.setImageUrl(this.imageUrl);
         return userRepository.saveAndFlush(user);
     }
 

@@ -16,6 +16,7 @@ import java.lang.annotation.Target;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -25,6 +26,14 @@ import java.util.Set;
 @WithSecurityContext(factory = WithEventHead.Factory.class)
 @CleanUpEventHead
 public @interface WithEventHead {
+
+    String firstName() default "";
+
+    String email() default "";
+
+    String imageUrl() default "";
+
+    String[] authorities() default {AuthoritiesConstants.USER};
 
     class Factory extends AbstractSecurityContextFactoryTemplate<WithEventHead> {
 
@@ -38,8 +47,27 @@ public @interface WithEventHead {
         }
 
         @Override
-        public Set<String> configureAuthorityNames() {
-            return new HashSet<>(Collections.singletonList(AuthoritiesConstants.USER));
+        public Set<String> configureAuthorityNames(WithEventHead annotation) {
+            return new HashSet<>(Arrays.asList(annotation.authorities()));
+        }
+
+        @Override
+        public String createUserEmail(WithEventHead annotation) {
+            boolean hasEmail = !annotation.email().isEmpty();
+            if (hasEmail) {
+                return annotation.email();
+            }
+            return super.createUserEmail(annotation);
+        }
+
+        @Override
+        public String configureFirstName(WithEventHead annotation) {
+            return annotation.firstName();
+        }
+
+        @Override
+        public String configureImageUrl(WithEventHead annotation) {
+            return annotation.imageUrl();
         }
 
         @Override
