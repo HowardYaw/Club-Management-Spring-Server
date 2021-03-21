@@ -32,7 +32,7 @@ public interface EventCrewService {
      *
      * @return the list of entities.
      */
-    Page<EventCrewDTO> findAllByEventId(Pageable pageable, Long eventId);
+    List<EventCrewDTO> findAllByEventId( Long eventId);
 
     /**
      * Get the "id" eventCrew.

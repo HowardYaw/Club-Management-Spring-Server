@@ -1,6 +1,8 @@
 package com.thirdcc.webapp.service.impl;
 
+import com.thirdcc.webapp.domain.Event;
 import com.thirdcc.webapp.domain.User;
+import com.thirdcc.webapp.repository.EventRepository;
 import com.thirdcc.webapp.repository.UserRepository;
 import com.thirdcc.webapp.service.EventCrewService;
 import com.thirdcc.webapp.domain.EventCrew;
@@ -36,13 +38,16 @@ public class EventCrewServiceImpl implements EventCrewService {
 
     private final UserRepository userRepository;
 
+    private final EventRepository eventRepository;
+
     private final EventCrewMapper eventCrewMapper;
 
     private final EventService eventService;
 
-    public EventCrewServiceImpl(EventCrewRepository eventCrewRepository, UserRepository userRepository, EventCrewMapper eventCrewMapper, EventService eventService) {
+    public EventCrewServiceImpl(EventCrewRepository eventCrewRepository, UserRepository userRepository, EventRepository eventRepository, EventCrewMapper eventCrewMapper, EventService eventService) {
         this.eventCrewRepository = eventCrewRepository;
         this.userRepository = userRepository;
+        this.eventRepository = eventRepository;
         this.eventCrewMapper = eventCrewMapper;
         this.eventService = eventService;
     }
@@ -84,16 +89,15 @@ public class EventCrewServiceImpl implements EventCrewService {
      */
     @Override
     @Transactional
-    public Page<EventCrewDTO> findAllByEventId(Pageable pageable, Long eventId){
+    public List<EventCrewDTO> findAllByEventId(Long eventId){
         log.debug("Request to get all EventCrews with event Id : {}", eventId);
 
-        List<EventCrewDTO> eventCrewDTOList = eventCrewRepository.findAllByEventId(pageable, eventId)
+        return eventCrewRepository.findAllByEventId(eventId)
             .stream()
             .map(eventCrewMapper::toDto)
             .map(this::mapUserDetails)
             .collect(Collectors.toList());
 
-        return PageUtils.toPage(eventCrewDTOList, pageable);
     }
 
     /**
@@ -107,7 +111,10 @@ public class EventCrewServiceImpl implements EventCrewService {
     public Optional<EventCrewDTO> findOne(Long id) {
         log.debug("Request to get EventCrew : {}", id);
         return eventCrewRepository.findById(id)
-            .map(eventCrewMapper::toDto);
+            .map(eventCrewMapper::toDto)
+            .map(this::mapUserDetails)
+            .map(this::mapEventName)
+            .map(this::mapUserDetails);
     }
 
     /**
@@ -121,9 +128,31 @@ public class EventCrewServiceImpl implements EventCrewService {
         eventCrewRepository.deleteById(id);
     }
 
+    /**
+     * Assign user details(name and contact number) to the eventCrewDTO.
+     *
+     * @param eventCrewDTO to add on the user details' prop.
+     */
     private EventCrewDTO mapUserDetails(EventCrewDTO eventCrewDTO) {
-        User user = userRepository.findOneById(eventCrewDTO.getUserId());
-        eventCrewDTO.setName(user.getFirstName() + " " + user.getLastName() );
+        Optional<User> dbUser = userRepository.findById(eventCrewDTO.getUserId());
+        if(dbUser.isPresent()){
+            User user = dbUser.get();
+            eventCrewDTO.setUserName(user.getFirstName() + " " + (user.getLastName() != null? user.getLastName(): "") );
+        }
+        return eventCrewDTO;
+    }
+
+    /**
+     * Assign event name to the eventCrewDTO.
+     *
+     * @param eventCrewDTO to add on the eventName prop.
+     * */
+    private EventCrewDTO mapEventName(EventCrewDTO eventCrewDTO) {
+        Optional<Event> dbEvent = eventRepository.findById(eventCrewDTO.getEventId());
+        if(dbEvent.isPresent()){
+            Event event = dbEvent.get();
+            eventCrewDTO.setEventName(event.getName());
+        }
         return eventCrewDTO;
     }
 }

@@ -154,6 +154,21 @@ public class UserResource {
     }
 
     /**
+     * {@code GET  /users/:id} : get the "id" user.
+     *
+     * @param id the id of the userDTO to retrieve.
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the userDTO, or with status {@code 404 (Not Found)}.
+     */
+    @GetMapping("/users/{id}")
+    public ResponseEntity<UserDTO> getUserWithId(@PathVariable Long id){
+        log.debug("REST request to get User : {}", id);
+        Optional<UserDTO> userDTO = userService.getUserWithAuthorities(id)
+            .map(UserDTO::new);
+        return ResponseUtil.wrapOrNotFound(userDTO);
+    }
+
+
+    /**
      * Gets a list of all roles.
      * @return a string list of all roles.
      */
