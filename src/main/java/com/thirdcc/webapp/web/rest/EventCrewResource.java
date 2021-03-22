@@ -50,7 +50,7 @@ public class EventCrewResource {
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
     @PostMapping("/event-crews")
-    @PreAuthorize("@managementTeamSecurityExpression.isCurrentAdministrator() || @managementTeamSecurityExpression.isEventHead(#eventId)")
+    @PreAuthorize("@managementTeamSecurityExpression.isCurrentAdministrator() || @managementTeamSecurityExpression.isEventHead(#eventCrewDTO.getEventId())")
     public ResponseEntity<EventCrewDTO> createEventCrew(@RequestBody EventCrewDTO eventCrewDTO) throws URISyntaxException {
         log.debug("REST request to save EventCrew : {}", eventCrewDTO);
         if (eventCrewDTO.getId() != null) {
@@ -72,7 +72,7 @@ public class EventCrewResource {
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
     @PutMapping("/event-crews")
-    @PreAuthorize("@managementTeamSecurityExpression.isCurrentAdministrator() || @managementTeamSecurityExpression.isEventHead(#eventId)")
+    @PreAuthorize("@managementTeamSecurityExpression.isCurrentAdministrator() || @managementTeamSecurityExpression.isEventHead(#eventCrewDTO.getEventId())")
     public ResponseEntity<EventCrewDTO> updateEventCrew(@RequestBody EventCrewDTO eventCrewDTO) throws URISyntaxException {
         log.debug("REST request to update EventCrew : {}", eventCrewDTO);
         if (eventCrewDTO.getId() == null) {
@@ -104,7 +104,7 @@ public class EventCrewResource {
      */
     @GetMapping("/event-crews/{id}")
     @PreAuthorize("@managementTeamSecurityExpression.isCurrentAdministrator() || @managementTeamSecurityExpression.isEventHead(#eventId)")
-    public ResponseEntity<EventCrewDTO> getEventCrew(@PathVariable Long id) {
+    public ResponseEntity<EventCrewDTO> getEventCrew(@PathVariable Long id, @RequestParam(value = "eventId") String eventId) {
         log.debug("REST request to get EventCrew : {}", id);
         Optional<EventCrewDTO> eventCrewDTO = eventCrewService.findOne(id);
         return ResponseUtil.wrapOrNotFound(eventCrewDTO);
@@ -131,7 +131,7 @@ public class EventCrewResource {
      */
     @DeleteMapping("/event-crews/{id}")
     @PreAuthorize("@managementTeamSecurityExpression.isCurrentAdministrator() || @managementTeamSecurityExpression.isEventHead(#eventId)")
-    public ResponseEntity<Void> deleteEventCrew(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteEventCrew(@PathVariable Long id, @RequestParam(value = "eventId") String eventId) {
         log.debug("REST request to delete EventCrew : {}", id);
         eventCrewService.delete(id);
         return ResponseEntity.noContent().headers(HeaderUtil.createEntityDeletionAlert(applicationName, true, ENTITY_NAME, id.toString())).build();
