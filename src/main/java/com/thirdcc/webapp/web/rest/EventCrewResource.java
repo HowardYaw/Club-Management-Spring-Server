@@ -100,8 +100,10 @@ public class EventCrewResource {
      *
      * @param id the id of the eventCrewDTO to retrieve.
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the eventCrewDTO, or with status {@code 404 (Not Found)}.
+     * @usage Use for getting eventCrew data when update
      */
     @GetMapping("/event-crews/{id}")
+    @PreAuthorize("@managementTeamSecurityExpression.isCurrentAdministrator() || @managementTeamSecurityExpression.isEventHead(#eventId)")
     public ResponseEntity<EventCrewDTO> getEventCrew(@PathVariable Long id) {
         log.debug("REST request to get EventCrew : {}", id);
         Optional<EventCrewDTO> eventCrewDTO = eventCrewService.findOne(id);
@@ -115,7 +117,7 @@ public class EventCrewResource {
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the eventCrewDTO, or with status {@code 404 (Not Found)}.
      */
     @GetMapping("/event-crews/event/{eventId}")
-    @PreAuthorize("@managementTeamSecurityExpression.isCurrentAdministrator() || @managementTeamSecurityExpression.isEventHead(#eventId)")
+    @PreAuthorize("@managementTeamSecurityExpression.isCurrentAdministrator() || @managementTeamSecurityExpression.isEventCrew(#eventId)")
     public List<EventCrewDTO> getEventCrewWithEventId( @PathVariable Long eventId) {
         log.debug("REST request to get EventCrew with Event Id: {}", eventId);
         return eventCrewService.findAllByEventId(eventId);

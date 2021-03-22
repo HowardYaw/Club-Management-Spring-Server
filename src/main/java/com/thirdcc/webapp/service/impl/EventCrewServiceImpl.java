@@ -2,6 +2,7 @@ package com.thirdcc.webapp.service.impl;
 
 import com.thirdcc.webapp.domain.Event;
 import com.thirdcc.webapp.domain.User;
+import com.thirdcc.webapp.exception.BadRequestException;
 import com.thirdcc.webapp.repository.EventRepository;
 import com.thirdcc.webapp.repository.UserRepository;
 import com.thirdcc.webapp.service.EventCrewService;
@@ -125,6 +126,10 @@ public class EventCrewServiceImpl implements EventCrewService {
     @Override
     public void delete(Long id) {
         log.debug("Request to delete EventCrew : {}", id);
+        EventCrew eventCrew = eventCrewRepository
+            .findById(id)
+            .orElseThrow(() -> new BadRequestException("Cannot delete non existing event crew"));
+
         eventCrewRepository.deleteById(id);
     }
 

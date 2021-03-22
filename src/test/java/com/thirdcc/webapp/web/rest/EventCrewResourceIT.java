@@ -1,12 +1,25 @@
 package com.thirdcc.webapp.web.rest;
 
 import com.thirdcc.webapp.ClubmanagementApp;
+import com.thirdcc.webapp.annotations.authorization.WithCurrentCCAdministrator;
+import com.thirdcc.webapp.annotations.authorization.WithCurrentCCHead;
+import com.thirdcc.webapp.annotations.authorization.WithEventCrew;
+import com.thirdcc.webapp.annotations.authorization.WithEventHead;
+import com.thirdcc.webapp.annotations.init.InitYearSession;
+import com.thirdcc.webapp.domain.Event;
 import com.thirdcc.webapp.domain.EventCrew;
+import com.thirdcc.webapp.domain.User;
+import com.thirdcc.webapp.domain.enumeration.EventStatus;
+import com.thirdcc.webapp.exception.BadRequestException;
 import com.thirdcc.webapp.repository.EventCrewRepository;
+import com.thirdcc.webapp.repository.EventRepository;
+import com.thirdcc.webapp.repository.UserRepository;
+import com.thirdcc.webapp.security.SecurityUtils;
 import com.thirdcc.webapp.service.EventCrewService;
 import com.thirdcc.webapp.service.dto.EventCrewDTO;
 import com.thirdcc.webapp.service.mapper.EventCrewMapper;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockitoAnnotations;
@@ -19,6 +32,9 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.EntityManager;
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -32,7 +48,7 @@ import com.thirdcc.webapp.domain.enumeration.EventCrewRole;
  */
 @SpringBootTest(classes = ClubmanagementApp.class)
 @AutoConfigureMockMvc
-@WithMockUser(value = "user")
+@InitYearSession
 public class EventCrewResourceIT {
 
     private static final Long DEFAULT_USER_ID = 1L;
@@ -44,8 +60,24 @@ public class EventCrewResourceIT {
     private static final EventCrewRole DEFAULT_ROLE = EventCrewRole.HEAD;
     private static final EventCrewRole UPDATED_ROLE = EventCrewRole.HEAD;
 
+    private static final String DEFAULT_EVENT_NAME = "DEFAULT_EVENT_NAME";
+    private static final String DEFAULT_EVENT_DESCRIPTION = "DEFAULT_EVENT_DESCRIPTION";
+    private static final String DEFAULT_EVENT_REMARKS = "DEFAULT_EVENT_REMARKS";
+    private static final String DEFAULT_EVENT_VENUE = "DEFAULT_EVENT_VENUE";
+    private static final Instant DEFAULT_EVENT_START_DATE = Instant.now().minus(5, ChronoUnit.DAYS);
+    private static final Instant DEFAULT_EVENT_END_DATE = Instant.now().plus(5, ChronoUnit.DAYS);
+    private static final BigDecimal DEFAULT_EVENT_FEE = new BigDecimal(2123);
+    private static final Boolean DEFAULT_EVENT_REQUIRED_TRANSPORT = Boolean.TRUE;
+    private static final EventStatus DEFAULT_EVENT_STATUS = EventStatus.OPEN;
+
     @Autowired
     private EventCrewRepository eventCrewRepository;
+
+    @Autowired
+    private EventRepository eventRepository;
+
+    @Autowired
+    UserRepository userRepository;
 
     @Autowired
     private EventCrewMapper eventCrewMapper;
@@ -72,13 +104,34 @@ public class EventCrewResourceIT {
      * This is a static method, as tests for other entities might also need it,
      * if they test an entity which requires the current entity.
      */
-    public static EventCrew createEntity(EntityManager em) {
+    @AfterEach
+    public void cleanUp() {
+        eventRepository.deleteAll();
+        eventCrewRepository.deleteAll();
+    }
+
+    public static Event createEventEntity() {
+        Event event = new Event();
+        event.setName(DEFAULT_EVENT_NAME);
+        event.setDescription(DEFAULT_EVENT_DESCRIPTION);
+        event.setRemarks(DEFAULT_EVENT_REMARKS);
+        event.setVenue(DEFAULT_EVENT_VENUE);
+        event.setStartDate(DEFAULT_EVENT_START_DATE);
+        event.setEndDate(DEFAULT_EVENT_END_DATE);
+        event.setFee(DEFAULT_EVENT_FEE);
+        event.setRequiredTransport(DEFAULT_EVENT_REQUIRED_TRANSPORT);
+        event.setStatus(DEFAULT_EVENT_STATUS);
+        return event;
+    }
+
+    public static EventCrew createEventCrewEntity() {
         EventCrew eventCrew = new EventCrew()
             .userId(DEFAULT_USER_ID)
             .eventId(DEFAULT_EVENT_ID)
             .role(DEFAULT_ROLE);
         return eventCrew;
     }
+
     /**
      * Create an updated entity for this test.
      *
@@ -93,18 +146,18 @@ public class EventCrewResourceIT {
         return eventCrew;
     }
 
-    @BeforeEach
-    public void initTest() {
-        eventCrew = createEntity(em);
-    }
-
     @Test
     @Transactional
+    @WithCurrentCCAdministrator
     public void createEventCrew() throws Exception {
         int databaseSizeBeforeCreate = eventCrewRepository.findAll().size();
 
         // Create the EventCrew
+        Event savedEvent = initEventDB(createEventEntity());
+        EventCrew eventCrew = createEventCrewEntity();
+        eventCrew.setEventId(savedEvent.getId());
         EventCrewDTO eventCrewDTO = eventCrewMapper.toDto(eventCrew);
+
         restEventCrewMockMvc.perform(post("/api/event-crews")
             .contentType(TestUtil.APPLICATION_JSON_UTF8)
             .content(TestUtil.convertObjectToJsonBytes(eventCrewDTO)))
@@ -121,10 +174,14 @@ public class EventCrewResourceIT {
 
     @Test
     @Transactional
+    @WithCurrentCCAdministrator
     public void createEventCrewWithExistingId() throws Exception {
         int databaseSizeBeforeCreate = eventCrewRepository.findAll().size();
 
         // Create the EventCrew with an existing ID
+        Event savedEvent = initEventDB(createEventEntity());
+        EventCrew eventCrew = createEventCrewEntity();
+        eventCrew.setEventId(savedEvent.getId());
         eventCrew.setId(1L);
         EventCrewDTO eventCrewDTO = eventCrewMapper.toDto(eventCrew);
 
@@ -139,41 +196,95 @@ public class EventCrewResourceIT {
         assertThat(eventCrewList).hasSize(databaseSizeBeforeCreate);
     }
 
+    @Test
+    @Transactional
+    @WithMockUser
+    public void createEventCrew_AsMockUser_ShouldReturn403() throws Exception {
+        int databaseSizeBeforeCreate = eventCrewRepository.findAll().size();
+
+        // Create the EventCrew
+        Event savedEvent = initEventDB(createEventEntity());
+        EventCrew eventCrew = createEventCrewEntity();
+        eventCrew.setEventId(savedEvent.getId());
+        EventCrewDTO eventCrewDTO = eventCrewMapper.toDto(eventCrew);
+
+        restEventCrewMockMvc.perform(post("/api/event-crews")
+            .contentType(TestUtil.APPLICATION_JSON_UTF8)
+            .content(TestUtil.convertObjectToJsonBytes(eventCrewDTO)))
+            .andExpect(status().isForbidden());
+
+        // Validate the EventCrew in the database
+        List<EventCrew> eventCrewList = eventCrewRepository.findAll();
+        assertThat(eventCrewList).hasSize(databaseSizeBeforeCreate);
+    }
 
     @Test
     @Transactional
+    @WithCurrentCCAdministrator
     public void getAllEventCrews() throws Exception {
         // Initialize the database
-        eventCrewRepository.saveAndFlush(eventCrew);
+        Event savedEvent = initEventDB(createEventEntity());
+        EventCrew savedEventCrew = createEventCrewEntity();
+        savedEventCrew.setEventId(savedEvent.getId());
+        savedEventCrew = initEventCrewDB(savedEventCrew);
 
         // Get all the eventCrewList
         restEventCrewMockMvc.perform(get("/api/event-crews?sort=id,desc"))
             .andExpect(status().isOk())
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
-            .andExpect(jsonPath("$.[*].id").value(hasItem(eventCrew.getId().intValue())))
-            .andExpect(jsonPath("$.[*].userId").value(hasItem(DEFAULT_USER_ID.intValue())))
-            .andExpect(jsonPath("$.[*].eventId").value(hasItem(DEFAULT_EVENT_ID.intValue())))
+            .andExpect(jsonPath("$.[*].id").value(hasItem(savedEventCrew.getId().intValue())))
+            .andExpect(jsonPath("$.[*].userId").value(hasItem(savedEventCrew.getUserId().intValue())))
+            .andExpect(jsonPath("$.[*].eventId").value(hasItem(savedEventCrew.getEventId().intValue())))
             .andExpect(jsonPath("$.[*].role").value(hasItem(DEFAULT_ROLE.toString())));
     }
 
     @Test
     @Transactional
+    @WithCurrentCCAdministrator
     public void getEventCrew() throws Exception {
         // Initialize the database
-        eventCrewRepository.saveAndFlush(eventCrew);
+        Event savedEvent = initEventDB(createEventEntity());
+        EventCrew savedEventCrew = createEventCrewEntity();
+        savedEventCrew.setEventId(savedEvent.getId());
+        savedEventCrew = initEventCrewDB(savedEventCrew);
 
         // Get the eventCrew
-        restEventCrewMockMvc.perform(get("/api/event-crews/{id}", eventCrew.getId()))
+        restEventCrewMockMvc.perform(get("/api/event-crews/{id}", savedEventCrew.getId()))
             .andExpect(status().isOk())
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
-            .andExpect(jsonPath("$.id").value(eventCrew.getId().intValue()))
-            .andExpect(jsonPath("$.userId").value(DEFAULT_USER_ID.intValue()))
-            .andExpect(jsonPath("$.eventId").value(DEFAULT_EVENT_ID.intValue()))
+            .andExpect(jsonPath("$.id").value(savedEventCrew.getId().intValue()))
+            .andExpect(jsonPath("$.userId").value(savedEventCrew.getUserId().intValue()))
+            .andExpect(jsonPath("$.eventId").value(savedEventCrew.getEventId().intValue()))
             .andExpect(jsonPath("$.role").value(DEFAULT_ROLE.toString()));
     }
 
     @Test
     @Transactional
+    @WithCurrentCCAdministrator
+    public void getEventCrew_WithNonExistingEventCrew_ShouldReturn404() throws Exception {
+         // Get the eventCrew
+        restEventCrewMockMvc.perform(get("/api/event-crews/{id}", Long.MAX_VALUE))
+            .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @Transactional
+    @WithMockUser
+    public void getEventCrew_AsMockUser_ShouldReturn403() throws Exception {
+        // Initialize the database
+        Event savedEvent = initEventDB(createEventEntity());
+        EventCrew savedEventCrew = createEventCrewEntity();
+        savedEventCrew.setEventId(savedEvent.getId());
+        savedEventCrew = initEventCrewDB(savedEventCrew);
+
+        // Get the eventCrew
+        restEventCrewMockMvc.perform(get("/api/event-crews/{id}", savedEventCrew.getId()))
+            .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @Transactional
+    @WithCurrentCCAdministrator
     public void getNonExistingEventCrew() throws Exception {
         // Get the eventCrew
         restEventCrewMockMvc.perform(get("/api/event-crews/{id}", Long.MAX_VALUE))
@@ -182,21 +293,53 @@ public class EventCrewResourceIT {
 
     @Test
     @Transactional
+    @WithEventCrew
+    public void getEventCrewWithEventId() throws Exception {
+        // Initialize the database
+        EventCrew tester = getEventCrewByCurrentLoginUser();
+
+        EventCrew eventCrew = createEventCrewEntity();
+        eventCrew.setEventId(tester.getEventId());
+        EventCrew savedEventCrew = initEventCrewDB(eventCrew);
+
+        // Get all the eventCrewList
+        restEventCrewMockMvc.perform(get("/api/event-crews/event/{eventId}", tester.getEventId()))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
+            .andExpect(jsonPath("$.[*].id").value(hasItem(savedEventCrew.getId().intValue())))
+            .andExpect(jsonPath("$.[*].userId").value(hasItem(savedEventCrew.getUserId().intValue())))
+            .andExpect(jsonPath("$.[*].eventId").value(hasItem(savedEventCrew.getEventId().intValue())))
+            .andExpect(jsonPath("$.[*].role").value(hasItem(DEFAULT_ROLE.toString())));
+    }
+
+    @Test
+    @Transactional
+    @WithMockUser
+    public void getEventCrewWithEventId_WithMockUser_ShouldReturn403() throws Exception {
+        // Initialize the database
+        Event savedEvent = initEventDB(createEventEntity());
+        EventCrew eventCrew = createEventCrewEntity();
+        eventCrew.setEventId(savedEvent.getId());
+        EventCrew savedEventCrew = initEventCrewDB(eventCrew);
+
+        // Get all the eventCrewList
+        restEventCrewMockMvc.perform(get("/api/event-crews/event/{eventId}", savedEvent.getId()))
+            .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @Transactional
+    @WithCurrentCCAdministrator
     public void updateEventCrew() throws Exception {
         // Initialize the database
-        eventCrewRepository.saveAndFlush(eventCrew);
+        Event savedEvent = initEventDB(createEventEntity());
+        EventCrew savedEventCrew = createEventCrewEntity();
+        savedEventCrew.setEventId(savedEvent.getId());
+        savedEventCrew = initEventCrewDB(savedEventCrew);
 
         int databaseSizeBeforeUpdate = eventCrewRepository.findAll().size();
 
-        // Update the eventCrew
-        EventCrew updatedEventCrew = eventCrewRepository.findById(eventCrew.getId()).get();
-        // Disconnect from session so that the updates on updatedEventCrew are not directly saved in db
-        em.detach(updatedEventCrew);
-        updatedEventCrew
-            .userId(UPDATED_USER_ID)
-            .eventId(UPDATED_EVENT_ID)
-            .role(UPDATED_ROLE);
-        EventCrewDTO eventCrewDTO = eventCrewMapper.toDto(updatedEventCrew);
+        EventCrewDTO eventCrewDTO = eventCrewMapper.toDto(savedEventCrew);
 
         restEventCrewMockMvc.perform(put("/api/event-crews")
             .contentType(TestUtil.APPLICATION_JSON_UTF8)
@@ -207,17 +350,19 @@ public class EventCrewResourceIT {
         List<EventCrew> eventCrewList = eventCrewRepository.findAll();
         assertThat(eventCrewList).hasSize(databaseSizeBeforeUpdate);
         EventCrew testEventCrew = eventCrewList.get(eventCrewList.size() - 1);
-        assertThat(testEventCrew.getUserId()).isEqualTo(UPDATED_USER_ID);
-        assertThat(testEventCrew.getEventId()).isEqualTo(UPDATED_EVENT_ID);
+        assertThat(testEventCrew.getUserId()).isEqualTo(savedEventCrew.getUserId());
+        assertThat(testEventCrew.getEventId()).isEqualTo(savedEvent.getId());
         assertThat(testEventCrew.getRole()).isEqualTo(UPDATED_ROLE);
     }
 
     @Test
     @Transactional
-    public void updateNonExistingEventCrew() throws Exception {
+    @WithCurrentCCAdministrator
+    public void updateNonExistingEventCrew_ShouldThrow400() throws Exception {
         int databaseSizeBeforeUpdate = eventCrewRepository.findAll().size();
 
         // Create the EventCrew
+        EventCrew eventCrew = createEventCrewEntity();
         EventCrewDTO eventCrewDTO = eventCrewMapper.toDto(eventCrew);
 
         // If the entity doesn't have an ID, it will throw BadRequestAlertException
@@ -233,20 +378,80 @@ public class EventCrewResourceIT {
 
     @Test
     @Transactional
+    @WithMockUser
+    public void updateEventCrew_AsMockUser_ShouldThrow403()  throws Exception {
+        // Initialize the database
+        Event savedEvent = initEventDB(createEventEntity());
+        EventCrew savedEventCrew = createEventCrewEntity();
+        savedEventCrew.setEventId(savedEvent.getId());
+        savedEventCrew = initEventCrewDB(savedEventCrew);
+
+        EventCrewDTO eventCrewDTO = eventCrewMapper.toDto(savedEventCrew);
+
+        restEventCrewMockMvc.perform(put("/api/event-crews")
+            .contentType(TestUtil.APPLICATION_JSON_UTF8)
+            .content(TestUtil.convertObjectToJsonBytes(eventCrewDTO)))
+            .andExpect(status().isForbidden());
+
+    }
+
+    @Test
+    @Transactional
+    @WithCurrentCCAdministrator
     public void deleteEventCrew() throws Exception {
         // Initialize the database
-        eventCrewRepository.saveAndFlush(eventCrew);
+        Event savedEvent = initEventDB(createEventEntity());
+        EventCrew savedEventCrew = createEventCrewEntity();
+        savedEventCrew.setEventId(savedEvent.getId());
+        savedEventCrew = initEventCrewDB(savedEventCrew);
 
         int databaseSizeBeforeDelete = eventCrewRepository.findAll().size();
 
         // Delete the eventCrew
-        restEventCrewMockMvc.perform(delete("/api/event-crews/{id}", eventCrew.getId())
+        restEventCrewMockMvc.perform(delete("/api/event-crews/{id}", savedEventCrew.getId())
             .accept(TestUtil.APPLICATION_JSON_UTF8))
             .andExpect(status().isNoContent());
 
         // Validate the database contains one less item
         List<EventCrew> eventCrewList = eventCrewRepository.findAll();
         assertThat(eventCrewList).hasSize(databaseSizeBeforeDelete - 1);
+    }
+
+    @Test
+    @Transactional
+    @WithCurrentCCAdministrator
+    public void deleteEventCrew_WithNonExistingEventCrew_ShouldThrow400() throws Exception {
+        int databaseSizeBeforeDelete = eventCrewRepository.findAll().size();
+
+        // Delete the eventCrew
+        restEventCrewMockMvc.perform(delete("/api/event-crews/{id}", Long.MAX_VALUE)
+            .accept(TestUtil.APPLICATION_JSON_UTF8))
+            .andExpect(status().isBadRequest());
+
+        List<EventCrew> eventCrewList = eventCrewRepository.findAll();
+        assertThat(eventCrewList).hasSize(databaseSizeBeforeDelete);
+    }
+
+    @Test
+    @Transactional
+    @WithEventCrew
+    public void deleteEventCrew_AsEventCrew_ShouldThrow403() throws Exception {
+        // Initialize the database
+        Event savedEvent = initEventDB(createEventEntity());
+        EventCrew savedEventCrew = createEventCrewEntity();
+        savedEventCrew.setEventId(savedEvent.getId());
+        savedEventCrew = initEventCrewDB(savedEventCrew);
+
+        int databaseSizeBeforeDelete = eventCrewRepository.findAll().size();
+
+        // Delete the eventCrew
+        restEventCrewMockMvc.perform(delete("/api/event-crews/{id}", savedEventCrew.getId())
+            .accept(TestUtil.APPLICATION_JSON_UTF8))
+            .andExpect(status().isForbidden());
+
+        // Validate the database contains one less item
+        List<EventCrew> eventCrewList = eventCrewRepository.findAll();
+        assertThat(eventCrewList).hasSize(databaseSizeBeforeDelete);
     }
 
     @Test
@@ -285,5 +490,24 @@ public class EventCrewResourceIT {
     public void testEntityFromId() {
         assertThat(eventCrewMapper.fromId(42L).getId()).isEqualTo(42);
         assertThat(eventCrewMapper.fromId(null)).isNull();
+    }
+
+    private Event initEventDB(Event event) {
+        return eventRepository.saveAndFlush(event);
+    }
+
+    private EventCrew getEventCrewByCurrentLoginUser() {
+        User currentUser = SecurityUtils
+            .getCurrentUserLogin()
+            .flatMap(userRepository::findOneWithAuthoritiesByLogin)
+            .orElseThrow(() -> new BadRequestException("Cannot find user"));
+        List<EventCrew> eventCrewList = eventCrewRepository
+            .findAllByUserId(currentUser.getId());
+        assertThat(eventCrewList).hasSize(1);
+        return eventCrewList.get(0);
+    }
+
+    private EventCrew initEventCrewDB(EventCrew eventCrew){
+        return eventCrewRepository.saveAndFlush(eventCrew);
     }
 }
