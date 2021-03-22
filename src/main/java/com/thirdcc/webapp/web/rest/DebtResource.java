@@ -55,7 +55,11 @@ public class DebtResource {
     @PreAuthorize("hasRole(\"" + AuthoritiesConstants.ADMIN + "\") || @managementTeamSecurityExpression.isCurrentAdministrator()")
     public ResponseEntity<List<DebtDTO>> getAllDebts(Pageable pageable, @RequestParam MultiValueMap<String, String> queryParams, UriComponentsBuilder uriBuilder) {
         log.debug("REST request to get a page of Debts");
+        System.out.println(pageable);
         Page<DebtDTO> page = debtService.findAllOpenDebts(pageable);
+        for(DebtDTO debt : page){
+            System.out.println(debt);
+        }
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(uriBuilder.queryParams(queryParams), page);
         return ResponseEntity.ok().headers(headers).body(page.getContent());
     }

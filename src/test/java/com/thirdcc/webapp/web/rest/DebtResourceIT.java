@@ -106,11 +106,6 @@ public class DebtResourceIT {
             .status(UPDATED_STATUS);
     }
     
-    private YearSession createYearSession() {
-        return new YearSession()
-            .value(DEFAULT_YEAR_SESSION_VALUE);
-    }
-    
     @BeforeEach
     public void initTest() {
         debt = createDebtEntity();
@@ -127,6 +122,10 @@ public class DebtResourceIT {
         return debtRepository.saveAndFlush(debt);
     }
     
+    private void insertIntoDebtDB(Debt debt){
+        debtRepository.saveAndFlush(debt);
+    }
+    
     private YearSession initYearSessionDB() {
         return yearSessionRepository.saveAndFlush(new YearSession()
             .value(DEFAULT_YEAR_SESSION_VALUE));
@@ -136,9 +135,18 @@ public class DebtResourceIT {
     public void getAllOpenDebts_UserWithRoleAdmin() throws Exception {
         // Initialize the database
         Debt savedDebt = initDebtDB();
+        Debt secondDebt = createDebtEntity();
+        secondDebt.setEventAttendeeId(2L);
+        Debt thirdDebt = createDebtEntity();
+        thirdDebt.setEventAttendeeId(3L);
+        insertIntoDebtDB(thirdDebt);
+        Debt fourthDebt = createDebtEntity();
+        fourthDebt.setEventAttendeeId(4L);
+        insertIntoDebtDB(secondDebt);
+        insertIntoDebtDB(fourthDebt);
 
         // Get all the debt in the event
-        restDebtMockMvc.perform(get("/api/debts/?sort=id,desc"))
+        restDebtMockMvc.perform(get("/api/debts/"))
             .andExpect(status().isOk())
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
             .andExpect(jsonPath("$.[*].id").value(hasItem(savedDebt.getId().intValue())))
