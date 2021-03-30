@@ -15,6 +15,7 @@ import com.thirdcc.webapp.repository.*;
 import com.thirdcc.webapp.security.SecurityUtils;
 import com.thirdcc.webapp.service.BudgetService;
 import com.thirdcc.webapp.service.dto.BudgetDTO;
+import com.thirdcc.webapp.service.dto.EventBudgetTotalDTO;
 import com.thirdcc.webapp.service.mapper.BudgetMapper;
 
 import org.junit.jupiter.api.AfterEach;
@@ -567,6 +568,94 @@ public class BudgetResourceIT {
 
         List<Budget> budgetList = budgetRepository.findAll();
         assertThat(budgetList).hasSize(databaseSizeBeforeUpdate);
+    }
+
+    @Test
+    @WithCurrentCCAdministrator
+    public void getTotalBudgetByEventId_WithCurrentCCAdministrator() throws Exception {
+        Event savedEvent = initEventDB(createEventEntity());
+        EventBudgetTotalDTO eventBudgetTotalDTO = new EventBudgetTotalDTO();
+        for (int i = 0; i < 2; i ++) {
+            Budget budget = createBudgetEntity();
+            budget.setEventId(savedEvent.getId());
+            Budget savedBudget = initBudgetDB(budget);
+            eventBudgetTotalDTO.addTotalIncome(savedBudget.getAmount());
+        }
+        for (int i = 0; i < 2; i ++) {
+            Budget budget = createBudgetEntity();
+            budget.setEventId(savedEvent.getId());
+            budget.setType(UPDATED_TYPE);
+            Budget savedBudget = initBudgetDB(budget);
+            eventBudgetTotalDTO.addTotalExpense(savedBudget.getAmount());
+        }
+
+        restBudgetMockMvc.perform(get("/api/event-budget/event/{eventId}/total", savedEvent.getId()))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
+            .andExpect(jsonPath("$.totalExpense").value(eventBudgetTotalDTO.getTotalExpense()))
+            .andExpect(jsonPath("$.totalIncome").value(eventBudgetTotalDTO.getTotalIncome()));
+    }
+
+    @Test
+    @WithEventCrew
+    public void getTotalBudgetByEventId_WithEventCrew() throws Exception {
+        EventCrew savedEventCrew = getEventCrewByCurrentLoginUser();
+        EventBudgetTotalDTO eventBudgetTotalDTO = new EventBudgetTotalDTO();
+        for (int i = 0; i < 2; i ++) {
+            Budget budget = createBudgetEntity();
+            budget.setEventId(savedEventCrew.getEventId());
+            Budget savedBudget = initBudgetDB(budget);
+            eventBudgetTotalDTO.addTotalIncome(savedBudget.getAmount());
+        }
+        for (int i = 0; i < 2; i ++) {
+            Budget budget = createBudgetEntity();
+            budget.setEventId(savedEventCrew.getEventId());
+            budget.setType(UPDATED_TYPE);
+            Budget savedBudget = initBudgetDB(budget);
+            eventBudgetTotalDTO.addTotalExpense(savedBudget.getAmount());
+        }
+
+        restBudgetMockMvc.perform(get("/api/event-budget/event/{eventId}/total", savedEventCrew.getEventId()))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
+            .andExpect(jsonPath("$.totalExpense").value(eventBudgetTotalDTO.getTotalExpense()))
+            .andExpect(jsonPath("$.totalIncome").value(eventBudgetTotalDTO.getTotalIncome()));
+    }
+
+    @Test
+    @WithEventCrew
+    public void getTotalBudgetByEventId_WithoutBudget() throws Exception {
+        EventCrew savedEventCrew = getEventCrewByCurrentLoginUser();
+        EventBudgetTotalDTO eventBudgetTotalDTO = new EventBudgetTotalDTO();
+
+        restBudgetMockMvc.perform(get("/api/event-budget/event/{eventId}/total", savedEventCrew.getEventId()))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
+            .andExpect(jsonPath("$.totalExpense").value(eventBudgetTotalDTO.getTotalExpense()))
+            .andExpect(jsonPath("$.totalIncome").value(eventBudgetTotalDTO.getTotalIncome()));
+    }
+
+    @Test
+    @WithMockUser
+    public void getTotalBudgetByEventId_WithNormalUser_ShouldThrow403() throws Exception {
+        Event savedEvent = initEventDB(createEventEntity());
+        EventBudgetTotalDTO eventBudgetTotalDTO = new EventBudgetTotalDTO();
+        for (int i = 0; i < 2; i ++) {
+            Budget budget = createBudgetEntity();
+            budget.setEventId(savedEvent.getId());
+            Budget savedBudget = initBudgetDB(budget);
+            eventBudgetTotalDTO.addTotalIncome(savedBudget.getAmount());
+        }
+        for (int i = 0; i < 2; i ++) {
+            Budget budget = createBudgetEntity();
+            budget.setEventId(savedEvent.getId());
+            budget.setType(UPDATED_TYPE);
+            Budget savedBudget = initBudgetDB(budget);
+            eventBudgetTotalDTO.addTotalExpense(savedBudget.getAmount());
+        }
+
+        restBudgetMockMvc.perform(get("/api/event-budget/event/{eventId}/total", savedEvent.getId()))
+            .andExpect(status().isForbidden());
     }
 
     @Test
