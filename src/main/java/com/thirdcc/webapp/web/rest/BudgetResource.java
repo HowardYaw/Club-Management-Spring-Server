@@ -82,7 +82,7 @@ public class BudgetResource {
         return ResponseUtil.wrapOrNotFound(budgetDTO);
     }
 
-    @GetMapping("event-budget/event/{eventId}/total")
+    @GetMapping("/event-budget/event/{eventId}/total")
     @PreAuthorize("@managementTeamSecurityExpression.isCurrentAdministrator() || @managementTeamSecurityExpression.isEventCrew(#eventId)")
     public ResponseEntity<EventBudgetTotalDTO> getTotalBudgetByEventId(@PathVariable Long eventId) {
         log.debug("REST request to get total event budget amount by event Id: {}", eventId);

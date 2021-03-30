@@ -2,6 +2,7 @@ package com.thirdcc.webapp.web.rest;
 
 import com.thirdcc.webapp.security.AuthoritiesConstants;
 import com.thirdcc.webapp.service.TransactionService;
+import com.thirdcc.webapp.service.dto.EventBudgetTotalDTO;
 import com.thirdcc.webapp.web.rest.errors.BadRequestAlertException;
 import com.thirdcc.webapp.service.dto.TransactionDTO;
 
@@ -110,5 +111,14 @@ public class TransactionResource {
         Page<TransactionDTO> page = transactionService.findAllByEventId(eventId, pageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(uriBuilder.queryParams(queryParams), page);
         return ResponseEntity.ok().headers(headers).body(page.getContent());
+    }
+
+    @GetMapping("/transactions/event/{eventId}/total")
+    @PreAuthorize("@managementTeamSecurityExpression.isCurrentAdministrator() || @managementTeamSecurityExpression.isEventCrew(#eventId)")
+    public ResponseEntity<EventBudgetTotalDTO> getTotalTransactionByEventId(@PathVariable Long eventId) {
+        log.debug("REST request to get total transaction amount by event Id: {}", eventId);
+        EventBudgetTotalDTO result = transactionService.findTotalTransactionByEventId(eventId);
+        return ResponseEntity.ok()
+            .body(result);
     }
 }

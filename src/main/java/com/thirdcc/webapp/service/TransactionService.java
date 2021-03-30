@@ -1,5 +1,6 @@
 package com.thirdcc.webapp.service;
 
+import com.thirdcc.webapp.service.dto.EventBudgetTotalDTO;
 import com.thirdcc.webapp.service.dto.TransactionDTO;
 
 import org.springframework.data.domain.Page;
@@ -47,4 +48,6 @@ public interface TransactionService {
     void delete(Long id);
 
     Page<TransactionDTO> findAllByEventId(Long eventId, Pageable pageable);
+
+    EventBudgetTotalDTO findTotalTransactionByEventId(Long eventId);
 }
