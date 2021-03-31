@@ -9,8 +9,8 @@ import com.thirdcc.webapp.service.EventService;
 import com.thirdcc.webapp.service.FinanceReportService;
 import com.thirdcc.webapp.service.dto.EventDTO;
 import com.thirdcc.webapp.service.dto.FinanceReportDTO;
-import com.thirdcc.webapp.utils.PageUtils;
 import com.thirdcc.webapp.utils.YearSessionUtils;
+import io.github.jhipster.web.util.PageUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
@@ -57,7 +57,7 @@ public class FinanceReportServiceImpl implements FinanceReportService {
             .map(this::mapTotalIncome)
             .map(this::mapTotalExpenses)
             .collect(Collectors.toList());
-        return PageUtils.toPage(financeReportDTOList, pageable);
+        return PageUtil.createPageFromList(financeReportDTOList, pageable);
     }
 
     @Override
