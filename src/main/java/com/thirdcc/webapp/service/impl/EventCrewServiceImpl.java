@@ -90,14 +90,12 @@ public class EventCrewServiceImpl implements EventCrewService {
      */
     @Override
     @Transactional
-    public List<EventCrewDTO> findAllByEventId(Long eventId){
+    public Page<EventCrewDTO> findAllByEventId(Pageable pageable, Long eventId){
         log.debug("Request to get all EventCrews with event Id : {}", eventId);
 
-        return eventCrewRepository.findAllByEventId(eventId)
-            .stream()
+        return eventCrewRepository.findAllByEventId(pageable, eventId)
             .map(eventCrewMapper::toDto)
-            .map(this::mapUserDetails)
-            .collect(Collectors.toList());
+            .map(this::mapUserDetails);
 
     }
 
