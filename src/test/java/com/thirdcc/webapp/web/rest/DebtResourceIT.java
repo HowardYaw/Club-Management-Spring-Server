@@ -1,6 +1,9 @@
 package com.thirdcc.webapp.web.rest;
 
 import com.thirdcc.webapp.ClubmanagementApp;
+import com.thirdcc.webapp.annotations.authorization.WithCurrentCCAdministrator;
+import com.thirdcc.webapp.annotations.authorization.WithEventHead;
+import com.thirdcc.webapp.annotations.init.InitYearSession;
 import com.thirdcc.webapp.domain.Debt;
 import com.thirdcc.webapp.domain.User;
 import com.thirdcc.webapp.domain.YearSession;
@@ -37,7 +40,7 @@ import org.junit.jupiter.api.AfterEach;
  */
 @SpringBootTest(classes = ClubmanagementApp.class)
 @AutoConfigureMockMvc
-@WithMockUser(username = "admin", roles = "ADMIN")
+@InitYearSession
 public class DebtResourceIT {
 
     private static final Long DEFAULT_RECEIPT_ID = 1L;
@@ -52,8 +55,6 @@ public class DebtResourceIT {
     private static final DebtStatus DEFAULT_STATUS = DebtStatus.OPEN;
     private static final DebtStatus UPDATED_STATUS = DebtStatus.COLLECTED;
     
-    private static final String DEFAULT_YEAR_SESSION_VALUE = "2021/2022";
-    
     @Autowired
     private DebtRepository debtRepository;
     
@@ -67,11 +68,6 @@ public class DebtResourceIT {
     
     @Autowired
     private UserService userService;
-    
-    @Autowired
-    private YearSessionRepository yearSessionRepository;
-
-    private User currentUser;
     
     @BeforeEach
     public void setup() {
@@ -109,13 +105,11 @@ public class DebtResourceIT {
     @BeforeEach
     public void initTest() {
         debt = createDebtEntity();
-        initYearSessionDB();
     }
 
     @AfterEach
     public void cleanUp() {
         debtRepository.deleteAll();
-        yearSessionRepository.deleteAll();
     }
     
     private Debt initDebtDB() {
@@ -126,12 +120,8 @@ public class DebtResourceIT {
         debtRepository.saveAndFlush(debt);
     }
     
-    private YearSession initYearSessionDB() {
-        return yearSessionRepository.saveAndFlush(new YearSession()
-            .value(DEFAULT_YEAR_SESSION_VALUE));
-    }
-    
     @Test
+    @WithCurrentCCAdministrator
     public void getAllOpenDebts_UserWithRoleAdmin() throws Exception {
         // Initialize the database
         Debt savedDebt = initDebtDB();
@@ -157,6 +147,7 @@ public class DebtResourceIT {
     }
     
     @Test
+    @WithCurrentCCAdministrator
     public void getAllOpenDebts_UserWithRoleAdmin_NoDebtWithOpenStatus() throws Exception {
         // Initialize the database
         debt.setStatus(UPDATED_STATUS);
@@ -170,10 +161,9 @@ public class DebtResourceIT {
     }
     
     @Test
-    @WithMockUser
+    @WithEventHead
     public void getAllOpenDebts_UserIsNotAdmin_ShouldThrow403IsForbidden() throws Exception {
         // Initialize the database
-        currentUser = getLoggedInUser();
         initDebtDB();
         
         // Get all the debt in the event
@@ -182,6 +172,7 @@ public class DebtResourceIT {
     }
 
     @Test
+    @WithCurrentCCAdministrator
     public void updateDebtStatus_UserWithRoleAdmin() throws Exception {
         // Initialize the database
         initDebtDB();
@@ -203,11 +194,10 @@ public class DebtResourceIT {
     }
     
     @Test
-    @WithMockUser
+    @WithEventHead
     public void updateDebtStatus_UserIsNotAdmin_ShouldThrow403IsForbidden() throws Exception {
         // Initialize the database
         initDebtDB();
-        currentUser = getLoggedInUser();
 
         int databaseSizeBeforeUpdate = debtRepository.findAll().size();
 
@@ -226,6 +216,7 @@ public class DebtResourceIT {
     }
 
     @Test
+    @WithCurrentCCAdministrator
     public void updateDebtStatus_DebtIsNotExists_ShouldThrow400BadRequest() throws Exception {
         // Initialize the database
         initDebtDB();
@@ -242,6 +233,7 @@ public class DebtResourceIT {
     }
 
     @Test
+    @WithCurrentCCAdministrator
     public void updateDebtStatus_DebtIsNotOpen_ShouldThrow400BadRequest() throws Exception {
         // Initialize the database
         debt.setStatus(UPDATED_STATUS);
