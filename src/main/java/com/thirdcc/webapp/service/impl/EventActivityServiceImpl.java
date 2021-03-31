@@ -80,13 +80,7 @@ public class EventActivityServiceImpl implements EventActivityService {
         if (!eventActivityDTO.getEventId().equals(eventActivity.getEventId())) {
             throw new BadRequestException("Cannot update eventId of Event Activity");
         }
-        Set<EventStatus> eventStatuses = new HashSet<EventStatus>() {{
-            add(EventStatus.OPEN);
-            add(EventStatus.POSTPONED);
-        }};
-        Event event = eventRepository
-            .findOneByIdAndStatusIn(eventActivity.getEventId(), eventStatuses)
-            .orElseThrow(() -> new BadRequestException("This event does not exists or it is not happening"));
+        Event event = eventService.findEventByIdAndNotCancelledStatus(eventActivityDTO.getEventId());
         if (event.getEndDate().isBefore(Instant.now())) {
             throw new BadRequestException("cannot save eventActivity for ended event");
         }
