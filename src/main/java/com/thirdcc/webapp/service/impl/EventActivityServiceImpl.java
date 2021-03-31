@@ -1,6 +1,7 @@
 package com.thirdcc.webapp.service.impl;
 
 import com.thirdcc.webapp.domain.Event;
+import com.thirdcc.webapp.domain.enumeration.EventStatus;
 import com.thirdcc.webapp.exception.BadRequestException;
 import com.thirdcc.webapp.repository.EventRepository;
 import com.thirdcc.webapp.service.EventActivityService;
@@ -18,7 +19,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Service Implementation for managing {@link EventActivity}.
@@ -74,8 +77,16 @@ public class EventActivityServiceImpl implements EventActivityService {
         EventActivity eventActivity = eventActivityRepository
             .findById(eventActivityDTO.getId())
             .orElseThrow(() -> new BadRequestException("eventActivity does not exist"));
-        Event event = eventService
-            .findEventByIdAndNotCancelledStatus(eventActivity.getEventId());
+        if (!eventActivityDTO.getEventId().equals(eventActivity.getEventId())) {
+            throw new BadRequestException("Cannot update eventId of Event Activity");
+        }
+        Set<EventStatus> eventStatuses = new HashSet<EventStatus>() {{
+            add(EventStatus.OPEN);
+            add(EventStatus.POSTPONED);
+        }};
+        Event event = eventRepository
+            .findOneByIdAndStatusIn(eventActivity.getEventId(), eventStatuses)
+            .orElseThrow(() -> new BadRequestException("This event does not exists or it is not happening"));
         if (event.getEndDate().isBefore(Instant.now())) {
             throw new BadRequestException("cannot save eventActivity for ended event");
         }
