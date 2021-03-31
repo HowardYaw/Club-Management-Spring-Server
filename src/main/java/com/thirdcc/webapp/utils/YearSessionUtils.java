@@ -47,7 +47,8 @@ public class YearSessionUtils {
         int firstYear = year;
         int secondYear = year + 1;
 
-        if (month.getValue() < getFirstMonthOfYearSession().getValue()) {
+        boolean isInPreviousYearSession = month.getValue() < getFirstMonthOfYearSession().getValue();
+        if (isInPreviousYearSession) {
             firstYear = year - 1;
             secondYear = year;
         }

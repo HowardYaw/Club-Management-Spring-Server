@@ -13,14 +13,13 @@ import com.thirdcc.webapp.service.mapper.BudgetMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
-import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 /**
  * Service Implementation for managing {@link Budget}.
@@ -79,12 +78,10 @@ public class BudgetServiceImpl implements BudgetService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<BudgetDTO> findAllByEventId(Pageable pageable, Long eventId) {
+    public Page<BudgetDTO> findAllByEventId(Pageable pageable, Long eventId) {
         log.debug("Request to findAllByEventId : {}", eventId);
         return budgetRepository.findAllByEventId(pageable, eventId)
-            .stream()
-            .map(budgetMapper::toDto)
-            .collect(Collectors.toList());
+            .map(budgetMapper::toDto);
     }
 
     @Override
