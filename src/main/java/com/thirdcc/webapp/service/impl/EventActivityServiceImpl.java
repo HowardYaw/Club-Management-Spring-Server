@@ -78,6 +78,9 @@ public class EventActivityServiceImpl implements EventActivityService {
         EventActivity eventActivity = eventActivityRepository
             .findById(eventActivityDTO.getId())
             .orElseThrow(() -> new BadRequestException("eventActivity does not exist"));
+        if (!eventActivityDTO.getEventId().equals(eventActivity.getEventId())) {
+            throw new BadRequestException("Cannot update eventId of Event Activity");
+        }
         Set<EventStatus> eventStatuses = new HashSet<EventStatus>() {{
             add(EventStatus.OPEN);
             add(EventStatus.POSTPONED);
