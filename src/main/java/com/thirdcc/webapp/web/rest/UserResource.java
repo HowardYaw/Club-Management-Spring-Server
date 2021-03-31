@@ -205,4 +205,10 @@ public class UserResource {
         userService.deleteUser(login);
         return ResponseEntity.noContent().headers(HeaderUtil.createAlert(applicationName,  "userManagement.deleted", login)).build();
     }
+
+    @GetMapping("/users/event-crews/{eventId}")
+    public List<UserDTO> getNotEventCrewUsers (Pageable pageable, @PathVariable Long eventId){
+        log.debug("REST request to get not event crew user of event: {}", eventId);
+        return userService.getNotEventCrewUsers(pageable, eventId);
+    }
 }

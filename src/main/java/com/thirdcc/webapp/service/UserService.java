@@ -2,11 +2,14 @@ package com.thirdcc.webapp.service;
 
 import com.thirdcc.webapp.config.Constants;
 import com.thirdcc.webapp.domain.Authority;
+import com.thirdcc.webapp.domain.EventCrew;
 import com.thirdcc.webapp.domain.User;
 import com.thirdcc.webapp.repository.AuthorityRepository;
+import com.thirdcc.webapp.repository.EventCrewRepository;
 import com.thirdcc.webapp.repository.UserRepository;
 import com.thirdcc.webapp.security.AuthoritiesConstants;
 import com.thirdcc.webapp.security.SecurityUtils;
+import com.thirdcc.webapp.service.dto.EventCrewDTO;
 import com.thirdcc.webapp.service.dto.UserDTO;
 import com.thirdcc.webapp.service.util.RandomUtil;
 import com.thirdcc.webapp.web.rest.errors.*;
@@ -38,17 +41,20 @@ public class UserService {
 
     private final UserRepository userRepository;
 
+    private final EventCrewRepository eventCrewRepository;
+
     private final PasswordEncoder passwordEncoder;
 
     private final AuthorityRepository authorityRepository;
 
     private final CacheManager cacheManager;
 
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, AuthorityRepository authorityRepository, CacheManager cacheManager) {
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, AuthorityRepository authorityRepository, CacheManager cacheManager, EventCrewRepository eventCrewRepository) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.authorityRepository = authorityRepository;
         this.cacheManager = cacheManager;
+        this.eventCrewRepository = eventCrewRepository;
     }
 
     public Optional<User> activateRegistration(String key) {
@@ -328,4 +334,17 @@ public class UserService {
         log.debug("Created Information for User: {}", newUser);
         return newUser;
     }
+
+    /**
+     * Gets a list of users that are not event crews of event with "eventId".
+     * @return a list of all the non event crew users.
+     */
+    public List<UserDTO> getNotEventCrewUsers (Pageable pageable, Long eventId){
+        List<UserDTO> userDTOList = userRepository.findAllByLoginNot(pageable, Constants.ANONYMOUS_USER).map(UserDTO::new).getContent();
+        return userDTOList
+            .stream()
+            .filter(user -> !eventCrewRepository.findByUserIdAndAndEventId(user.getId(), eventId).isPresent())
+            .collect(Collectors.toList());
+    }
+
 }
