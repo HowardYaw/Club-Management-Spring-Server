@@ -55,5 +55,18 @@ public interface EventService {
      */
     void delete(Long id);
 
+    /**
+     * Find the "id" event with not cancelled status.
+     *
+     * @param eventId the id of the entity.
+     */
     Event findEventByIdAndNotCancelledStatus(Long eventId);
+
+    /**
+     * Cancel the "id" event.
+     *
+     * @param eventId the id of the entity.
+     */
+    EventDTO cancelEventById(Long eventId);
+
 }

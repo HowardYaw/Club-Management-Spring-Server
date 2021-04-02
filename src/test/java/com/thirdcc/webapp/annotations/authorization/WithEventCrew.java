@@ -18,7 +18,7 @@ import java.lang.annotation.Target;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -27,6 +27,14 @@ import java.util.Set;
 @WithSecurityContext(factory = WithEventCrew.Factory.class)
 @CleanUpEventCrew
 public @interface WithEventCrew {
+
+    String firstName() default "";
+
+    String email() default "";
+
+    String imageUrl() default "";
+
+    String[] authorities() default {AuthoritiesConstants.USER};
 
     class Factory extends AbstractSecurityContextFactoryTemplate<WithEventCrew> {
 
@@ -40,8 +48,27 @@ public @interface WithEventCrew {
         }
 
         @Override
-        public Set<String> configureAuthorityNames() {
-            return new HashSet<>(Collections.singletonList(AuthoritiesConstants.USER));
+        public Set<String> configureAuthorityNames(WithEventCrew annotation) {
+            return new HashSet<>(Arrays.asList(annotation.authorities()));
+        }
+
+        @Override
+        public String createUserEmail(WithEventCrew annotation) {
+            boolean hasEmail = !annotation.email().isEmpty();
+            if (hasEmail) {
+                return annotation.email();
+            }
+            return super.createUserEmail(annotation);
+        }
+
+        @Override
+        public String configureFirstName(WithEventCrew annotation) {
+            return annotation.firstName();
+        }
+
+        @Override
+        public String configureImageUrl(WithEventCrew annotation) {
+            return annotation.imageUrl();
         }
 
         @Override
