@@ -1,9 +1,9 @@
 package com.thirdcc.webapp.service;
 
 import com.thirdcc.webapp.service.dto.BudgetDTO;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
-import java.util.List;
 import java.util.Optional;
 
 /**
@@ -15,7 +15,7 @@ public interface BudgetService {
 
     BudgetDTO update(BudgetDTO budgetDTO);
 
-    List<BudgetDTO> findAllByEventId(Pageable pageable, Long eventId);
+    Page<BudgetDTO> findAllByEventId(Pageable pageable, Long eventId);
 
     Optional<BudgetDTO> findOneByEventIdAndId(Long eventId, Long id);
 

@@ -1,6 +1,8 @@
 package com.thirdcc.webapp.web.rest;
 
 import com.thirdcc.webapp.ClubmanagementApp;
+import com.thirdcc.webapp.annotations.authorization.WithCurrentCCAdministrator;
+import com.thirdcc.webapp.annotations.init.InitYearSession;
 import com.thirdcc.webapp.domain.Event;
 import com.thirdcc.webapp.domain.EventActivity;
 import com.thirdcc.webapp.domain.enumeration.EventStatus;
@@ -37,7 +39,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  */
 @SpringBootTest(classes = ClubmanagementApp.class)
 @AutoConfigureMockMvc
-@WithMockUser(value = "user")
+@InitYearSession
 public class EventActivityResourceIT {
 
     private static final Long DEFAULT_EVENT_ID = 1L;
@@ -148,6 +150,7 @@ public class EventActivityResourceIT {
     }
 
     @Test
+    @WithCurrentCCAdministrator
     public void createEventActivity() throws Exception {
         Event savedEvent = initEventDB();
 
@@ -172,6 +175,7 @@ public class EventActivityResourceIT {
     }
 
     @Test
+    @WithCurrentCCAdministrator
     public void createEventActivity_WithEventEnded_ShouldThrow400() throws Exception {
         event.setEndDate(Instant.now().minus(1, ChronoUnit.DAYS));
         Event savedEvent = initEventDB();
@@ -193,6 +197,7 @@ public class EventActivityResourceIT {
     }
 
     @Test
+    @WithCurrentCCAdministrator
     public void createEventActivity_WithEventClosed_ShouldThrow400() throws Exception {
         event.setStatus(EventStatus.CLOSED);
         Event savedEvent = initEventDB();
@@ -214,6 +219,7 @@ public class EventActivityResourceIT {
     }
 
     @Test
+    @WithCurrentCCAdministrator
     public void createEventActivity_WithEventCancelled_ShouldThrow400() throws Exception {
         event.setStatus(EventStatus.CANCELLED);
         Event savedEvent = initEventDB();
@@ -235,6 +241,7 @@ public class EventActivityResourceIT {
     }
 
     @Test
+    @WithCurrentCCAdministrator
     public void createEventActivity_WithEventActivityStartDateEarlierThanToday_ShouldThrow400() throws Exception {
         Event savedEvent = initEventDB();
 
@@ -256,6 +263,7 @@ public class EventActivityResourceIT {
     }
 
     @Test
+    @WithCurrentCCAdministrator
     public void createEventActivity_WithEventActivityStartDateLaterThanEventEndDate_ShouldThrow400() throws Exception {
         Event savedEvent = initEventDB();
 
@@ -277,6 +285,7 @@ public class EventActivityResourceIT {
     }
 
     @Test
+    @WithCurrentCCAdministrator
     public void createEventActivityWithExistingId() throws Exception {
         int databaseSizeBeforeCreate = eventActivityRepository.findAll().size();
 
@@ -297,6 +306,7 @@ public class EventActivityResourceIT {
 
 
     @Test
+    @WithCurrentCCAdministrator
     public void getAllEventActivities() throws Exception {
         // Initialize the database
         Event savedEvent = initEventDB();
@@ -315,6 +325,7 @@ public class EventActivityResourceIT {
     }
 
     @Test
+    @WithCurrentCCAdministrator
     public void getAllEventActivitiesByEventId() throws Exception {
         // Initialize the database
         Event savedEvent = initEventDB();
@@ -333,13 +344,14 @@ public class EventActivityResourceIT {
     }
 
     @Test
+    @WithCurrentCCAdministrator
     public void getEventActivity() throws Exception {
         // Initialize the database
         Event savedEvent = initEventDB();
         EventActivity savedEventActivity = initEventActivityDB(savedEvent);
 
         // Get the eventActivity
-        restEventActivityMockMvc.perform(get("/api/event-activities/{id}", eventActivity.getId()))
+        restEventActivityMockMvc.perform(get("/api/event-activities/{id}/event/{eventId}", eventActivity.getId(), savedEvent.getId()))
             .andExpect(status().isOk())
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
             .andExpect(jsonPath("$.id").value(savedEventActivity.getId().intValue()))
@@ -351,13 +363,18 @@ public class EventActivityResourceIT {
     }
 
     @Test
+    @WithCurrentCCAdministrator
     public void getNonExistingEventActivity() throws Exception {
+        // Initialize the database
+        Event savedEvent = initEventDB();
+
         // Get the eventActivity
-        restEventActivityMockMvc.perform(get("/api/event-activities/{id}", Long.MAX_VALUE))
+        restEventActivityMockMvc.perform(get("/api/event-activities/{id}/eventId/{eventId}", Long.MAX_VALUE, savedEvent.getId()))
             .andExpect(status().isNotFound());
     }
 
     @Test
+    @WithCurrentCCAdministrator
     public void updateEventActivity() throws Exception {
         Event savedEvent = initEventDB();
         EventActivity savedEventActivity = initEventActivityDB(savedEvent);
@@ -366,6 +383,7 @@ public class EventActivityResourceIT {
 
         EventActivityDTO eventActivityDTO = createUpdateEventActivityDTO();
         eventActivityDTO.setId(savedEventActivity.getId());
+        eventActivityDTO.setEventId(savedEventActivity.getEventId());
 
         restEventActivityMockMvc.perform(put("/api/event-activities")
             .contentType(TestUtil.APPLICATION_JSON_UTF8)
@@ -385,6 +403,7 @@ public class EventActivityResourceIT {
     }
 
     @Test
+    @WithCurrentCCAdministrator
     public void updateEventActivity_WithEventActivityNotExist_ShouldThrow400() throws Exception {
         int databaseSizeBeforeUpdate = eventActivityRepository.findAll().size();
 
@@ -403,6 +422,7 @@ public class EventActivityResourceIT {
     }
 
     @Test
+    @WithCurrentCCAdministrator
     public void updateEventActivity_WithEventEnded_ShouldThrow400() throws Exception {
         event.setEndDate(Instant.now().minus(1, ChronoUnit.DAYS));
         Event savedEvent = initEventDB();
@@ -412,6 +432,7 @@ public class EventActivityResourceIT {
 
         EventActivityDTO eventActivityDTO = createUpdateEventActivityDTO();
         eventActivityDTO.setId(savedEventActivity.getId());
+        eventActivityDTO.setEventId(savedEventActivity.getEventId());
 
         restEventActivityMockMvc.perform(put("/api/event-activities")
             .contentType(TestUtil.APPLICATION_JSON_UTF8)
@@ -423,6 +444,7 @@ public class EventActivityResourceIT {
     }
 
     @Test
+    @WithCurrentCCAdministrator
     public void updateEventActivity_WithEventClosed_ShouldThrow400() throws Exception {
         event.setStatus(EventStatus.CLOSED);
         Event savedEvent = initEventDB();
@@ -432,6 +454,7 @@ public class EventActivityResourceIT {
 
         EventActivityDTO eventActivityDTO = createUpdateEventActivityDTO();
         eventActivityDTO.setId(savedEventActivity.getId());
+        eventActivityDTO.setEventId(savedEventActivity.getEventId());
 
         restEventActivityMockMvc.perform(put("/api/event-activities")
             .contentType(TestUtil.APPLICATION_JSON_UTF8)
@@ -443,6 +466,7 @@ public class EventActivityResourceIT {
     }
 
     @Test
+    @WithCurrentCCAdministrator
     public void updateEventActivity_WithEventCancelled_ShouldThrow400() throws Exception {
         event.setStatus(EventStatus.CANCELLED);
         Event savedEvent = initEventDB();
@@ -452,6 +476,7 @@ public class EventActivityResourceIT {
 
         EventActivityDTO eventActivityDTO = createUpdateEventActivityDTO();
         eventActivityDTO.setId(savedEventActivity.getId());
+        eventActivityDTO.setEventId(savedEventActivity.getEventId());
 
         restEventActivityMockMvc.perform(put("/api/event-activities")
             .contentType(TestUtil.APPLICATION_JSON_UTF8)
@@ -463,6 +488,7 @@ public class EventActivityResourceIT {
     }
 
     @Test
+    @WithCurrentCCAdministrator
     public void updateEventActivity_WithEventActivityStartDateEarlierThanToday_ShouldThrow400() throws Exception {
         Event savedEvent = initEventDB();
         EventActivity savedEventActivity = initEventActivityDB(savedEvent);
@@ -471,6 +497,7 @@ public class EventActivityResourceIT {
 
         EventActivityDTO eventActivityDTO = createUpdateEventActivityDTO();
         eventActivityDTO.setId(savedEventActivity.getId());
+        eventActivityDTO.setEventId(savedEventActivity.getEventId());
         eventActivityDTO.setStartDate(Instant.now().minus(1, ChronoUnit.SECONDS));
 
         assertThat(eventActivityDTO.getStartDate()).isBefore(Instant.now());
@@ -485,6 +512,7 @@ public class EventActivityResourceIT {
     }
 
     @Test
+    @WithCurrentCCAdministrator
     public void updateEventActivity_WithEventActivityStartDateLaterThanEventEndDate_ShouldThrow400() throws Exception {
         Event savedEvent = initEventDB();
         EventActivity savedEventActivity = initEventActivityDB(savedEvent);
@@ -493,6 +521,7 @@ public class EventActivityResourceIT {
 
         EventActivityDTO eventActivityDTO = createUpdateEventActivityDTO();
         eventActivityDTO.setId(savedEventActivity.getId());
+        eventActivityDTO.setEventId(savedEventActivity.getEventId());
         eventActivityDTO.setStartDate(savedEvent.getEndDate().plus(1, ChronoUnit.SECONDS));
 
         assertThat(eventActivityDTO.getStartDate()).isAfter(savedEvent.getEndDate());
@@ -508,6 +537,7 @@ public class EventActivityResourceIT {
 
 
     @Test
+    @WithCurrentCCAdministrator
     public void deleteEventActivity() throws Exception {
         Event savedEvent = initEventDB();
         EventActivity savedEventActivity = initEventActivityDB(savedEvent);
@@ -523,6 +553,7 @@ public class EventActivityResourceIT {
     }
 
     @Test
+    @WithCurrentCCAdministrator
     public void deleteEventActivity_WithEventActivityNotExist_ShouldThrow400() throws Exception {
 
         int databaseSizeBeforeDelete = eventActivityRepository.findAll().size();
@@ -536,6 +567,7 @@ public class EventActivityResourceIT {
     }
 
     @Test
+    @WithCurrentCCAdministrator
     public void deleteEventActivity_WithEventIsCancelled_ShouldThrow400() throws Exception {
         event.setStatus(EventStatus.CANCELLED);
         Event savedEvent = initEventDB();
@@ -554,6 +586,7 @@ public class EventActivityResourceIT {
     }
 
     @Test
+    @WithCurrentCCAdministrator
     public void deleteEventActivity_WithEventIsClosed_ShouldThrow400() throws Exception {
         event.setStatus(EventStatus.CLOSED);
         Event savedEvent = initEventDB();
@@ -572,6 +605,7 @@ public class EventActivityResourceIT {
     }
 
     @Test
+    @WithCurrentCCAdministrator
     public void deleteEventActivity_WithEventIsEnded_ShouldThrow400() throws Exception {
         event.setEndDate(Instant.now().minus(1, ChronoUnit.DAYS));
         Event savedEvent = initEventDB();

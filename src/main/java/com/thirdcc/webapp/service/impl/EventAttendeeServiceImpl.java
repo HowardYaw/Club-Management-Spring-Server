@@ -1,13 +1,13 @@
 package com.thirdcc.webapp.service.impl;
 
 import com.thirdcc.webapp.domain.Event;
-import com.thirdcc.webapp.domain.enumeration.EventStatus;
 import com.thirdcc.webapp.exception.BadRequestException;
 import com.thirdcc.webapp.repository.EventRepository;
 import com.thirdcc.webapp.repository.UserRepository;
 import com.thirdcc.webapp.service.EventAttendeeService;
 import com.thirdcc.webapp.domain.EventAttendee;
 import com.thirdcc.webapp.repository.EventAttendeeRepository;
+import com.thirdcc.webapp.service.EventService;
 import com.thirdcc.webapp.service.dto.EventAttendeeDTO;
 import com.thirdcc.webapp.service.mapper.EventAttendeeMapper;
 import org.slf4j.Logger;
@@ -19,9 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
-import java.util.HashSet;
 import java.util.Optional;
-import java.util.Set;
 
 /**
  * Service Implementation for managing {@link EventAttendee}.
@@ -36,13 +34,16 @@ public class EventAttendeeServiceImpl implements EventAttendeeService {
 
     private final EventRepository eventRepository;
 
+    private final EventService eventService;
+
     private final UserRepository userRepository;
 
     private final EventAttendeeMapper eventAttendeeMapper;
 
-    public EventAttendeeServiceImpl(EventAttendeeRepository eventAttendeeRepository, EventRepository eventRepository, UserRepository userRepository, EventAttendeeMapper eventAttendeeMapper) {
+    public EventAttendeeServiceImpl(EventAttendeeRepository eventAttendeeRepository, EventRepository eventRepository, EventService eventService, UserRepository userRepository, EventAttendeeMapper eventAttendeeMapper) {
         this.eventAttendeeRepository = eventAttendeeRepository;
         this.eventRepository = eventRepository;
+        this.eventService = eventService;
         this.userRepository = userRepository;
         this.eventAttendeeMapper = eventAttendeeMapper;
     }
@@ -56,19 +57,11 @@ public class EventAttendeeServiceImpl implements EventAttendeeService {
     @Override
     public EventAttendeeDTO save(EventAttendeeDTO eventAttendeeDTO) {
         log.debug("Request to save EventAttendee : {}", eventAttendeeDTO);
-
-        Set<EventStatus> eventStatuses = new HashSet<EventStatus>() {{
-            add(EventStatus.OPEN);
-            add(EventStatus.POSTPONED);
-        }};
-
         userRepository
             .findById(eventAttendeeDTO.getUserId())
             .orElseThrow(() -> new BadRequestException("User not found"));
-
-        Event event = eventRepository
-            .findOneByIdAndStatusIn(eventAttendeeDTO.getEventId(), eventStatuses)
-            .orElseThrow(()-> new BadRequestException("This event does not exists or it is not happening"));
+        Event event = eventService
+            .findEventByIdAndNotCancelledStatus(eventAttendeeDTO.getEventId());
 
         if(event.getEndDate().isBefore(Instant.now())){
             throw new BadRequestException("Cannot add attendee to ended event");

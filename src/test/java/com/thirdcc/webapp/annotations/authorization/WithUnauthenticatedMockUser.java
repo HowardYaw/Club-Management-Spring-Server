@@ -1,4 +1,4 @@
-package com.thirdcc.webapp.web.rest;
+package com.thirdcc.webapp.annotations.authorization;
 
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
