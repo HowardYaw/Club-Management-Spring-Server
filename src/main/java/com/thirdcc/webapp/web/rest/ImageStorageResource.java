@@ -47,6 +47,8 @@ public class ImageStorageResource {
      */
     @PostMapping("/image-storages")
     public ResponseEntity<ImageStorageDTO> createImageStorage(@RequestBody ImageStorageDTO imageStorageDTO) throws URISyntaxException {
+
+        // TODO: @LUXIANZE Firebase Image Upload at service layer
         log.debug("REST request to save ImageStorage : {}", imageStorageDTO);
         if (imageStorageDTO.getId() != null) {
             throw new BadRequestAlertException("A new imageStorage cannot already have an ID", ENTITY_NAME, "idexists");
