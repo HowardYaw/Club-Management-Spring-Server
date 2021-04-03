@@ -154,21 +154,6 @@ public class UserResource {
     }
 
     /**
-     * {@code GET  /users/:id} : get the "id" user.
-     *
-     * @param id the id of the userDTO to retrieve.
-     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the userDTO, or with status {@code 404 (Not Found)}.
-     */
-    @GetMapping("/users/{id}")
-    public ResponseEntity<UserDTO> getUserWithId(@PathVariable Long id){
-        log.debug("REST request to get User : {}", id);
-        Optional<UserDTO> userDTO = userService.getUserWithAuthorities(id)
-            .map(UserDTO::new);
-        return ResponseUtil.wrapOrNotFound(userDTO);
-    }
-
-
-    /**
      * Gets a list of all roles.
      * @return a string list of all roles.
      */
@@ -206,6 +191,12 @@ public class UserResource {
         return ResponseEntity.noContent().headers(HeaderUtil.createAlert(applicationName,  "userManagement.deleted", login)).build();
     }
 
+    /**
+     * {@code GET /users/event-crews/:eventId} : get all users that is not event crew of eventId with "eventId".
+     *
+     * @param eventId the id of the event.
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the list of users in body.
+     */
     @GetMapping("/users/event-crews/{eventId}")
     public List<UserDTO> getNotEventCrewUsers (Pageable pageable, @PathVariable Long eventId){
         log.debug("REST request to get not event crew user of event: {}", eventId);

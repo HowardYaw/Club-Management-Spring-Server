@@ -286,7 +286,7 @@ public class UserResourceIT {
         assertThat(cacheManager.getCache(UserRepository.USERS_BY_LOGIN_CACHE).get(user.getLogin())).isNull();
 
         // Get the user
-        restUserMockMvc.perform(get("/api/users/{login}", user.getLogin()))
+        restUserMockMvc.perform(get("/api/users/login/{login}", user.getLogin()))
             .andExpect(status().isOk())
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
             .andExpect(jsonPath("$.login").value(user.getLogin()))
@@ -302,7 +302,7 @@ public class UserResourceIT {
     @Test
     @Transactional
     public void getNonExistingUser() throws Exception {
-        restUserMockMvc.perform(get("/api/users/unknown"))
+        restUserMockMvc.perform(get("/api/users/login/unknown"))
             .andExpect(status().isNotFound());
     }
 
@@ -483,7 +483,7 @@ public class UserResourceIT {
         int databaseSizeBeforeDelete = userRepository.findAll().size();
 
         // Delete the user
-        restUserMockMvc.perform(delete("/api/users/{login}", user.getLogin())
+        restUserMockMvc.perform(delete("/api/users/login/{login}", user.getLogin())
             .accept(TestUtil.APPLICATION_JSON_UTF8))
             .andExpect(status().isNoContent());
 

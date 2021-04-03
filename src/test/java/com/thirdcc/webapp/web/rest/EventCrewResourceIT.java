@@ -167,9 +167,9 @@ public class EventCrewResourceIT {
         List<EventCrew> eventCrewList = eventCrewRepository.findAll();
         assertThat(eventCrewList).hasSize(databaseSizeBeforeCreate + 1);
         EventCrew testEventCrew = eventCrewList.get(eventCrewList.size() - 1);
-        assertThat(testEventCrew.getUserId()).isEqualTo(DEFAULT_USER_ID);
-        assertThat(testEventCrew.getEventId()).isEqualTo(DEFAULT_EVENT_ID);
-        assertThat(testEventCrew.getRole()).isEqualTo(DEFAULT_ROLE);
+        assertThat(testEventCrew.getUserId()).isEqualTo(eventCrew.getUserId());
+        assertThat(testEventCrew.getEventId()).isEqualTo(eventCrew.getEventId());
+        assertThat(testEventCrew.getRole()).isEqualTo(eventCrew.getRole());
     }
 
     @Test
@@ -249,7 +249,7 @@ public class EventCrewResourceIT {
         savedEventCrew = initEventCrewDB(savedEventCrew);
 
         // Get the eventCrew
-        restEventCrewMockMvc.perform(get("/api/event-crews/{id}", savedEventCrew.getId()))
+        restEventCrewMockMvc.perform(get("/api/event-crews/{id}?eventId={eventId}", savedEventCrew.getId(), savedEvent.getId()))
             .andExpect(status().isOk())
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
             .andExpect(jsonPath("$.id").value(savedEventCrew.getId().intValue()))
@@ -263,7 +263,7 @@ public class EventCrewResourceIT {
     @WithCurrentCCAdministrator
     public void getEventCrew_WithNonExistingEventCrew_ShouldReturn404() throws Exception {
          // Get the eventCrew
-        restEventCrewMockMvc.perform(get("/api/event-crews/{id}", Long.MAX_VALUE))
+        restEventCrewMockMvc.perform(get("/api/event-crews/{id}?eventId={eventId}", Long.MAX_VALUE, DEFAULT_EVENT_ID))
             .andExpect(status().isNotFound());
     }
 
@@ -278,17 +278,8 @@ public class EventCrewResourceIT {
         savedEventCrew = initEventCrewDB(savedEventCrew);
 
         // Get the eventCrew
-        restEventCrewMockMvc.perform(get("/api/event-crews/{id}", savedEventCrew.getId()))
+        restEventCrewMockMvc.perform(get("/api/event-crews/{id}?eventId={eventId}", savedEventCrew.getId(), savedEvent.getId()))
             .andExpect(status().isForbidden());
-    }
-
-    @Test
-    @Transactional
-    @WithCurrentCCAdministrator
-    public void getNonExistingEventCrew() throws Exception {
-        // Get the eventCrew
-        restEventCrewMockMvc.perform(get("/api/event-crews/{id}", Long.MAX_VALUE))
-            .andExpect(status().isNotFound());
     }
 
     @Test
@@ -408,7 +399,7 @@ public class EventCrewResourceIT {
         int databaseSizeBeforeDelete = eventCrewRepository.findAll().size();
 
         // Delete the eventCrew
-        restEventCrewMockMvc.perform(delete("/api/event-crews/{id}", savedEventCrew.getId())
+        restEventCrewMockMvc.perform(delete("/api/event-crews/{id}?eventId={eventId}", savedEventCrew.getId(), savedEvent.getId())
             .accept(TestUtil.APPLICATION_JSON_UTF8))
             .andExpect(status().isNoContent());
 
@@ -424,7 +415,7 @@ public class EventCrewResourceIT {
         int databaseSizeBeforeDelete = eventCrewRepository.findAll().size();
 
         // Delete the eventCrew
-        restEventCrewMockMvc.perform(delete("/api/event-crews/{id}", Long.MAX_VALUE)
+        restEventCrewMockMvc.perform(delete("/api/event-crews/{id}", Long.MAX_VALUE, DEFAULT_EVENT_ID)
             .accept(TestUtil.APPLICATION_JSON_UTF8))
             .andExpect(status().isBadRequest());
 
@@ -445,7 +436,7 @@ public class EventCrewResourceIT {
         int databaseSizeBeforeDelete = eventCrewRepository.findAll().size();
 
         // Delete the eventCrew
-        restEventCrewMockMvc.perform(delete("/api/event-crews/{id}", savedEventCrew.getId())
+        restEventCrewMockMvc.perform(delete("/api/event-crews/{id}?eventId={eventId}", savedEventCrew.getId(), savedEvent.getId())
             .accept(TestUtil.APPLICATION_JSON_UTF8))
             .andExpect(status().isForbidden());
 
