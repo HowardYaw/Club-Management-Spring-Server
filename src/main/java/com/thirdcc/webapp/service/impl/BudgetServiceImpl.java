@@ -1,12 +1,14 @@
 package com.thirdcc.webapp.service.impl;
 
 import com.thirdcc.webapp.domain.Event;
+import com.thirdcc.webapp.domain.enumeration.TransactionType;
 import com.thirdcc.webapp.exception.BadRequestException;
 import com.thirdcc.webapp.service.BudgetService;
 import com.thirdcc.webapp.domain.Budget;
 import com.thirdcc.webapp.repository.BudgetRepository;
 import com.thirdcc.webapp.service.EventService;
 import com.thirdcc.webapp.service.dto.BudgetDTO;
+import com.thirdcc.webapp.service.dto.EventBudgetTotalDTO;
 import com.thirdcc.webapp.service.mapper.BudgetMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -97,5 +99,20 @@ public class BudgetServiceImpl implements BudgetService {
             .findOneByEventIdAndId(eventId, id)
             .orElseThrow(() -> new BadRequestException("Cannot delete non existing budget"));
         budgetRepository.deleteById(id);
+    }
+
+    @Override
+    public EventBudgetTotalDTO findTotalEventBudgetByEventId(Long eventId) {
+        log.debug("Request to get total event budget by event Id");
+        EventBudgetTotalDTO eventBudgetTotalDTO = new EventBudgetTotalDTO();
+        budgetRepository.findAllByEventId(Pageable.unpaged(), eventId)
+            .forEach(eventBudget -> {
+                if (TransactionType.EXPENSE == eventBudget.getType()) {
+                    eventBudgetTotalDTO.addTotalExpense(eventBudget.getAmount());
+                } else if (TransactionType.INCOME == eventBudget.getType()) {
+                    eventBudgetTotalDTO.addTotalIncome(eventBudget.getAmount());
+                }
+            });
+        return eventBudgetTotalDTO;
     }
 }

@@ -13,6 +13,7 @@ import com.thirdcc.webapp.service.TransactionService;
 import com.thirdcc.webapp.domain.Transaction;
 import com.thirdcc.webapp.repository.TransactionRepository;
 import com.thirdcc.webapp.service.dto.ClaimDTO;
+import com.thirdcc.webapp.service.dto.EventBudgetTotalDTO;
 import com.thirdcc.webapp.service.dto.ReceiptDTO;
 import com.thirdcc.webapp.service.dto.TransactionDTO;
 import com.thirdcc.webapp.service.mapper.TransactionMapper;
@@ -151,6 +152,21 @@ public class TransactionServiceImpl implements TransactionService {
         eventService.findEventByIdAndNotCancelledStatus(eventId);
         return transactionRepository.findAllByEventId(eventId, pageable)
             .map(transactionMapper::toDto);
+    }
+
+    @Override
+    public EventBudgetTotalDTO findTotalTransactionByEventId(Long eventId) {
+        log.debug("Request to get total transactions by event Id");
+        EventBudgetTotalDTO eventBudgetTotalDTO = new EventBudgetTotalDTO();
+        transactionRepository.findAllByEventId(eventId, Pageable.unpaged())
+            .forEach(transaction -> {
+                if (TransactionType.EXPENSE == transaction.getType()) {
+                    eventBudgetTotalDTO.addTotalExpense(transaction.getAmount());
+                } else if (TransactionType.INCOME == transaction.getType()) {
+                    eventBudgetTotalDTO.addTotalIncome(transaction.getAmount());
+                }
+            });
+        return eventBudgetTotalDTO;
     }
 
     private TransactionDTO mapEventName(TransactionDTO transactionDTO) {

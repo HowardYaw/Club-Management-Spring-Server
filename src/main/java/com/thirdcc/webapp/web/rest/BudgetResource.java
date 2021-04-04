@@ -1,6 +1,7 @@
 package com.thirdcc.webapp.web.rest;
 
 import com.thirdcc.webapp.service.BudgetService;
+import com.thirdcc.webapp.service.dto.EventBudgetTotalDTO;
 import com.thirdcc.webapp.web.rest.errors.BadRequestAlertException;
 import com.thirdcc.webapp.service.dto.BudgetDTO;
 
@@ -91,6 +92,15 @@ public class BudgetResource {
         log.debug("REST request to get Budget : {}", id);
         Optional<BudgetDTO> budgetDTO = budgetService.findOneByEventIdAndId(eventId, id);
         return ResponseUtil.wrapOrNotFound(budgetDTO);
+    }
+
+    @GetMapping("/event-budget/event/{eventId}/total")
+    @PreAuthorize("@managementTeamSecurityExpression.isCurrentAdministrator() || @managementTeamSecurityExpression.isEventCrew(#eventId)")
+    public ResponseEntity<EventBudgetTotalDTO> getTotalBudgetByEventId(@PathVariable Long eventId) {
+        log.debug("REST request to get total event budget amount by event Id: {}", eventId);
+        EventBudgetTotalDTO result = budgetService.findTotalEventBudgetByEventId(eventId);
+        return ResponseEntity.ok()
+            .body(result);
     }
 
     @DeleteMapping("/event-budget/{id}/event/{eventId}")

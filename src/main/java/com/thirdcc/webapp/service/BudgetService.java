@@ -1,6 +1,7 @@
 package com.thirdcc.webapp.service;
 
 import com.thirdcc.webapp.service.dto.BudgetDTO;
+import com.thirdcc.webapp.service.dto.EventBudgetTotalDTO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -20,4 +21,6 @@ public interface BudgetService {
     Optional<BudgetDTO> findOneByEventIdAndId(Long eventId, Long id);
 
     void delete(Long eventId, Long id);
+
+    EventBudgetTotalDTO findTotalEventBudgetByEventId(Long eventId);
 }
