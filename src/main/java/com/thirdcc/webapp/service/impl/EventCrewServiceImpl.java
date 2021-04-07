@@ -110,8 +110,7 @@ public class EventCrewServiceImpl implements EventCrewService {
         return eventCrewRepository.findById(id)
             .map(eventCrewMapper::toDto)
             .map(this::mapUserDetails)
-            .map(this::mapEventName)
-            .map(this::mapUserDetails);
+            .map(this::mapEventName);
     }
 
     /**
@@ -138,7 +137,7 @@ public class EventCrewServiceImpl implements EventCrewService {
         Optional<User> dbUser = userRepository.findById(eventCrewDTO.getUserId());
         if(dbUser.isPresent()){
             User user = dbUser.get();
-            eventCrewDTO.setUserName(user.getFirstName() + " " + (user.getLastName() != null? user.getLastName(): "") );
+            eventCrewDTO.setUserName(user.getFirstName() + (user.getLastName() != null ? " " + user.getLastName(): "") );
         }
         return eventCrewDTO;
     }
