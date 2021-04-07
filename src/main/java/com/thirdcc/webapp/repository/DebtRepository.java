@@ -1,6 +1,10 @@
 package com.thirdcc.webapp.repository;
 
 import com.thirdcc.webapp.domain.Debt;
+import com.thirdcc.webapp.domain.enumeration.DebtStatus;
+import java.util.Set;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.*;
 import org.springframework.stereotype.Repository;
 
@@ -11,5 +15,6 @@ import org.springframework.stereotype.Repository;
 @SuppressWarnings("unused")
 @Repository
 public interface DebtRepository extends JpaRepository<Debt, Long> {
-
+    
+    Page<Debt> findAllByStatusIn(Pageable pageable, Set<DebtStatus> debtStatus);
 }
