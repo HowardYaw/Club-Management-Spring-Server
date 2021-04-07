@@ -137,7 +137,9 @@ public class EventCrewServiceImpl implements EventCrewService {
         Optional<User> dbUser = userRepository.findById(eventCrewDTO.getUserId());
         if(dbUser.isPresent()){
             User user = dbUser.get();
-            eventCrewDTO.setUserName(user.getFirstName() + (user.getLastName() != null ? " " + user.getLastName(): "") );
+            String lastName = (user.getLastName() != null ? " " + user.getLastName(): "");
+            String userName = user.getFirstName() + lastName;
+            eventCrewDTO.setUserName(userName);
         }
         return eventCrewDTO;
     }
