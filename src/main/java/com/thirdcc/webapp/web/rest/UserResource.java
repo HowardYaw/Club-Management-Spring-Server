@@ -190,4 +190,16 @@ public class UserResource {
         userService.deleteUser(login);
         return ResponseEntity.noContent().headers(HeaderUtil.createAlert(applicationName,  "userManagement.deleted", login)).build();
     }
+
+    /**
+     * {@code GET /users/event-crews/:eventId} : get all users that is not event crew of eventId with "eventId".
+     *
+     * @param eventId the id of the event.
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the list of users in body.
+     */
+    @GetMapping("/users/event-crews/{eventId}")
+    public List<UserDTO> getNotEventCrewUsers (Pageable pageable, @PathVariable Long eventId){
+        log.debug("REST request to get not event crew user of event: {}", eventId);
+        return userService.getNotEventCrewUsers(pageable, eventId);
+    }
 }
