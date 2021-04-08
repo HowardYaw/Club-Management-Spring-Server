@@ -38,6 +38,8 @@ public interface YearSessionService {
 
     String getYearSessionStringById(Long id);
 
+    YearSession getCurrentYearSession();
+
     /**
      * Delete the "id" yearSession.
      *

@@ -1,11 +1,16 @@
 package com.thirdcc.webapp.web.rest;
 
 import com.thirdcc.webapp.ClubmanagementApp;
+import com.thirdcc.webapp.annotations.authorization.WithCurrentCCAdministrator;
+import com.thirdcc.webapp.annotations.authorization.WithEventCrew;
+import com.thirdcc.webapp.annotations.init.InitYearSession;
 import com.thirdcc.webapp.domain.*;
 import com.thirdcc.webapp.domain.enumeration.*;
 import com.thirdcc.webapp.exception.BadRequestException;
 import com.thirdcc.webapp.repository.*;
+import com.thirdcc.webapp.security.SecurityUtils;
 import com.thirdcc.webapp.service.UserService;
+import com.thirdcc.webapp.service.dto.EventBudgetTotalDTO;
 import com.thirdcc.webapp.service.dto.ReceiptDTO;
 import com.thirdcc.webapp.service.dto.TransactionDTO;
 import com.thirdcc.webapp.service.mapper.TransactionMapper;
@@ -38,6 +43,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest(classes = ClubmanagementApp.class)
 @AutoConfigureMockMvc
 @WithMockUser(username = "admin", roles = "ADMIN")
+@InitYearSession
 public class TransactionResourceIT {
 
     private static final Long DEFAULT_EVENT_ID = 1L;
@@ -86,6 +92,8 @@ public class TransactionResourceIT {
 
     @Autowired
     private UserService userService;
+    @Autowired
+    private UserRepository userRepository;
 
     private User currentUser;
 
@@ -642,6 +650,96 @@ public class TransactionResourceIT {
     }
 
     @Test
+    @WithCurrentCCAdministrator
+    public void getTotalTransactionByEventId_WithCurrentCCAdministrator() throws Exception {
+        this.event = createEventEntity();
+        Event savedEvent = initEventDB();
+        EventBudgetTotalDTO eventBudgetTotalDTO = new EventBudgetTotalDTO();
+        for (int i = 0; i < 2; i ++) {
+            Transaction transaction = createTransactionEntity();
+            transaction.setEventId(savedEvent.getId());
+            Transaction savedTransaction = transactionRepository.save(transaction);
+            eventBudgetTotalDTO.addTotalIncome(savedTransaction.getAmount());
+        }
+        for (int i = 0; i < 2; i ++) {
+            Transaction transaction = createTransactionEntity();
+            transaction.setEventId(savedEvent.getId());
+            transaction.setType(UPDATED_TYPE);
+            Transaction savedTransaction = transactionRepository.save(transaction);
+            eventBudgetTotalDTO.addTotalExpense(savedTransaction.getAmount());
+        }
+
+        restTransactionMockMvc.perform(get("/api/transactions/event/{eventId}/total", savedEvent.getId()))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
+            .andExpect(jsonPath("$.totalExpense").value(eventBudgetTotalDTO.getTotalExpense().setScale(1)))
+            .andExpect(jsonPath("$.totalIncome").value(eventBudgetTotalDTO.getTotalIncome().setScale(1)));
+    }
+
+    @Test
+    @WithEventCrew
+    public void getTotalBudgetByEventId_WithEventCrew() throws Exception {
+        EventCrew savedEventCrew = getEventCrewByCurrentLoginUser();
+        EventBudgetTotalDTO eventBudgetTotalDTO = new EventBudgetTotalDTO();
+        for (int i = 0; i < 2; i ++) {
+            Transaction transaction = createTransactionEntity();
+            transaction.setEventId(savedEventCrew.getEventId());
+            Transaction savedTransaction = transactionRepository.save(transaction);
+            eventBudgetTotalDTO.addTotalIncome(savedTransaction.getAmount());
+        }
+        for (int i = 0; i < 2; i ++) {
+            Transaction transaction = createTransactionEntity();
+            transaction.setEventId(savedEventCrew.getEventId());
+            transaction.setType(UPDATED_TYPE);
+            Transaction savedTransaction = transactionRepository.save(transaction);
+            eventBudgetTotalDTO.addTotalExpense(savedTransaction.getAmount());
+        }
+
+        restTransactionMockMvc.perform(get("/api/transactions/event/{eventId}/total", savedEventCrew.getEventId()))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
+            .andExpect(jsonPath("$.totalExpense").value(eventBudgetTotalDTO.getTotalExpense().setScale(1)))
+            .andExpect(jsonPath("$.totalIncome").value(eventBudgetTotalDTO.getTotalIncome().setScale(1)));
+    }
+
+    @Test
+    @WithEventCrew
+    public void getTotalBudgetByEventId_WithoutBudget() throws Exception {
+        EventCrew savedEventCrew = getEventCrewByCurrentLoginUser();
+        EventBudgetTotalDTO eventBudgetTotalDTO = new EventBudgetTotalDTO();
+
+        restTransactionMockMvc.perform(get("/api/transactions/event/{eventId}/total", savedEventCrew.getEventId()))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
+            .andExpect(jsonPath("$.totalExpense").value(eventBudgetTotalDTO.getTotalExpense()))
+            .andExpect(jsonPath("$.totalIncome").value(eventBudgetTotalDTO.getTotalIncome()));
+    }
+
+    @Test
+    @WithMockUser
+    public void getTotalBudgetByEventId_WithNormalUser_ShouldThrow403() throws Exception {
+        this.event = createEventEntity();
+        Event savedEvent = initEventDB();
+        EventBudgetTotalDTO eventBudgetTotalDTO = new EventBudgetTotalDTO();
+        for (int i = 0; i < 2; i ++) {
+            Transaction transaction = createTransactionEntity();
+            transaction.setEventId(savedEvent.getId());
+            Transaction savedTransaction = transactionRepository.save(transaction);
+            eventBudgetTotalDTO.addTotalIncome(savedTransaction.getAmount());
+        }
+        for (int i = 0; i < 2; i ++) {
+            Transaction transaction = createTransactionEntity();
+            transaction.setEventId(savedEvent.getId());
+            transaction.setType(UPDATED_TYPE);
+            Transaction savedTransaction = transactionRepository.save(transaction);
+            eventBudgetTotalDTO.addTotalExpense(savedTransaction.getAmount());
+        }
+
+        restTransactionMockMvc.perform(get("/api/transactions/event/{eventId}/total", savedEvent.getId()))
+            .andExpect(status().isForbidden());
+    }
+
+    @Test
     public void equalsVerifier() throws Exception {
         TestUtil.equalsVerifier(Transaction.class);
         Transaction transaction1 = new Transaction();
@@ -690,4 +788,15 @@ public class TransactionResourceIT {
     }
 
     private EventCrew initEventCrewDB() { return eventCrewRepository.saveAndFlush(eventCrew); }
+
+    private EventCrew getEventCrewByCurrentLoginUser() {
+        User currentUser = SecurityUtils
+            .getCurrentUserLogin()
+            .flatMap(userRepository::findOneWithAuthoritiesByLogin)
+            .orElseThrow(() -> new BadRequestException("Cannot find user"));
+        List<EventCrew> eventCrewList = eventCrewRepository
+            .findAllByUserId(currentUser.getId());
+        assertThat(eventCrewList).hasSize(1);
+        return eventCrewList.get(0);
+    }
 }

@@ -7,6 +7,7 @@ import com.thirdcc.webapp.repository.EventRepository;
 import com.thirdcc.webapp.service.EventActivityService;
 import com.thirdcc.webapp.domain.EventActivity;
 import com.thirdcc.webapp.repository.EventActivityRepository;
+import com.thirdcc.webapp.service.EventService;
 import com.thirdcc.webapp.service.dto.EventActivityDTO;
 import com.thirdcc.webapp.service.mapper.EventActivityMapper;
 import org.slf4j.Logger;
@@ -33,13 +34,16 @@ public class EventActivityServiceImpl implements EventActivityService {
 
     private final EventActivityRepository eventActivityRepository;
 
-    private final EventRepository eventRepository;
+    private final EventService eventService;
 
     private final EventActivityMapper eventActivityMapper;
 
-    public EventActivityServiceImpl(EventActivityRepository eventActivityRepository, EventRepository eventRepository, EventActivityMapper eventActivityMapper) {
+    public EventActivityServiceImpl(
+        EventActivityRepository eventActivityRepository,
+        EventService eventService, EventActivityMapper eventActivityMapper
+    ) {
         this.eventActivityRepository = eventActivityRepository;
-        this.eventRepository = eventRepository;
+        this.eventService = eventService;
         this.eventActivityMapper = eventActivityMapper;
     }
 
@@ -52,13 +56,8 @@ public class EventActivityServiceImpl implements EventActivityService {
     @Override
     public EventActivityDTO save(EventActivityDTO eventActivityDTO) {
         log.debug("Request to save EventActivity : {}", eventActivityDTO);
-        Set<EventStatus> eventStatuses = new HashSet<EventStatus>() {{
-            add(EventStatus.OPEN);
-            add(EventStatus.POSTPONED);
-        }};
-        Event event = eventRepository
-            .findOneByIdAndStatusIn(eventActivityDTO.getEventId(), eventStatuses)
-            .orElseThrow(() -> new BadRequestException("This event does not exists or it is not happening"));
+        Event event = eventService
+            .findEventByIdAndNotCancelledStatus(eventActivityDTO.getEventId());
         if (event.getEndDate().isBefore(Instant.now())) {
             throw new BadRequestException("cannot save eventActivity for ended event");
         }
@@ -78,13 +77,10 @@ public class EventActivityServiceImpl implements EventActivityService {
         EventActivity eventActivity = eventActivityRepository
             .findById(eventActivityDTO.getId())
             .orElseThrow(() -> new BadRequestException("eventActivity does not exist"));
-        Set<EventStatus> eventStatuses = new HashSet<EventStatus>() {{
-            add(EventStatus.OPEN);
-            add(EventStatus.POSTPONED);
-        }};
-        Event event = eventRepository
-            .findOneByIdAndStatusIn(eventActivity.getEventId(), eventStatuses)
-            .orElseThrow(() -> new BadRequestException("This event does not exists or it is not happening"));
+        if (!eventActivityDTO.getEventId().equals(eventActivity.getEventId())) {
+            throw new BadRequestException("Cannot update eventId of Event Activity");
+        }
+        Event event = eventService.findEventByIdAndNotCancelledStatus(eventActivityDTO.getEventId());
         if (event.getEndDate().isBefore(Instant.now())) {
             throw new BadRequestException("cannot save eventActivity for ended event");
         }
@@ -149,13 +145,8 @@ public class EventActivityServiceImpl implements EventActivityService {
         EventActivity eventActivity = eventActivityRepository
             .findById(id)
             .orElseThrow(() -> new BadRequestException("eventActivity does not exist"));
-        Set<EventStatus> eventStatuses = new HashSet<EventStatus>() {{
-            add(EventStatus.OPEN);
-            add(EventStatus.POSTPONED);
-        }};
-        Event event = eventRepository
-            .findOneByIdAndStatusIn(eventActivity.getEventId(), eventStatuses)
-            .orElseThrow(() -> new BadRequestException("This event does not exists or it is not happening"));
+        Event event = eventService
+            .findEventByIdAndNotCancelledStatus(eventActivity.getEventId());
         if (event.getEndDate().isBefore(Instant.now())) {
             throw new BadRequestException("cannot delete eventActivity for ended event");
         }

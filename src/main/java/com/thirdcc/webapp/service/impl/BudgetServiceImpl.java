@@ -1,20 +1,25 @@
 package com.thirdcc.webapp.service.impl;
 
+import com.thirdcc.webapp.domain.Event;
+import com.thirdcc.webapp.domain.enumeration.TransactionType;
+import com.thirdcc.webapp.exception.BadRequestException;
 import com.thirdcc.webapp.service.BudgetService;
 import com.thirdcc.webapp.domain.Budget;
 import com.thirdcc.webapp.repository.BudgetRepository;
+import com.thirdcc.webapp.service.EventService;
 import com.thirdcc.webapp.service.dto.BudgetDTO;
+import com.thirdcc.webapp.service.dto.EventBudgetTotalDTO;
 import com.thirdcc.webapp.service.mapper.BudgetMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.LinkedList;
-import java.util.List;
+import java.time.Instant;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 /**
  * Service Implementation for managing {@link Budget}.
@@ -29,62 +34,85 @@ public class BudgetServiceImpl implements BudgetService {
 
     private final BudgetMapper budgetMapper;
 
-    public BudgetServiceImpl(BudgetRepository budgetRepository, BudgetMapper budgetMapper) {
+    private final EventService eventService;
+
+    public BudgetServiceImpl(
+        BudgetRepository budgetRepository,
+        BudgetMapper budgetMapper,
+        EventService eventService
+    ) {
         this.budgetRepository = budgetRepository;
         this.budgetMapper = budgetMapper;
+        this.eventService = eventService;
     }
 
-    /**
-     * Save a budget.
-     *
-     * @param budgetDTO the entity to save.
-     * @return the persisted entity.
-     */
     @Override
     public BudgetDTO save(BudgetDTO budgetDTO) {
         log.debug("Request to save Budget : {}", budgetDTO);
+        Event event = eventService.findEventByIdAndNotCancelledStatus(budgetDTO.getEventId());
+        if (event.getEndDate().isBefore(Instant.now())) {
+            throw new BadRequestException("cannot save budget for ended event");
+        }
         Budget budget = budgetMapper.toEntity(budgetDTO);
         budget = budgetRepository.save(budget);
         return budgetMapper.toDto(budget);
     }
 
-    /**
-     * Get all the budgets.
-     *
-     * @return the list of entities.
-     */
     @Override
-    @Transactional(readOnly = true)
-    public List<BudgetDTO> findAll() {
-        log.debug("Request to get all Budgets");
-        return budgetRepository.findAll().stream()
-            .map(budgetMapper::toDto)
-            .collect(Collectors.toCollection(LinkedList::new));
+    public BudgetDTO update(BudgetDTO budgetDTO) {
+        log.debug("Request to update Budget : {}", budgetDTO);
+        Budget budget = budgetRepository
+            .findById(budgetDTO.getId())
+            .orElseThrow(() -> new BadRequestException("Cannot update non existing budget"));
+        Event event = eventService.findEventByIdAndNotCancelledStatus(budget.getEventId());
+        if (event.getEndDate().isBefore(Instant.now())) {
+            throw new BadRequestException("cannot update budget for ended event");
+        }
+        budget.setAmount(budgetDTO.getAmount());
+        budget.setType(budgetDTO.getType());
+        budget.setName(budgetDTO.getName());
+        budget.setDetails(budgetDTO.getDetails());
+        budget = budgetRepository.save(budget);
+        return budgetMapper.toDto(budget);
     }
 
-
-    /**
-     * Get one budget by id.
-     *
-     * @param id the id of the entity.
-     * @return the entity.
-     */
     @Override
     @Transactional(readOnly = true)
-    public Optional<BudgetDTO> findOne(Long id) {
-        log.debug("Request to get Budget : {}", id);
-        return budgetRepository.findById(id)
+    public Page<BudgetDTO> findAllByEventId(Pageable pageable, Long eventId) {
+        log.debug("Request to findAllByEventId : {}", eventId);
+        return budgetRepository.findAllByEventId(pageable, eventId)
             .map(budgetMapper::toDto);
     }
 
-    /**
-     * Delete the budget by id.
-     *
-     * @param id the id of the entity.
-     */
     @Override
-    public void delete(Long id) {
-        log.debug("Request to delete Budget : {}", id);
+    @Transactional(readOnly = true)
+    public Optional<BudgetDTO> findOneByEventIdAndId(Long eventId, Long id) {
+        log.debug("Request to get Budget eventId: {}, id: {}", eventId, id);
+        return budgetRepository.findOneByEventIdAndId(eventId, id)
+            .map(budgetMapper::toDto);
+    }
+
+    @Override
+    public void delete(Long eventId, Long id) {
+        log.debug("Request to delete Budget eventId: {}, id: {}", eventId, id);
+        Budget budget = budgetRepository
+            .findOneByEventIdAndId(eventId, id)
+            .orElseThrow(() -> new BadRequestException("Cannot delete non existing budget"));
         budgetRepository.deleteById(id);
+    }
+
+    @Override
+    public EventBudgetTotalDTO findTotalEventBudgetByEventId(Long eventId) {
+        log.debug("Request to get total event budget by event Id");
+        EventBudgetTotalDTO eventBudgetTotalDTO = new EventBudgetTotalDTO();
+        budgetRepository.findAllByEventId(Pageable.unpaged(), eventId)
+            .forEach(eventBudget -> {
+                if (TransactionType.EXPENSE == eventBudget.getType()) {
+                    eventBudgetTotalDTO.addTotalExpense(eventBudget.getAmount());
+                } else if (TransactionType.INCOME == eventBudget.getType()) {
+                    eventBudgetTotalDTO.addTotalIncome(eventBudget.getAmount());
+                }
+            });
+        return eventBudgetTotalDTO;
     }
 }

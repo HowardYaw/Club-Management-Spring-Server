@@ -1,5 +1,7 @@
 package com.thirdcc.webapp.web.rest;
 
+import com.thirdcc.webapp.exception.BadRequestException;
+import com.thirdcc.webapp.security.AuthoritiesConstants;
 import com.thirdcc.webapp.service.EventActivityService;
 import com.thirdcc.webapp.web.rest.errors.BadRequestAlertException;
 import com.thirdcc.webapp.service.dto.EventActivityDTO;
@@ -14,6 +16,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.springframework.http.ResponseEntity;
@@ -53,6 +56,8 @@ public class EventActivityResource {
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
     @PostMapping("/event-activities")
+    @PreAuthorize("@managementTeamSecurityExpression.isEventCrew(#eventActivityDTO.getEventId()) || " +
+        "@managementTeamSecurityExpression.isCurrentAdministrator()")
     public ResponseEntity<EventActivityDTO> createEventActivity(@RequestBody EventActivityDTO eventActivityDTO) throws URISyntaxException {
         log.debug("REST request to save EventActivity : {}", eventActivityDTO);
         if (eventActivityDTO.getId() != null) {
@@ -74,6 +79,8 @@ public class EventActivityResource {
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
     @PutMapping("/event-activities")
+    @PreAuthorize("@managementTeamSecurityExpression.isEventCrew(#eventActivityDTO.getEventId()) || " +
+        "@managementTeamSecurityExpression.isCurrentAdministrator()")
     public ResponseEntity<EventActivityDTO> updateEventActivity(@RequestBody EventActivityDTO eventActivityDTO) throws URISyntaxException {
         log.debug("REST request to update EventActivity : {}", eventActivityDTO);
         if (eventActivityDTO.getId() == null) {
@@ -102,6 +109,8 @@ public class EventActivityResource {
     }
 
     @GetMapping("/event-activities/event/{eventId}")
+    @PreAuthorize("@managementTeamSecurityExpression.isEventCrew(#eventId) || " +
+        "@managementTeamSecurityExpression.isCurrentAdministrator()")
     public ResponseEntity<List<EventActivityDTO>> getAllEventActivitiesByEventId(Pageable pageable, @PathVariable Long eventId, @RequestParam MultiValueMap<String, String> queryParams, UriComponentsBuilder uriBuilder) {
         log.debug("REST request to get a page of EventActivities");
         Page<EventActivityDTO> page = eventActivityService.findAllByEventId(pageable, eventId);
@@ -115,10 +124,15 @@ public class EventActivityResource {
      * @param id the id of the eventActivityDTO to retrieve.
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the eventActivityDTO, or with status {@code 404 (Not Found)}.
      */
-    @GetMapping("/event-activities/{id}")
-    public ResponseEntity<EventActivityDTO> getEventActivity(@PathVariable Long id) {
+    @GetMapping("/event-activities/{id}/event/{eventId}")
+    @PreAuthorize("@managementTeamSecurityExpression.isEventCrew(#eventId) || " +
+        "@managementTeamSecurityExpression.isCurrentAdministrator()")
+    public ResponseEntity<EventActivityDTO> getEventActivity(@PathVariable Long id, @PathVariable Long eventId) {
         log.debug("REST request to get EventActivity : {}", id);
         Optional<EventActivityDTO> eventActivityDTO = eventActivityService.findOne(id);
+        if (eventActivityDTO.isPresent() && !eventActivityDTO.get().getEventId().equals(eventId)) {
+            throw new BadRequestException("Event Activity is not belong to Event");
+        }
         return ResponseUtil.wrapOrNotFound(eventActivityDTO);
     }
 
