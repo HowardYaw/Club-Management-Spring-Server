@@ -1,5 +1,6 @@
 package com.thirdcc.webapp.web.rest;
 
+import com.thirdcc.webapp.projections.interfaces.EventAttendeeCustomInterface;
 import com.thirdcc.webapp.service.EventAttendeeService;
 import com.thirdcc.webapp.web.rest.errors.BadRequestAlertException;
 import com.thirdcc.webapp.service.dto.EventAttendeeDTO;
@@ -122,10 +123,10 @@ public class EventAttendeeResource {
      * @return the {@link ResponseEntity} with status {@code 200 (OK) or 400 (BadRequest)}.
      */
     @GetMapping("/event-attendees/event/{eventId}")
-    @PreAuthorize("@managementTeamSecurityExpression.hasRoleAdminOrIsEventCrew(#eventId)")
-    public ResponseEntity<List<EventAttendeeDTO>> getAllEventAttendeeByEventId(Pageable pageable, @PathVariable Long eventId, @RequestParam MultiValueMap<String, String> queryParams, UriComponentsBuilder uriBuilder) {
+    @PreAuthorize("@managementTeamSecurityExpression.isEventCrew(#eventId) || @managementTeamSecurityExpression.isCurrentAdministrator()")
+    public ResponseEntity<List<EventAttendeeCustomInterface>> getAllEventAttendeeByEventId(Pageable pageable, @PathVariable Long eventId, @RequestParam MultiValueMap<String, String> queryParams, UriComponentsBuilder uriBuilder) {
         log.debug("REST request to get a page of EventAttendees");
-        Page<EventAttendeeDTO> page = eventAttendeeService.findAllByEventId(pageable, eventId);
+        Page<EventAttendeeCustomInterface> page = eventAttendeeService.findAllByEventId(pageable, eventId);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(uriBuilder.queryParams(queryParams), page);
         return ResponseEntity.ok().headers(headers).body(page.getContent());
     }

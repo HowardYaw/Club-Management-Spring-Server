@@ -6,6 +6,7 @@ import com.thirdcc.webapp.repository.EventRepository;
 import com.thirdcc.webapp.repository.UserRepository;
 import com.thirdcc.webapp.service.EventAttendeeService;
 import com.thirdcc.webapp.domain.EventAttendee;
+import com.thirdcc.webapp.projections.interfaces.EventAttendeeCustomInterface;
 import com.thirdcc.webapp.repository.EventAttendeeRepository;
 import com.thirdcc.webapp.service.EventService;
 import com.thirdcc.webapp.service.dto.EventAttendeeDTO;
@@ -20,6 +21,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.Optional;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Sort.Direction;
 
 /**
  * Service Implementation for managing {@link EventAttendee}.
@@ -98,14 +102,28 @@ public class EventAttendeeServiceImpl implements EventAttendeeService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<EventAttendeeDTO> findAllByEventId(Pageable pageable, Long eventId) {
+    public Page<EventAttendeeCustomInterface> findAllByEventId(Pageable pageable, Long eventId) {
         log.debug("Request to get all EventAttendee by Event Id: {}", eventId);
         eventRepository
             .findById(eventId)
             .orElseThrow(() -> new BadRequestException("Event not found"));
-
-        return eventAttendeeRepository.findAllByEventId(pageable, eventId)
-            .map(eventAttendeeMapper::toDto);
+        String orderProperty = null;
+        Direction orderDirection = null;
+        for(Sort.Order order: pageable.getSort()){
+            orderProperty = order.getProperty();
+            orderDirection = order.getDirection();
+        }
+        Pageable newPageable = null;
+        if(null == orderProperty){
+            newPageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize());
+        }
+        else if(orderProperty.equals("year_session")){
+            newPageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), Sort.by(orderDirection, "ui.year_session"));
+        }
+        else{
+            newPageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), Sort.by(orderDirection, orderProperty));
+        }
+        return eventAttendeeRepository.customFindAllByEventId(newPageable, eventId);
     }
 
     /**
