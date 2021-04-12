@@ -1,31 +1,23 @@
 package com.thirdcc.webapp.web.rest;
 
 import com.thirdcc.webapp.domain.enumeration.ClaimStatus;
-import com.thirdcc.webapp.security.AuthoritiesConstants;
 import com.thirdcc.webapp.service.ClaimService;
-import com.thirdcc.webapp.web.rest.errors.BadRequestAlertException;
 import com.thirdcc.webapp.service.dto.ClaimDTO;
 
 import io.github.jhipster.web.util.HeaderUtil;
 import io.github.jhipster.web.util.PaginationUtil;
-import io.github.jhipster.web.util.ResponseUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.net.URI;
-import java.net.URISyntaxException;
-
 import java.util.List;
-import java.util.Optional;
 import org.springframework.security.access.prepost.PreAuthorize;
 
 /**
@@ -58,7 +50,7 @@ public class ClaimResource {
      * or with status {@code 500 (Internal Server Error)} if the claimDTO couldn't be updated.
      */
     @PutMapping("/claims/{id}/status/{claimStatus}")
-    @PreAuthorize("hasRole(\"" + AuthoritiesConstants.ADMIN + "\") || @managementTeamSecurityExpression.isCurrentAdministrator()")
+    @PreAuthorize("@managementTeamSecurityExpression.isCurrentAdministrator()")
     public ResponseEntity<ClaimDTO> updateClaimStatus(@PathVariable Long id, @PathVariable ClaimStatus claimStatus) {
         log.debug("REST request to update claim: {} with status: {}", id, claimStatus);
         ClaimDTO result = claimService.updateStatus(id, claimStatus);
@@ -76,7 +68,7 @@ public class ClaimResource {
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the list of claims in body.
      */
     @GetMapping("/claims")
-    @PreAuthorize("hasRole(\"" + AuthoritiesConstants.ADMIN + "\") || @managementTeamSecurityExpression.isCurrentAdministrator()")
+    @PreAuthorize("@managementTeamSecurityExpression.isCurrentAdministrator()")
     public ResponseEntity<List<ClaimDTO>> getAllOpenClaims(Pageable pageable, @RequestParam MultiValueMap<String, String> queryParams, UriComponentsBuilder uriBuilder) {
         log.debug("REST request to get a page of Claims");
         Page<ClaimDTO> page = claimService.findAllOpenClaims(pageable);
