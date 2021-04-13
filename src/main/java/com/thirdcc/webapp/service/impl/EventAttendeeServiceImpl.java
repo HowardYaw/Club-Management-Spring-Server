@@ -13,6 +13,7 @@ import com.thirdcc.webapp.repository.EventAttendeeRepository;
 import com.thirdcc.webapp.service.EventService;
 import com.thirdcc.webapp.service.dto.EventAttendeeDTO;
 import com.thirdcc.webapp.service.mapper.EventAttendeeMapper;
+import io.github.jhipster.web.util.PageUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -129,48 +131,42 @@ public class EventAttendeeServiceImpl implements EventAttendeeService {
                 .collect(Collectors.toList());
         String orderProperty = null;
         Direction orderDirection = null;
-        for(Sort.Order order : pageable.getSort()){
+        Iterator<Sort.Order> sortIterator = pageable.getSort().iterator();
+        if(sortIterator.hasNext()){
+            Sort.Order order = sortIterator.next();
             orderProperty = order.getProperty();
             orderDirection = order.getDirection();
         }
+        
+        //final is needed because local variable inside Comparator must be final
+        final boolean isAscending = (null == orderDirection || orderDirection.isAscending());
         if(null == orderProperty){
             list.sort((EventAttendeeDTO e1, EventAttendeeDTO e2) -> {
                 return Long.compare(e1.getId(), e2.getId());
             });
         }
         else if(orderProperty.equals("provideTransport")){
-            if(null == orderDirection || orderDirection.isAscending()){
-                list.sort((EventAttendeeDTO e1, EventAttendeeDTO e2) -> {
+            list.sort((EventAttendeeDTO e1, EventAttendeeDTO e2) -> {
+                if(isAscending){
                     return Boolean.compare(e1.isProvideTransport(), e2.isProvideTransport());
-                });
-            }
-            else{
-                list.sort((EventAttendeeDTO e1, EventAttendeeDTO e2) -> {
-                    return Boolean.compare(e2.isProvideTransport(), e1.isProvideTransport());
-                });
-            }
+                }
+                return Boolean.compare(e2.isProvideTransport(), e1.isProvideTransport());
+            });
         }
         else if(orderProperty.equals("yearSession")){
-            if(null == orderDirection || orderDirection.isAscending()){
-                list.sort((EventAttendeeDTO e1, EventAttendeeDTO e2) -> {
+            list.sort((EventAttendeeDTO e1, EventAttendeeDTO e2) -> {
+                if(isAscending){
                     return e1.getYearSession().compareTo(e2.getYearSession());
-                });
-            }
-            else{
-                list.sort((EventAttendeeDTO e1, EventAttendeeDTO e2) -> {
-                    return e2.getYearSession().compareTo(e1.getYearSession());
-                });
-            }
+                }
+                return e2.getYearSession().compareTo(e1.getYearSession());
+            });
         }
         else{
             list.sort((EventAttendeeDTO e1, EventAttendeeDTO e2) -> {
                 return Long.compare(e1.getId(), e2.getId());
             });
         }
-        // refer to https://stackoverflow.com/questions/37136679/how-to-convert-a-list-of-enity-object-to-page-object-in-spring-mvc-jpa
-        int start = (int) pageable.getOffset();
-        int end = Math.min((start + pageable.getPageSize()), list.size());
-        return new PageImpl(list.subList(start, end), pageable, list.size());
+        return PageUtil.createPageFromList(list, pageable);
     }
 
     /**
