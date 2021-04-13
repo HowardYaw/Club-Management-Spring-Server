@@ -1,6 +1,5 @@
 package com.thirdcc.webapp.service;
 
-import com.thirdcc.webapp.projections.interfaces.EventAttendeeCustomInterface;
 import com.thirdcc.webapp.service.dto.EventAttendeeDTO;
 
 import org.springframework.data.domain.Page;
@@ -28,22 +27,15 @@ public interface EventAttendeeService {
      * @return the list of entities.
      */
     Page<EventAttendeeDTO> findAll(Pageable pageable);
-
-//    /**
-//     * Get all the eventAttendees from an Event via Event Id.
-//     *
-//     * @param pageable the pagination information.
-//     * @return the list of entities.
-//     */
-//    Page<EventAttendeeDTO> findAllByEventId(Pageable pageable, Long eventId);
     
     /**
      * Get all the eventAttendees from an Event via Event Id.
      *
      * @param pageable the pagination information.
+     * @param eventId the eventId of the event
      * @return the list of entities.
      */
-    Page<EventAttendeeCustomInterface> findAllByEventId(Pageable pageable, Long eventId);
+    Page<EventAttendeeDTO> findAllByEventId(Pageable pageable, Long eventId);
     
     /**
      * Get the "id" eventAttendee.

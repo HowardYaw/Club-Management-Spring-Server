@@ -3,6 +3,7 @@ package com.thirdcc.webapp.web.rest;
 import com.thirdcc.webapp.ClubmanagementApp;
 import com.thirdcc.webapp.annotations.authorization.WithCurrentCCAdministrator;
 import com.thirdcc.webapp.annotations.authorization.WithEventHead;
+import com.thirdcc.webapp.annotations.authorization.WithUnauthenticatedMockUser;
 import com.thirdcc.webapp.annotations.init.InitYearSession;
 import com.thirdcc.webapp.domain.Event;
 import com.thirdcc.webapp.domain.EventAttendee;
@@ -10,6 +11,7 @@ import com.thirdcc.webapp.domain.User;
 import com.thirdcc.webapp.domain.UserUniInfo;
 import com.thirdcc.webapp.domain.enumeration.EventStatus;
 import com.thirdcc.webapp.domain.enumeration.UserUniStatus;
+import com.thirdcc.webapp.exception.BadRequestException;
 import com.thirdcc.webapp.repository.EventAttendeeRepository;
 import com.thirdcc.webapp.repository.EventRepository;
 import com.thirdcc.webapp.repository.UserRepository;
@@ -50,6 +52,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest(classes = ClubmanagementApp.class)
 @AutoConfigureMockMvc
 @InitYearSession
+@WithMockUser(username = "admin", roles = "ADMIN")
 public class EventAttendeeResourceIT {
     private final Logger log = LoggerFactory.getLogger(EventAttendeeServiceImpl.class);
 
@@ -184,8 +187,6 @@ public class EventAttendeeResourceIT {
     @BeforeEach
     public void initTest() {
         event = createEventEntity(em);
-        user = userService.getUserWithAuthorities()
-            .orElseThrow(()-> new RuntimeException("Could not get user when initiate testing"));
         eventAttendee = createEventAttendeeEntity(em);
     }
 
@@ -278,7 +279,6 @@ public class EventAttendeeResourceIT {
         List<EventAttendee> eventAttendeeList = eventAttendeeRepository.findAll();
         assertThat(eventAttendeeList).hasSize(databaseSizeBeforeCreate);
     }
-
 
     @Test
     @WithCurrentCCAdministrator
@@ -406,9 +406,9 @@ public class EventAttendeeResourceIT {
     public void getAllEventAttendees_WithEventId() throws Exception {
         // Initialize the database
         Event savedEvent = initEventDB();
+        EventAttendee savedEventAttendee = initEventAttendeeDB();
         userUniInfo = createUserUniInfoEntity();
         initUserUniInfoDB();
-        EventAttendee savedEventAttendee = initEventAttendeeDB();
 
         // Get the eventAttendee
         restEventAttendeeMockMvc.perform(get("/api/event-attendees/event/{eventId}?sort=id,desc", savedEvent.getId()))
@@ -432,7 +432,11 @@ public class EventAttendeeResourceIT {
         restEventAttendeeMockMvc.perform(get("/api/event-attendees/event/{eventId}?sort=id,desc", savedEvent.getId()))
             .andExpect(status().isOk())
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
-            .andExpect(jsonPath("$").isEmpty());
+            .andExpect(jsonPath("$.[*].id").value(savedEventAttendee.getId().intValue()))
+            .andExpect(jsonPath("$.[*].userId").value(user.getId().intValue()))
+            .andExpect(jsonPath("$.[*].eventId").value(savedEvent.getId().intValue()))
+            .andExpect(jsonPath("$.[*].provideTransport").value(DEFAULT_PROVIDE_TRANSPORT.booleanValue()))
+            .andExpect(jsonPath("$.[*].yearSession").value(""));
     }
 
     @Test
@@ -443,8 +447,9 @@ public class EventAttendeeResourceIT {
     }
 
     @Test
-    @WithEventHead
+    @WithMockUser
     public void getAllEventAttendees_WithEventId_NonAdmin_ShouldThrow403() throws Exception {
+        user = getLoggedInUser();
         // Initialize the database
         Event savedEvent = initEventDB();
         EventAttendee savedEventAttendee = initEventAttendeeDB();
@@ -500,7 +505,6 @@ public class EventAttendeeResourceIT {
     }
 
     @Test
-    @WithCurrentCCAdministrator
     public void equalsVerifier() throws Exception {
         TestUtil.equalsVerifier(EventAttendee.class);
         EventAttendee eventAttendee1 = new EventAttendee();
@@ -515,7 +519,6 @@ public class EventAttendeeResourceIT {
     }
 
     @Test
-    @WithCurrentCCAdministrator
     public void dtoEqualsVerifier() throws Exception {
         TestUtil.equalsVerifier(EventAttendeeDTO.class);
         EventAttendeeDTO eventAttendeeDTO1 = new EventAttendeeDTO();
@@ -531,7 +534,6 @@ public class EventAttendeeResourceIT {
     }
 
     @Test
-    @WithCurrentCCAdministrator
     public void testEntityFromId() {
         assertThat(eventAttendeeMapper.fromId(42L).getId()).isEqualTo(42);
         assertThat(eventAttendeeMapper.fromId(null)).isNull();
@@ -542,13 +544,20 @@ public class EventAttendeeResourceIT {
     }
 
     private EventAttendee initEventAttendeeDB() {
+        user = getLoggedInUser();
         eventAttendee.setEventId(event.getId());
         eventAttendee.setUserId(user.getId());
         return eventAttendeeRepository.saveAndFlush(eventAttendee);
     }
 
     private UserUniInfo initUserUniInfoDB() {
+        user = getLoggedInUser();
         userUniInfo.setUserId(user.getId());
         return userUniInfoRepository.saveAndFlush(userUniInfo);
+    }
+    
+    private User getLoggedInUser() {
+        return userService.getUserWithAuthorities()
+            .orElseThrow(() -> new BadRequestException("User not login"));
     }
 }

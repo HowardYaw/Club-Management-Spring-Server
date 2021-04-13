@@ -1,6 +1,5 @@
 package com.thirdcc.webapp.web.rest;
 
-import com.thirdcc.webapp.projections.interfaces.EventAttendeeCustomInterface;
 import com.thirdcc.webapp.service.EventAttendeeService;
 import com.thirdcc.webapp.web.rest.errors.BadRequestAlertException;
 import com.thirdcc.webapp.service.dto.EventAttendeeDTO;
@@ -14,7 +13,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -124,9 +122,9 @@ public class EventAttendeeResource {
      */
     @GetMapping("/event-attendees/event/{eventId}")
     @PreAuthorize("@managementTeamSecurityExpression.isEventCrew(#eventId) || @managementTeamSecurityExpression.isCurrentAdministrator()")
-    public ResponseEntity<List<EventAttendeeCustomInterface>> getAllEventAttendeeByEventId(Pageable pageable, @PathVariable Long eventId, @RequestParam MultiValueMap<String, String> queryParams, UriComponentsBuilder uriBuilder) {
+    public ResponseEntity<List<EventAttendeeDTO>> getAllEventAttendeeByEventId(Pageable pageable, @PathVariable Long eventId, @RequestParam MultiValueMap<String, String> queryParams, UriComponentsBuilder uriBuilder) {
         log.debug("REST request to get a page of EventAttendees");
-        Page<EventAttendeeCustomInterface> page = eventAttendeeService.findAllByEventId(pageable, eventId);
+        Page<EventAttendeeDTO> page = eventAttendeeService.findAllByEventId(pageable, eventId);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(uriBuilder.queryParams(queryParams), page);
         return ResponseEntity.ok().headers(headers).body(page.getContent());
     }

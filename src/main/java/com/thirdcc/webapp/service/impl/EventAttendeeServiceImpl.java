@@ -4,9 +4,11 @@ import com.thirdcc.webapp.domain.Event;
 import com.thirdcc.webapp.exception.BadRequestException;
 import com.thirdcc.webapp.repository.EventRepository;
 import com.thirdcc.webapp.repository.UserRepository;
+import com.thirdcc.webapp.repository.UserUniInfoRepository;
 import com.thirdcc.webapp.service.EventAttendeeService;
 import com.thirdcc.webapp.domain.EventAttendee;
-import com.thirdcc.webapp.projections.interfaces.EventAttendeeCustomInterface;
+import com.thirdcc.webapp.domain.User;
+import com.thirdcc.webapp.domain.UserUniInfo;
 import com.thirdcc.webapp.repository.EventAttendeeRepository;
 import com.thirdcc.webapp.service.EventService;
 import com.thirdcc.webapp.service.dto.EventAttendeeDTO;
@@ -20,8 +22,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Optional;
-import org.springframework.data.domain.PageRequest;
+import java.util.stream.Collectors;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
 
@@ -41,14 +46,17 @@ public class EventAttendeeServiceImpl implements EventAttendeeService {
     private final EventService eventService;
 
     private final UserRepository userRepository;
+    
+    private final UserUniInfoRepository userUniInfoRepository;
 
     private final EventAttendeeMapper eventAttendeeMapper;
 
-    public EventAttendeeServiceImpl(EventAttendeeRepository eventAttendeeRepository, EventRepository eventRepository, EventService eventService, UserRepository userRepository, EventAttendeeMapper eventAttendeeMapper) {
+    public EventAttendeeServiceImpl(EventAttendeeRepository eventAttendeeRepository, EventRepository eventRepository, EventService eventService, UserRepository userRepository, UserUniInfoRepository userUniInfoRepository, EventAttendeeMapper eventAttendeeMapper) {
         this.eventAttendeeRepository = eventAttendeeRepository;
         this.eventRepository = eventRepository;
         this.eventService = eventService;
         this.userRepository = userRepository;
+        this.userUniInfoRepository = userUniInfoRepository;
         this.eventAttendeeMapper = eventAttendeeMapper;
     }
 
@@ -99,31 +107,70 @@ public class EventAttendeeServiceImpl implements EventAttendeeService {
         return eventAttendeeRepository.findAll(pageable)
             .map(eventAttendeeMapper::toDto);
     }
-
+    
+    /**
+     * Get all the eventAttendees from an Event via Event Id.
+     *
+     * @param pageable the pagination information.
+     * @param eventId the eventId of the event
+     * @return the list of entities.
+     */
     @Override
     @Transactional(readOnly = true)
-    public Page<EventAttendeeCustomInterface> findAllByEventId(Pageable pageable, Long eventId) {
+    public Page<EventAttendeeDTO> findAllByEventId(Pageable pageable, Long eventId) {
         log.debug("Request to get all EventAttendee by Event Id: {}", eventId);
         eventRepository
             .findById(eventId)
             .orElseThrow(() -> new BadRequestException("Event not found"));
+        List<EventAttendeeDTO> list = eventAttendeeRepository.findAllByEventId(eventId)
+                .stream()
+                .map(eventAttendeeMapper::toDto)
+                .map(this::mapEventAttendeeDetails)
+                .collect(Collectors.toList());
         String orderProperty = null;
         Direction orderDirection = null;
-        for(Sort.Order order: pageable.getSort()){
+        for(Sort.Order order : pageable.getSort()){
             orderProperty = order.getProperty();
             orderDirection = order.getDirection();
         }
-        Pageable newPageable = null;
         if(null == orderProperty){
-            newPageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize());
+            list.sort((EventAttendeeDTO e1, EventAttendeeDTO e2) -> {
+                return Long.compare(e1.getId(), e2.getId());
+            });
         }
-        else if(orderProperty.equals("year_session")){
-            newPageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), Sort.by(orderDirection, "ui.year_session"));
+        else if(orderProperty.equals("provideTransport")){
+            if(null == orderDirection || orderDirection.isAscending()){
+                list.sort((EventAttendeeDTO e1, EventAttendeeDTO e2) -> {
+                    return Boolean.compare(e1.isProvideTransport(), e2.isProvideTransport());
+                });
+            }
+            else{
+                list.sort((EventAttendeeDTO e1, EventAttendeeDTO e2) -> {
+                    return Boolean.compare(e2.isProvideTransport(), e1.isProvideTransport());
+                });
+            }
+        }
+        else if(orderProperty.equals("yearSession")){
+            if(null == orderDirection || orderDirection.isAscending()){
+                list.sort((EventAttendeeDTO e1, EventAttendeeDTO e2) -> {
+                    return e1.getYearSession().compareTo(e2.getYearSession());
+                });
+            }
+            else{
+                list.sort((EventAttendeeDTO e1, EventAttendeeDTO e2) -> {
+                    return e2.getYearSession().compareTo(e1.getYearSession());
+                });
+            }
         }
         else{
-            newPageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), Sort.by(orderDirection, orderProperty));
+            list.sort((EventAttendeeDTO e1, EventAttendeeDTO e2) -> {
+                return Long.compare(e1.getId(), e2.getId());
+            });
         }
-        return eventAttendeeRepository.customFindAllByEventId(newPageable, eventId);
+        // refer to https://stackoverflow.com/questions/37136679/how-to-convert-a-list-of-enity-object-to-page-object-in-spring-mvc-jpa
+        int start = (int) pageable.getOffset();
+        int end = Math.min((start + pageable.getPageSize()), list.size());
+        return new PageImpl(list.subList(start, end), pageable, list.size());
     }
 
     /**
@@ -149,5 +196,30 @@ public class EventAttendeeServiceImpl implements EventAttendeeService {
     public void delete(Long id) {
         log.debug("Request to delete EventAttendee : {}", id);
         eventAttendeeRepository.deleteById(id);
+    }
+    
+    private EventAttendeeDTO mapEventAttendeeDetails(EventAttendeeDTO eventAttendeeDTO){
+        Optional<User> dbUser = userRepository.findById(eventAttendeeDTO.getUserId());
+        if(dbUser.isPresent()){
+            User user = dbUser.get();
+            String lastName = (user.getLastName() != null ? " " + user.getLastName(): "");
+            String userName = user.getFirstName() + lastName;
+            eventAttendeeDTO.setUserName(userName);
+            //TODO: set contact number as user phone number after adding it in database
+            eventAttendeeDTO.setContactNumber("000");
+        }
+        else{//if user is not found, set the name to empty string instead of null
+            eventAttendeeDTO.setUserName("");
+            eventAttendeeDTO.setContactNumber("");
+        }
+        Optional<UserUniInfo> dbUserUniInfo = userUniInfoRepository.findOneByUserId(eventAttendeeDTO.getUserId());
+        if(dbUserUniInfo.isPresent()){
+            UserUniInfo userUniInfo = dbUserUniInfo.get();
+            eventAttendeeDTO.setYearSession(userUniInfo.getYearSession());
+        }
+        else{//if userUniInfo is not found, set the yearSession to empty string instead of null
+            eventAttendeeDTO.setYearSession("");
+        }
+        return eventAttendeeDTO;
     }
 }
