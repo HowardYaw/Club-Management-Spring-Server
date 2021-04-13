@@ -39,14 +39,14 @@ public class UserUniInfoResourceIT {
     private static final Long DEFAULT_USER_ID = 1L;
     private static final Long UPDATED_USER_ID = 2L;
 
-    private static final String DEFAULT_FACULTY = "AAAAAAAAAA";
-    private static final String UPDATED_FACULTY = "BBBBBBBBBB";
+    private static final Long DEFAULT_COURSE_PROGRAM_ID = 52L;
+    private static final Long UPDATED_COURSE_PROGRAM_ID = 53L;
 
-    private static final String DEFAULT_PROGRAM = "AAAAAAAAAA";
-    private static final String UPDATED_PROGRAM = "BBBBBBBBBB";
+    private static final String DEFAULT_PROGRAM = "DEFAULT_PROGRAM";
+    private static final String UPDATED_PROGRAM = "UPDATED_PROGRAM";
 
-    private static final String DEFAULT_YEAR_SESSION = "AAAAAAAAAA";
-    private static final String UPDATED_YEAR_SESSION = "BBBBBBBBBB";
+    private static final String DEFAULT_YEAR_SESSION = "DEFAULT_YEAR_SESSION";
+    private static final String UPDATED_YEAR_SESSION = "UPDATED_YEAR_SESSION";
 
     private static final Integer DEFAULT_INTAKE_SEMESTER = 1;
     private static final Integer UPDATED_INTAKE_SEMESTER = 2;
@@ -54,8 +54,8 @@ public class UserUniInfoResourceIT {
     private static final BigDecimal DEFAULT_YEAR_OF_STUDY = new BigDecimal(1);
     private static final BigDecimal UPDATED_YEAR_OF_STUDY = new BigDecimal(2);
 
-    private static final String DEFAULT_STAY_IN = "AAAAAAAAAA";
-    private static final String UPDATED_STAY_IN = "BBBBBBBBBB";
+    private static final String DEFAULT_STAY_IN = "DEFAULT_STAY_IN";
+    private static final String UPDATED_STAY_IN = "UPDATED_STAY_IN";
 
     private static final UserUniStatus DEFAULT_STATUS = UserUniStatus.GRADUATED;
     private static final UserUniStatus UPDATED_STATUS = UserUniStatus.STUDYING;
@@ -89,15 +89,13 @@ public class UserUniInfoResourceIT {
      * if they test an entity which requires the current entity.
      */
     public static UserUniInfo createEntity(EntityManager em) {
-        UserUniInfo userUniInfo = new UserUniInfo()
-            .userId(DEFAULT_USER_ID)
-            .faculty(DEFAULT_FACULTY)
-            .program(DEFAULT_PROGRAM)
-            .yearSession(DEFAULT_YEAR_SESSION)
-            .intakeSemester(DEFAULT_INTAKE_SEMESTER)
-            .yearOfStudy(DEFAULT_YEAR_OF_STUDY)
-            .stayIn(DEFAULT_STAY_IN)
-            .status(DEFAULT_STATUS);
+        UserUniInfo userUniInfo = new UserUniInfo();
+        userUniInfo.setUserId(DEFAULT_USER_ID);
+        userUniInfo.setCourseProgramId(DEFAULT_COURSE_PROGRAM_ID);
+        userUniInfo.setYearSession(DEFAULT_YEAR_SESSION);
+        userUniInfo.setIntakeSemester(DEFAULT_INTAKE_SEMESTER);
+        userUniInfo.setStayIn(DEFAULT_STAY_IN);
+        userUniInfo.setStatus(DEFAULT_STATUS);
         return userUniInfo;
     }
     /**
@@ -107,15 +105,13 @@ public class UserUniInfoResourceIT {
      * if they test an entity which requires the current entity.
      */
     public static UserUniInfo createUpdatedEntity(EntityManager em) {
-        UserUniInfo userUniInfo = new UserUniInfo()
-            .userId(UPDATED_USER_ID)
-            .faculty(UPDATED_FACULTY)
-            .program(UPDATED_PROGRAM)
-            .yearSession(UPDATED_YEAR_SESSION)
-            .intakeSemester(UPDATED_INTAKE_SEMESTER)
-            .yearOfStudy(UPDATED_YEAR_OF_STUDY)
-            .stayIn(UPDATED_STAY_IN)
-            .status(UPDATED_STATUS);
+        UserUniInfo userUniInfo = new UserUniInfo();
+        userUniInfo.setUserId(UPDATED_USER_ID);
+        userUniInfo.setCourseProgramId(UPDATED_COURSE_PROGRAM_ID);
+        userUniInfo.setYearSession(UPDATED_YEAR_SESSION);
+        userUniInfo.setIntakeSemester(UPDATED_INTAKE_SEMESTER);
+        userUniInfo.setStayIn(UPDATED_STAY_IN);
+        userUniInfo.setStatus(UPDATED_STATUS);
         return userUniInfo;
     }
 
@@ -141,11 +137,9 @@ public class UserUniInfoResourceIT {
         assertThat(userUniInfoList).hasSize(databaseSizeBeforeCreate + 1);
         UserUniInfo testUserUniInfo = userUniInfoList.get(userUniInfoList.size() - 1);
         assertThat(testUserUniInfo.getUserId()).isEqualTo(DEFAULT_USER_ID);
-        assertThat(testUserUniInfo.getFaculty()).isEqualTo(DEFAULT_FACULTY);
-        assertThat(testUserUniInfo.getProgram()).isEqualTo(DEFAULT_PROGRAM);
+        assertThat(testUserUniInfo.getCourseProgramId()).isEqualTo(DEFAULT_COURSE_PROGRAM_ID);
         assertThat(testUserUniInfo.getYearSession()).isEqualTo(DEFAULT_YEAR_SESSION);
         assertThat(testUserUniInfo.getIntakeSemester()).isEqualTo(DEFAULT_INTAKE_SEMESTER);
-        assertThat(testUserUniInfo.getYearOfStudy()).isEqualTo(DEFAULT_YEAR_OF_STUDY);
         assertThat(testUserUniInfo.getStayIn()).isEqualTo(DEFAULT_STAY_IN);
         assertThat(testUserUniInfo.getStatus()).isEqualTo(DEFAULT_STATUS);
     }
@@ -183,11 +177,9 @@ public class UserUniInfoResourceIT {
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
             .andExpect(jsonPath("$.[*].id").value(hasItem(userUniInfo.getId().intValue())))
             .andExpect(jsonPath("$.[*].userId").value(hasItem(DEFAULT_USER_ID.intValue())))
-            .andExpect(jsonPath("$.[*].faculty").value(hasItem(DEFAULT_FACULTY.toString())))
-            .andExpect(jsonPath("$.[*].program").value(hasItem(DEFAULT_PROGRAM.toString())))
+            .andExpect(jsonPath("$.[*].courseProgramId").value(hasItem(DEFAULT_COURSE_PROGRAM_ID.intValue())))
             .andExpect(jsonPath("$.[*].yearSession").value(hasItem(DEFAULT_YEAR_SESSION.toString())))
             .andExpect(jsonPath("$.[*].intakeSemester").value(hasItem(DEFAULT_INTAKE_SEMESTER)))
-            .andExpect(jsonPath("$.[*].yearOfStudy").value(hasItem(DEFAULT_YEAR_OF_STUDY.intValue())))
             .andExpect(jsonPath("$.[*].stayIn").value(hasItem(DEFAULT_STAY_IN.toString())))
             .andExpect(jsonPath("$.[*].status").value(hasItem(DEFAULT_STATUS.toString())));
     }
@@ -204,11 +196,9 @@ public class UserUniInfoResourceIT {
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
             .andExpect(jsonPath("$.id").value(userUniInfo.getId().intValue()))
             .andExpect(jsonPath("$.userId").value(DEFAULT_USER_ID.intValue()))
-            .andExpect(jsonPath("$.faculty").value(DEFAULT_FACULTY.toString()))
-            .andExpect(jsonPath("$.program").value(DEFAULT_PROGRAM.toString()))
+            .andExpect(jsonPath("$.courseProgramId").value(DEFAULT_COURSE_PROGRAM_ID.intValue()))
             .andExpect(jsonPath("$.yearSession").value(DEFAULT_YEAR_SESSION.toString()))
             .andExpect(jsonPath("$.intakeSemester").value(DEFAULT_INTAKE_SEMESTER))
-            .andExpect(jsonPath("$.yearOfStudy").value(DEFAULT_YEAR_OF_STUDY.intValue()))
             .andExpect(jsonPath("$.stayIn").value(DEFAULT_STAY_IN.toString()))
             .andExpect(jsonPath("$.status").value(DEFAULT_STATUS.toString()));
     }
@@ -233,15 +223,12 @@ public class UserUniInfoResourceIT {
         UserUniInfo updatedUserUniInfo = userUniInfoRepository.findById(userUniInfo.getId()).get();
         // Disconnect from session so that the updates on updatedUserUniInfo are not directly saved in db
         em.detach(updatedUserUniInfo);
-        updatedUserUniInfo
-            .userId(UPDATED_USER_ID)
-            .faculty(UPDATED_FACULTY)
-            .program(UPDATED_PROGRAM)
-            .yearSession(UPDATED_YEAR_SESSION)
-            .intakeSemester(UPDATED_INTAKE_SEMESTER)
-            .yearOfStudy(UPDATED_YEAR_OF_STUDY)
-            .stayIn(UPDATED_STAY_IN)
-            .status(UPDATED_STATUS);
+        updatedUserUniInfo.setUserId(UPDATED_USER_ID);
+        updatedUserUniInfo.setCourseProgramId(UPDATED_COURSE_PROGRAM_ID);
+        updatedUserUniInfo.setYearSession(UPDATED_YEAR_SESSION);
+        updatedUserUniInfo.setIntakeSemester(UPDATED_INTAKE_SEMESTER);
+        updatedUserUniInfo.setStayIn(UPDATED_STAY_IN);
+        updatedUserUniInfo.setStatus(UPDATED_STATUS);
         UserUniInfoDTO userUniInfoDTO = userUniInfoMapper.toDto(updatedUserUniInfo);
 
         restUserUniInfoMockMvc.perform(put("/api/user-uni-infos")
@@ -254,11 +241,9 @@ public class UserUniInfoResourceIT {
         assertThat(userUniInfoList).hasSize(databaseSizeBeforeUpdate);
         UserUniInfo testUserUniInfo = userUniInfoList.get(userUniInfoList.size() - 1);
         assertThat(testUserUniInfo.getUserId()).isEqualTo(UPDATED_USER_ID);
-        assertThat(testUserUniInfo.getFaculty()).isEqualTo(UPDATED_FACULTY);
-        assertThat(testUserUniInfo.getProgram()).isEqualTo(UPDATED_PROGRAM);
+        assertThat(testUserUniInfo.getCourseProgramId()).isEqualTo(UPDATED_COURSE_PROGRAM_ID);
         assertThat(testUserUniInfo.getYearSession()).isEqualTo(UPDATED_YEAR_SESSION);
         assertThat(testUserUniInfo.getIntakeSemester()).isEqualTo(UPDATED_INTAKE_SEMESTER);
-        assertThat(testUserUniInfo.getYearOfStudy()).isEqualTo(UPDATED_YEAR_OF_STUDY);
         assertThat(testUserUniInfo.getStayIn()).isEqualTo(UPDATED_STAY_IN);
         assertThat(testUserUniInfo.getStatus()).isEqualTo(UPDATED_STATUS);
     }

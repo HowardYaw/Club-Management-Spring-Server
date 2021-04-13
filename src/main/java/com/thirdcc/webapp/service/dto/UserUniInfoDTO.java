@@ -2,6 +2,8 @@ package com.thirdcc.webapp.service.dto;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.Objects;
+
+import com.thirdcc.webapp.domain.UserUniInfo;
 import com.thirdcc.webapp.domain.enumeration.UserUniStatus;
 
 /**
@@ -13,20 +15,15 @@ public class UserUniInfoDTO implements Serializable {
 
     private Long userId;
 
-    private String faculty;
-
-    private String program;
+    private Long courseProgramId;
 
     private String yearSession;
 
     private Integer intakeSemester;
 
-    private BigDecimal yearOfStudy;
-
     private String stayIn;
 
     private UserUniStatus status;
-
 
     public Long getId() {
         return id;
@@ -44,20 +41,12 @@ public class UserUniInfoDTO implements Serializable {
         this.userId = userId;
     }
 
-    public String getFaculty() {
-        return faculty;
+    public Long getCourseProgramId() {
+        return courseProgramId;
     }
 
-    public void setFaculty(String faculty) {
-        this.faculty = faculty;
-    }
-
-    public String getProgram() {
-        return program;
-    }
-
-    public void setProgram(String program) {
-        this.program = program;
+    public void setCourseProgramId(Long courseProgramId) {
+        this.courseProgramId = courseProgramId;
     }
 
     public String getYearSession() {
@@ -74,14 +63,6 @@ public class UserUniInfoDTO implements Serializable {
 
     public void setIntakeSemester(Integer intakeSemester) {
         this.intakeSemester = intakeSemester;
-    }
-
-    public BigDecimal getYearOfStudy() {
-        return yearOfStudy;
-    }
-
-    public void setYearOfStudy(BigDecimal yearOfStudy) {
-        this.yearOfStudy = yearOfStudy;
     }
 
     public String getStayIn() {
@@ -105,34 +86,27 @@ public class UserUniInfoDTO implements Serializable {
         if (this == o) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (!(o instanceof UserUniInfoDTO)) {
             return false;
         }
-
-        UserUniInfoDTO userUniInfoDTO = (UserUniInfoDTO) o;
-        if (userUniInfoDTO.getId() == null || getId() == null) {
-            return false;
-        }
-        return Objects.equals(getId(), userUniInfoDTO.getId());
+        return id != null && id.equals(((UserUniInfoDTO) o).id);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(getId());
+        return 31;
     }
 
     @Override
     public String toString() {
         return "UserUniInfoDTO{" +
-            "id=" + getId() +
-            ", userId=" + getUserId() +
-            ", faculty='" + getFaculty() + "'" +
-            ", program='" + getProgram() + "'" +
-            ", yearSession='" + getYearSession() + "'" +
-            ", intakeSemester=" + getIntakeSemester() +
-            ", yearOfStudy=" + getYearOfStudy() +
-            ", stayIn='" + getStayIn() + "'" +
-            ", status='" + getStatus() + "'" +
-            "}";
+            "id=" + id +
+            ", userId=" + userId +
+            ", courseProgramId=" + courseProgramId +
+            ", yearSession='" + yearSession + '\'' +
+            ", intakeSemester=" + intakeSemester +
+            ", stayIn='" + stayIn + '\'' +
+            ", status=" + status +
+            '}';
     }
 }

@@ -6,6 +6,7 @@ import javax.persistence.*;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.util.Objects;
 
 import com.thirdcc.webapp.domain.enumeration.UserUniStatus;
 
@@ -26,20 +27,14 @@ public class UserUniInfo implements Serializable {
     @Column(name = "user_id")
     private Long userId;
 
-    @Column(name = "faculty")
-    private String faculty;
-
-    @Column(name = "program")
-    private String program;
+    @Column(name = "course_program_id")
+    private Long courseProgramId;
 
     @Column(name = "year_session")
     private String yearSession;
 
     @Column(name = "intake_semester")
     private Integer intakeSemester;
-
-    @Column(name = "year_of_study", precision = 21, scale = 2)
-    private BigDecimal yearOfStudy;
 
     @Column(name = "stay_in")
     private String stayIn;
@@ -48,7 +43,6 @@ public class UserUniInfo implements Serializable {
     @Column(name = "status")
     private UserUniStatus status;
 
-    // jhipster-needle-entity-add-field - JHipster will add fields here, do not remove
     public Long getId() {
         return id;
     }
@@ -61,48 +55,20 @@ public class UserUniInfo implements Serializable {
         return userId;
     }
 
-    public UserUniInfo userId(Long userId) {
-        this.userId = userId;
-        return this;
-    }
-
     public void setUserId(Long userId) {
         this.userId = userId;
     }
 
-    public String getFaculty() {
-        return faculty;
+    public Long getCourseProgramId() {
+        return courseProgramId;
     }
 
-    public UserUniInfo faculty(String faculty) {
-        this.faculty = faculty;
-        return this;
-    }
-
-    public void setFaculty(String faculty) {
-        this.faculty = faculty;
-    }
-
-    public String getProgram() {
-        return program;
-    }
-
-    public UserUniInfo program(String program) {
-        this.program = program;
-        return this;
-    }
-
-    public void setProgram(String program) {
-        this.program = program;
+    public void setCourseProgramId(Long courseProgramId) {
+        this.courseProgramId = courseProgramId;
     }
 
     public String getYearSession() {
         return yearSession;
-    }
-
-    public UserUniInfo yearSession(String yearSession) {
-        this.yearSession = yearSession;
-        return this;
     }
 
     public void setYearSession(String yearSession) {
@@ -113,35 +79,12 @@ public class UserUniInfo implements Serializable {
         return intakeSemester;
     }
 
-    public UserUniInfo intakeSemester(Integer intakeSemester) {
-        this.intakeSemester = intakeSemester;
-        return this;
-    }
-
     public void setIntakeSemester(Integer intakeSemester) {
         this.intakeSemester = intakeSemester;
     }
 
-    public BigDecimal getYearOfStudy() {
-        return yearOfStudy;
-    }
-
-    public UserUniInfo yearOfStudy(BigDecimal yearOfStudy) {
-        this.yearOfStudy = yearOfStudy;
-        return this;
-    }
-
-    public void setYearOfStudy(BigDecimal yearOfStudy) {
-        this.yearOfStudy = yearOfStudy;
-    }
-
     public String getStayIn() {
         return stayIn;
-    }
-
-    public UserUniInfo stayIn(String stayIn) {
-        this.stayIn = stayIn;
-        return this;
     }
 
     public void setStayIn(String stayIn) {
@@ -152,15 +95,9 @@ public class UserUniInfo implements Serializable {
         return status;
     }
 
-    public UserUniInfo status(UserUniStatus status) {
-        this.status = status;
-        return this;
-    }
-
     public void setStatus(UserUniStatus status) {
         this.status = status;
     }
-    // jhipster-needle-entity-add-getters-setters - JHipster will add getters and setters here, do not remove
 
     @Override
     public boolean equals(Object o) {
@@ -181,15 +118,13 @@ public class UserUniInfo implements Serializable {
     @Override
     public String toString() {
         return "UserUniInfo{" +
-            "id=" + getId() +
-            ", userId=" + getUserId() +
-            ", faculty='" + getFaculty() + "'" +
-            ", program='" + getProgram() + "'" +
-            ", yearSession='" + getYearSession() + "'" +
-            ", intakeSemester=" + getIntakeSemester() +
-            ", yearOfStudy=" + getYearOfStudy() +
-            ", stayIn='" + getStayIn() + "'" +
-            ", status='" + getStatus() + "'" +
-            "}";
+            "id=" + id +
+            ", userId=" + userId +
+            ", courseProgramId=" + courseProgramId +
+            ", yearSession='" + yearSession + '\'' +
+            ", intakeSemester=" + intakeSemester +
+            ", stayIn='" + stayIn + '\'' +
+            ", status=" + status +
+            '}';
     }
 }

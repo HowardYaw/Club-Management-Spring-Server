@@ -38,7 +38,11 @@
 
     <include file="config/liquibase/changelog/20201104173710_alter_entity_checklist_table_name.xml" relativeToChangelogFile="false" />
     <include file="config/liquibase/changelog/20201121201520_alter_entity_EventAttendee_column_name.xml" relativeToChangelogFile="false"/>
-    
+
     <include file="config/liquibase/changelog/20201206112523_added_column_transacation_status.xml" relativeToChangelogFile="false" />
     <include file="config/liquibase/changelog/20201206115923_added_column_receipt_receiptUniqueId.xml" relativeToChangelogFile="false" />
+
+    <include file="config/liquibase/changelog/20210413_added_columns_User.xml" relativeToChangelogFile="false" />
+    <include file="config/liquibase/changelog/20210413_added_entity_CourseProgram.xml" relativeToChangelogFile="false" />
+    <include file="config/liquibase/changelog/20210413_alter_columns_UserUniInfo.xml" relativeToChangelogFile="false" />
 </databaseChangeLog>
