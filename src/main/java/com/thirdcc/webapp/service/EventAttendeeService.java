@@ -51,4 +51,13 @@ public interface EventAttendeeService {
      * @param id the id of the entity.
      */
     void delete(Long id);
+
+    /**
+     * Get the eventAttendee with "eventId" and "userId".
+     *
+     * @param eventId the event id of the entity.
+     * @param userId the user id of the entity.
+     * @return the entity.
+     */
+    Optional<EventAttendeeDTO> findOneByEventIdAndUserId(Long eventId, Long userId );
 }

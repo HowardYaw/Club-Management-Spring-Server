@@ -6,6 +6,7 @@ import com.thirdcc.webapp.annotations.authorization.WithEventHead;
 import com.thirdcc.webapp.annotations.authorization.WithUnauthenticatedMockUser;
 import com.thirdcc.webapp.annotations.init.InitYearSession;
 import com.thirdcc.webapp.domain.Event;
+import com.thirdcc.webapp.domain.EventActivity;
 import com.thirdcc.webapp.domain.EventAttendee;
 import com.thirdcc.webapp.domain.User;
 import com.thirdcc.webapp.domain.UserUniInfo;
@@ -502,6 +503,47 @@ public class EventAttendeeResourceIT {
         // Validate the database contains one less item
         List<EventAttendee> eventAttendeeList = eventAttendeeRepository.findAll();
         assertThat(eventAttendeeList).hasSize(databaseSizeBeforeDelete - 1);
+    }
+
+
+    @Test
+    public void getEventAttendeeByEventIdAndUserId() throws Exception {
+        //Initialize the event and eventAttendee
+        Event savedEvent = initEventDB();
+        initEventAttendeeDB();
+
+        //Save events and attendee
+        restEventAttendeeMockMvc.perform(get("/api/event-attendees/event/{eventId}/user/{userId}", savedEvent.getId(), user.getId() ))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
+            .andExpect(jsonPath("$.id").value(eventAttendee.getId().intValue()))
+            .andExpect(jsonPath("$.userId").value(user.getId()))
+            .andExpect(jsonPath("$.eventId").value(savedEvent.getId()))
+            .andExpect(jsonPath("$.provideTransport").value(DEFAULT_PROVIDE_TRANSPORT.booleanValue()));
+
+    }
+
+    @Test
+    public void getEventAttendeeByEventIdAndUserId_withNonExistingUser_ShouldThrow404() throws Exception {
+        //Initialize the event and eventAttendee
+        Event savedEvent = initEventDB();
+        initEventAttendeeDB();
+
+        //Save events and attendee
+        restEventAttendeeMockMvc.perform(get("/api/event-attendees/event/{eventId}/user/{userId}", savedEvent.getId(), Long.MAX_VALUE ))
+            .andExpect(status().isNotFound());
+
+    }
+
+    @Test
+    public void getEventAttendeeByEventIdAndUserId_withNonExistingEvent_ShouldThrow404() throws Exception {
+        //Initialize the event and eventAttendee
+        Event savedEvent = initEventDB();
+        initEventAttendeeDB();
+
+        //Save events and attendee
+        restEventAttendeeMockMvc.perform(get("/api/event-attendees/event/{eventId}/user/{userId}", Long.MAX_VALUE, user.getId() ))
+            .andExpect(status().isNotFound());
     }
 
     @Test
