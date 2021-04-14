@@ -124,11 +124,8 @@ public class EventAttendeeServiceImpl implements EventAttendeeService {
         eventRepository
             .findById(eventId)
             .orElseThrow(() -> new BadRequestException("Event not found"));
-        List<EventAttendeeDTO> list = eventAttendeeRepository.findAllByEventId(eventId)
-                .stream()
-                .map(eventAttendeeMapper::toDto)
-                .map(this::mapEventAttendeeDetails)
-                .collect(Collectors.toList());
+        //need to check the orderProperty in yearSession is yearSession 
+        //or other property
         String orderProperty = null;
         Direction orderDirection = null;
         Iterator<Sort.Order> sortIterator = pageable.getSort().iterator();
@@ -137,36 +134,32 @@ public class EventAttendeeServiceImpl implements EventAttendeeService {
             orderProperty = order.getProperty();
             orderDirection = order.getDirection();
         }
-        
-        //final is needed because local variable inside Comparator must be final
-        final boolean isAscending = (null == orderDirection || orderDirection.isAscending());
-        if(null == orderProperty){
-            list.sort((EventAttendeeDTO e1, EventAttendeeDTO e2) -> {
-                return Long.compare(e1.getId(), e2.getId());
-            });
+
+        //if the orderProperty is null or provideTransport can use the query
+        //with pageable
+        if(null == orderProperty || orderProperty.equals("provideTransport")){
+            return eventAttendeeRepository.findAllByEventId(eventId, pageable)
+                .map(eventAttendeeMapper::toDto)
+                .map(this::mapEventAttendeeDetails);
         }
-        else if(orderProperty.equals("provideTransport")){
-            list.sort((EventAttendeeDTO e1, EventAttendeeDTO e2) -> {
-                if(isAscending){
-                    return Boolean.compare(e1.isProvideTransport(), e2.isProvideTransport());
-                }
-                return Boolean.compare(e2.isProvideTransport(), e1.isProvideTransport());
-            });
-        }
-        else if(orderProperty.equals("yearSession")){
-            list.sort((EventAttendeeDTO e1, EventAttendeeDTO e2) -> {
+        else{//if the orderProperty is yearSession need to get the list and do sorting
+            List<EventAttendeeDTO> eventAttendeeList = eventAttendeeRepository.findAllByEventId(eventId)
+                .stream()
+                .map(eventAttendeeMapper::toDto)
+                .map(this::mapEventAttendeeDetails)
+                .collect(Collectors.toList());
+            
+            //final is needed because local variable inside Comparator must be final
+            final boolean isAscending = (null == orderDirection || orderDirection.isAscending());
+            eventAttendeeList.sort((EventAttendeeDTO e1, EventAttendeeDTO e2) -> {
                 if(isAscending){
                     return e1.getYearSession().compareTo(e2.getYearSession());
                 }
                 return e2.getYearSession().compareTo(e1.getYearSession());
             });
+            
+            return PageUtil.createPageFromList(eventAttendeeList, pageable);
         }
-        else{
-            list.sort((EventAttendeeDTO e1, EventAttendeeDTO e2) -> {
-                return Long.compare(e1.getId(), e2.getId());
-            });
-        }
-        return PageUtil.createPageFromList(list, pageable);
     }
 
     /**
