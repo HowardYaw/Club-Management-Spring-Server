@@ -1,10 +1,12 @@
 package com.thirdcc.webapp.service.impl;
 
+import com.thirdcc.webapp.exception.BadRequestException;
 import com.thirdcc.webapp.service.UserUniInfoService;
 import com.thirdcc.webapp.domain.UserUniInfo;
 import com.thirdcc.webapp.repository.UserUniInfoRepository;
 import com.thirdcc.webapp.service.dto.UserUniInfoDTO;
 import com.thirdcc.webapp.service.mapper.UserUniInfoMapper;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -86,5 +88,19 @@ public class UserUniInfoServiceImpl implements UserUniInfoService {
     public void delete(Long id) {
         log.debug("Request to delete UserUniInfo : {}", id);
         userUniInfoRepository.deleteById(id);
+    }
+
+    @Override
+    public boolean isUserUniInfoCompleted(Long userId) {
+        UserUniInfo userUniInfo = userUniInfoRepository
+            .findOneByUserId(userId)
+            .orElse(new UserUniInfo());
+
+        boolean hasCourseProgramId = userUniInfo.getCourseProgramId() != null;
+        boolean hasYearSession = StringUtils.isNotBlank(userUniInfo.getYearSession());
+        boolean hasIntakeSemester = userUniInfo.getIntakeSemester() != null;
+        boolean hasStayIn = StringUtils.isNotBlank(userUniInfo.getStayIn());
+
+        return hasCourseProgramId && hasYearSession && hasIntakeSemester && hasStayIn;
     }
 }

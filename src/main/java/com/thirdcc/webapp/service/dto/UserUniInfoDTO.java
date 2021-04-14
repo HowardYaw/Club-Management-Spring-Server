@@ -1,9 +1,11 @@
 package com.thirdcc.webapp.service.dto;
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.Objects;
 
 import com.thirdcc.webapp.domain.UserUniInfo;
+import com.thirdcc.webapp.domain.enumeration.Gender;
 import com.thirdcc.webapp.domain.enumeration.UserUniStatus;
 
 /**
@@ -14,6 +16,16 @@ public class UserUniInfoDTO implements Serializable {
     private Long id;
 
     private Long userId;
+
+    private String firstName;
+
+    private String lastName;
+
+    private Gender gender;
+
+    private String phoneNumber;
+
+    private LocalDate dateOfBirth;
 
     private Long courseProgramId;
 
@@ -39,6 +51,46 @@ public class UserUniInfoDTO implements Serializable {
 
     public void setUserId(Long userId) {
         this.userId = userId;
+    }
+
+    public String getFirstName() {
+        return firstName;
+    }
+
+    public void setFirstName(String firstName) {
+        this.firstName = firstName;
+    }
+
+    public String getLastName() {
+        return lastName;
+    }
+
+    public void setLastName(String lastName) {
+        this.lastName = lastName;
+    }
+
+    public Gender getGender() {
+        return gender;
+    }
+
+    public void setGender(Gender gender) {
+        this.gender = gender;
+    }
+
+    public String getPhoneNumber() {
+        return phoneNumber;
+    }
+
+    public void setPhoneNumber(String phoneNumber) {
+        this.phoneNumber = phoneNumber;
+    }
+
+    public LocalDate getDateOfBirth() {
+        return dateOfBirth;
+    }
+
+    public void setDateOfBirth(LocalDate dateOfBirth) {
+        this.dateOfBirth = dateOfBirth;
     }
 
     public Long getCourseProgramId() {
@@ -102,6 +154,11 @@ public class UserUniInfoDTO implements Serializable {
         return "UserUniInfoDTO{" +
             "id=" + id +
             ", userId=" + userId +
+            ", firstName='" + firstName + '\'' +
+            ", lastName='" + lastName + '\'' +
+            ", gender=" + gender +
+            ", phoneNumber='" + phoneNumber + '\'' +
+            ", dateOfBirth=" + dateOfBirth +
             ", courseProgramId=" + courseProgramId +
             ", yearSession='" + yearSession + '\'' +
             ", intakeSemester=" + intakeSemester +

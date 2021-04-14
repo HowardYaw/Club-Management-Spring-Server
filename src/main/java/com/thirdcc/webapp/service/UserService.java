@@ -4,6 +4,7 @@ import com.thirdcc.webapp.config.Constants;
 import com.thirdcc.webapp.domain.Authority;
 import com.thirdcc.webapp.domain.EventCrew;
 import com.thirdcc.webapp.domain.User;
+import com.thirdcc.webapp.exception.BadRequestException;
 import com.thirdcc.webapp.repository.AuthorityRepository;
 import com.thirdcc.webapp.repository.EventCrewRepository;
 import com.thirdcc.webapp.repository.UserRepository;
@@ -130,9 +131,9 @@ public class UserService {
         return newUser;
     }
 
-    private boolean removeNonActivatedUser(User existingUser){
+    private boolean removeNonActivatedUser(User existingUser) {
         if (existingUser.isActivated()) {
-             return false;
+            return false;
         }
         userRepository.delete(existingUser);
         userRepository.flush();
@@ -228,6 +229,7 @@ public class UserService {
             .map(UserDTO::new);
     }
 
+
     public void deleteUser(String login) {
         userRepository.findOneByLogin(login).ifPresent(user -> {
             userRepository.delete(user);
@@ -289,6 +291,7 @@ public class UserService {
 
     /**
      * Gets a list of all the authorities.
+     *
      * @return a list of all the authorities.
      */
     public List<String> getAuthorities() {
@@ -337,14 +340,30 @@ public class UserService {
 
     /**
      * Gets a list of users that are not event crews of event with "eventId".
+     *
      * @return a list of all the non event crew users.
      */
-    public List<UserDTO> getNotEventCrewUsers (Pageable pageable, Long eventId){
+    public List<UserDTO> getNotEventCrewUsers(Pageable pageable, Long eventId) {
         List<UserDTO> userDTOList = userRepository.findAllByLoginNot(pageable, Constants.ANONYMOUS_USER).map(UserDTO::new).getContent();
         return userDTOList
             .stream()
             .filter(user -> !eventCrewRepository.findByUserIdAndAndEventId(user.getId(), eventId).isPresent())
             .collect(Collectors.toList());
+    }
+
+    public boolean isBasicProfileCompleted() {
+        User currentUser = SecurityUtils
+            .getCurrentUserLogin()
+            .flatMap(userRepository::findOneWithAuthoritiesByLogin)
+            .orElseThrow(() -> new BadRequestException("Cannot find user"));
+
+        boolean hasFirstName = StringUtils.isNotBlank(currentUser.getFirstName());
+        boolean hasLastName = StringUtils.isNotBlank(currentUser.getLastName());
+        boolean hasGender = currentUser.getGender() != null;
+        boolean hasPhoneNumber = StringUtils.isNotBlank(currentUser.getPhoneNumber());
+        boolean hasDateOfBirth = currentUser.getDateOfBirth() != null;
+
+        return hasFirstName && hasLastName && hasGender && hasPhoneNumber && hasDateOfBirth;
     }
 
 }
