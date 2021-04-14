@@ -99,48 +99,6 @@ public class ImageStorageResourceIT {
 
     @Test
     @Transactional
-    public void createImageStorage() throws Exception {
-        int databaseSizeBeforeCreate = imageStorageRepository.findAll().size();
-
-        // Create the ImageStorage
-        ImageStorageDTO imageStorageDTO = imageStorageMapper.toDto(imageStorage);
-        restImageStorageMockMvc.perform(post("/api/image-storages")
-            .contentType(TestUtil.APPLICATION_JSON_UTF8)
-            .content(TestUtil.convertObjectToJsonBytes(imageStorageDTO)))
-            .andExpect(status().isCreated());
-
-        // Validate the ImageStorage in the database
-        List<ImageStorage> imageStorageList = imageStorageRepository.findAll();
-        assertThat(imageStorageList).hasSize(databaseSizeBeforeCreate + 1);
-        ImageStorage testImageStorage = imageStorageList.get(imageStorageList.size() - 1);
-        assertThat(testImageStorage.getImageUrl()).isEqualTo(DEFAULT_IMAGE_URL);
-        assertThat(testImageStorage.getFileName()).isEqualTo(DEFAULT_FILE_NAME);
-        assertThat(testImageStorage.getFileType()).isEqualTo(DEFAULT_FILE_TYPE);
-    }
-
-    @Test
-    @Transactional
-    public void createImageStorageWithExistingId() throws Exception {
-        int databaseSizeBeforeCreate = imageStorageRepository.findAll().size();
-
-        // Create the ImageStorage with an existing ID
-        imageStorage.setId(1L);
-        ImageStorageDTO imageStorageDTO = imageStorageMapper.toDto(imageStorage);
-
-        // An entity with an existing ID cannot be created, so this API call must fail
-        restImageStorageMockMvc.perform(post("/api/image-storages")
-            .contentType(TestUtil.APPLICATION_JSON_UTF8)
-            .content(TestUtil.convertObjectToJsonBytes(imageStorageDTO)))
-            .andExpect(status().isBadRequest());
-
-        // Validate the ImageStorage in the database
-        List<ImageStorage> imageStorageList = imageStorageRepository.findAll();
-        assertThat(imageStorageList).hasSize(databaseSizeBeforeCreate);
-    }
-
-
-    @Test
-    @Transactional
     public void getAllImageStorages() throws Exception {
         // Initialize the database
         imageStorageRepository.saveAndFlush(imageStorage);
@@ -177,57 +135,6 @@ public class ImageStorageResourceIT {
         // Get the imageStorage
         restImageStorageMockMvc.perform(get("/api/image-storages/{id}", Long.MAX_VALUE))
             .andExpect(status().isNotFound());
-    }
-
-    @Test
-    @Transactional
-    public void updateImageStorage() throws Exception {
-        // Initialize the database
-        imageStorageRepository.saveAndFlush(imageStorage);
-
-        int databaseSizeBeforeUpdate = imageStorageRepository.findAll().size();
-
-        // Update the imageStorage
-        ImageStorage updatedImageStorage = imageStorageRepository.findById(imageStorage.getId()).get();
-        // Disconnect from session so that the updates on updatedImageStorage are not directly saved in db
-        em.detach(updatedImageStorage);
-        updatedImageStorage
-            .imageUrl(UPDATED_IMAGE_URL)
-            .fileName(UPDATED_FILE_NAME)
-            .fileType(UPDATED_FILE_TYPE);
-        ImageStorageDTO imageStorageDTO = imageStorageMapper.toDto(updatedImageStorage);
-
-        restImageStorageMockMvc.perform(put("/api/image-storages")
-            .contentType(TestUtil.APPLICATION_JSON_UTF8)
-            .content(TestUtil.convertObjectToJsonBytes(imageStorageDTO)))
-            .andExpect(status().isOk());
-
-        // Validate the ImageStorage in the database
-        List<ImageStorage> imageStorageList = imageStorageRepository.findAll();
-        assertThat(imageStorageList).hasSize(databaseSizeBeforeUpdate);
-        ImageStorage testImageStorage = imageStorageList.get(imageStorageList.size() - 1);
-        assertThat(testImageStorage.getImageUrl()).isEqualTo(UPDATED_IMAGE_URL);
-        assertThat(testImageStorage.getFileName()).isEqualTo(UPDATED_FILE_NAME);
-        assertThat(testImageStorage.getFileType()).isEqualTo(UPDATED_FILE_TYPE);
-    }
-
-    @Test
-    @Transactional
-    public void updateNonExistingImageStorage() throws Exception {
-        int databaseSizeBeforeUpdate = imageStorageRepository.findAll().size();
-
-        // Create the ImageStorage
-        ImageStorageDTO imageStorageDTO = imageStorageMapper.toDto(imageStorage);
-
-        // If the entity doesn't have an ID, it will throw BadRequestAlertException
-        restImageStorageMockMvc.perform(put("/api/image-storages")
-            .contentType(TestUtil.APPLICATION_JSON_UTF8)
-            .content(TestUtil.convertObjectToJsonBytes(imageStorageDTO)))
-            .andExpect(status().isBadRequest());
-
-        // Validate the ImageStorage in the database
-        List<ImageStorage> imageStorageList = imageStorageRepository.findAll();
-        assertThat(imageStorageList).hasSize(databaseSizeBeforeUpdate);
     }
 
     @Test

@@ -14,6 +14,12 @@ public class EventAttendeeDTO implements Serializable {
     private Long eventId;
 
     private Boolean provideTransport;
+    
+    private String userName;
+    
+    private String yearSession;
+    
+    private String contactNumber;
 
 
     public Long getId() {
@@ -46,6 +52,30 @@ public class EventAttendeeDTO implements Serializable {
 
     public void setProvideTransport(Boolean provideTransport) {
         this.provideTransport = provideTransport;
+    }
+
+    public String getUserName() {
+        return userName;
+    }
+
+    public void setUserName(String userName) {
+        this.userName = userName;
+    }
+
+    public String getYearSession() {
+        return yearSession;
+    }
+
+    public void setYearSession(String yearSession) {
+        this.yearSession = yearSession;
+    }
+
+    public String getContactNumber() {
+        return contactNumber;
+    }
+
+    public void setContactNumber(String contactNumber) {
+        this.contactNumber = contactNumber;
     }
 
     @Override
