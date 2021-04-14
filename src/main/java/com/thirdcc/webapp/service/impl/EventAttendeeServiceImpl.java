@@ -132,4 +132,18 @@ public class EventAttendeeServiceImpl implements EventAttendeeService {
         log.debug("Request to delete EventAttendee : {}", id);
         eventAttendeeRepository.deleteById(id);
     }
+
+    /**
+     * Get one eventAttendee by event id and user id.
+     *
+     * @param eventId the event id of the entity.
+     * @param userId the user id of the entity.
+     * @return the entity.
+     */
+    @Override
+    public Optional<EventAttendeeDTO> findOneByEventIdAndUserId(Long eventId, Long userId) {
+        log.debug("Request to get EventAttendee by Event Id: {} and User Id: {}" , eventId, userId);
+        return eventAttendeeRepository.findOneByEventIdAndUserId(eventId, userId)
+            .map(eventAttendeeMapper::toDto);
+    }
 }
