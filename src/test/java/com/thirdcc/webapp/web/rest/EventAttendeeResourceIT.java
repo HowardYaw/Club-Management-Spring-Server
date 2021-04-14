@@ -478,7 +478,7 @@ public class EventAttendeeResourceIT {
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
             .andExpect(jsonPath("$.id").value(eventAttendee.getId().intValue()))
             .andExpect(jsonPath("$.userId").value(user.getId()))
-            .andExpect(jsonPath("$.eventId").value(DEFAULT_EVENT_ID.intValue()))
+            .andExpect(jsonPath("$.eventId").value(savedEvent.getId()))
             .andExpect(jsonPath("$.provideTransport").value(DEFAULT_PROVIDE_TRANSPORT.booleanValue()));
 
     }
