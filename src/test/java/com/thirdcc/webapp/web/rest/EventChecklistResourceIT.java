@@ -365,7 +365,7 @@ public class EventChecklistResourceIT {
         assertThat(testChecklist.getName()).isEqualTo(UPDATED_NAME);
         assertThat(testChecklist.getDescription()).isEqualTo(UPDATED_DESCRIPTION);
         assertThat(testChecklist.getType()).isEqualTo(UPDATED_TYPE);
-        assertThat(testChecklist.getStatus()).isEqualTo(DEFAULT_STATUS);
+        assertThat(testChecklist.getStatus()).isEqualTo(UPDATED_STATUS);
         assertThat(testChecklist.getEventId()).isEqualTo(event.getId());
     }
 
