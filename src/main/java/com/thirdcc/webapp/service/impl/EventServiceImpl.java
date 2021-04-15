@@ -15,6 +15,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
@@ -65,6 +66,16 @@ public class EventServiceImpl implements EventService {
             .map(eventMapper::toDto);
     }
 
+    @Override
+    public Page<EventDTO> findAllByDateRange(Pageable pageable, String fromDate, String toDate) {
+        log.debug("Request to get all Events and filter by date");
+
+        Instant from = Instant.parse(fromDate);
+        Instant to = Instant.parse(toDate);
+        return eventRepository.findEventsByStartDateBetween(from, to, pageable)
+            .map(eventMapper::toDto);
+    }
+
 
     /**
      * Get one event by id.
@@ -91,6 +102,11 @@ public class EventServiceImpl implements EventService {
         eventRepository.deleteById(id);
     }
 
+    /**
+     * Find the not cancelled event by id.
+     *
+     * @param id the id of the entity.
+     */
     @Override
     public Event findEventByIdAndNotCancelledStatus(Long id) {
         Set<EventStatus> eventStatuses = new HashSet<EventStatus>() {{
@@ -100,4 +116,25 @@ public class EventServiceImpl implements EventService {
         return eventRepository.findOneByIdAndStatusIn(id, eventStatuses)
             .orElseThrow(() -> new BadRequestException("Event not found, might be cancelled or not exist"));
     }
+
+    /**
+     * Cancel event by id.
+     *
+     * @param id the id of the entity.
+     */
+    @Override
+    public EventDTO cancelEventById(Long id) {
+        log.debug("Request to cancel Event : {}", id);
+        Set<EventStatus> eventStatuses = new HashSet<EventStatus>() {{
+            add(EventStatus.OPEN);
+            add(EventStatus.POSTPONED);
+        }};
+        Event event = eventRepository
+            .findOneByIdAndStatusIn(id, eventStatuses)
+            .orElseThrow(() -> new BadRequestException("This event does not exists or it is not happening"));
+
+        event.setStatus(EventStatus.CANCELLED);
+        return eventMapper.toDto(event);
+    }
+
 }

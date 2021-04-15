@@ -1,5 +1,6 @@
 package com.thirdcc.webapp.service;
 
+import com.thirdcc.webapp.service.dto.EventBudgetTotalDTO;
 import com.thirdcc.webapp.service.dto.TransactionDTO;
 
 import org.springframework.data.domain.Page;
@@ -19,6 +20,8 @@ public interface TransactionService {
      * @return the persisted entity.
      */
     TransactionDTO save(TransactionDTO transactionDTO);
+
+    TransactionDTO update(TransactionDTO transactionDTO);
 
     /**
      * Get all the transactions.
@@ -43,4 +46,8 @@ public interface TransactionService {
      * @param id the id of the entity.
      */
     void delete(Long id);
+
+    Page<TransactionDTO> findAllByEventId(Long eventId, Pageable pageable);
+
+    EventBudgetTotalDTO findTotalTransactionByEventId(Long eventId);
 }

@@ -121,3 +121,15 @@ jhipster:
 # ===================================================================
 
 # application:
+application:
+  shouldInitFirebase: false
+  access-token:
+    # This token must be encoded using Base64 and be at least 256 bits long (you can type `openssl rand -base64 64` on your command line to generate a 512 bits one)
+    base64-secret: 1u1VdaBx1lBpoS+5WtIbS4cb066o5rz5PSkXGHRS1eI7FvEYN7qh68qaz6RaQ8Y8XCLicSzDwMztvVSl7lVGEw==
+    # Token is valid 24 hours
+    token-validity-in-seconds: 86400
+  refresh-token:
+    # This token must be encoded using Base64 and be at least 256 bits long (you can type `openssl rand -base64 64` on your command line to generate a 512 bits one)
+    base64-secret: irj+uezFogJ82TMvyDl+kjS8u/WkU95saS03QRtkThVfmi2StgojKmxiM1WjUnN0Hcls/1ioWyqC4cMQ2YnqSw==
+    # Token is valid 30 days
+    token-validity-in-seconds: 2592000

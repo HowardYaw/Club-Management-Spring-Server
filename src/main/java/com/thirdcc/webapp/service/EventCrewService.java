@@ -1,6 +1,8 @@
 package com.thirdcc.webapp.service;
 
 import com.thirdcc.webapp.service.dto.EventCrewDTO;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 import java.util.Optional;
@@ -25,6 +27,12 @@ public interface EventCrewService {
      */
     List<EventCrewDTO> findAll();
 
+    /**
+     * Get all the eventCrews by EventId.
+     *
+     * @return the list of entities.
+     */
+    Page<EventCrewDTO> findAllByEventId(Pageable pageable, Long eventId);
 
     /**
      * Get the "id" eventCrew.

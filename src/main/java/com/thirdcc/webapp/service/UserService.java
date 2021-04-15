@@ -2,15 +2,19 @@ package com.thirdcc.webapp.service;
 
 import com.thirdcc.webapp.config.Constants;
 import com.thirdcc.webapp.domain.Authority;
+import com.thirdcc.webapp.domain.EventCrew;
 import com.thirdcc.webapp.domain.User;
 import com.thirdcc.webapp.repository.AuthorityRepository;
+import com.thirdcc.webapp.repository.EventCrewRepository;
 import com.thirdcc.webapp.repository.UserRepository;
 import com.thirdcc.webapp.security.AuthoritiesConstants;
 import com.thirdcc.webapp.security.SecurityUtils;
+import com.thirdcc.webapp.service.dto.EventCrewDTO;
 import com.thirdcc.webapp.service.dto.UserDTO;
 import com.thirdcc.webapp.service.util.RandomUtil;
 import com.thirdcc.webapp.web.rest.errors.*;
 
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cache.CacheManager;
@@ -37,17 +41,20 @@ public class UserService {
 
     private final UserRepository userRepository;
 
+    private final EventCrewRepository eventCrewRepository;
+
     private final PasswordEncoder passwordEncoder;
 
     private final AuthorityRepository authorityRepository;
 
     private final CacheManager cacheManager;
 
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, AuthorityRepository authorityRepository, CacheManager cacheManager) {
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, AuthorityRepository authorityRepository, CacheManager cacheManager, EventCrewRepository eventCrewRepository) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.authorityRepository = authorityRepository;
         this.cacheManager = cacheManager;
+        this.eventCrewRepository = eventCrewRepository;
     }
 
     public Optional<User> activateRegistration(String key) {
@@ -293,4 +300,51 @@ public class UserService {
         Objects.requireNonNull(cacheManager.getCache(UserRepository.USERS_BY_LOGIN_CACHE)).evict(user.getLogin());
         Objects.requireNonNull(cacheManager.getCache(UserRepository.USERS_BY_EMAIL_CACHE)).evict(user.getEmail());
     }
+
+    public User registerFirebaseUser(String fullName, String uid, String email, String picture) {
+        User newUser = null;
+        Optional<User> findOneByEmail = userRepository.findOneByEmail(email);
+        if (findOneByEmail.isPresent()) {
+            newUser = findOneByEmail.get();
+            newUser.setLogin(uid);
+            if (StringUtils.isBlank(newUser.getImageUrl())) {
+                newUser.setImageUrl(picture);
+            }
+            if (StringUtils.isBlank(newUser.getFirstName())) {
+                newUser.setFirstName(fullName);
+            }
+            userRepository.save(newUser);
+            return newUser;
+        }
+
+        newUser = new User();
+        Authority authority = authorityRepository.findById(AuthoritiesConstants.USER).get();
+        Set<Authority> authorities = new HashSet<>();
+
+        String encryptedPassword = passwordEncoder.encode(UUID.randomUUID().toString());
+        // firebase user gets a generated password
+        newUser.setPassword(encryptedPassword);
+        newUser.setFirstName(fullName);
+        newUser.setImageUrl(picture);
+        newUser.setLogin(uid);
+        newUser.setEmail(email);
+        authorities.add(authority);
+        newUser.setAuthorities(authorities);
+        userRepository.save(newUser);
+        log.debug("Created Information for User: {}", newUser);
+        return newUser;
+    }
+
+    /**
+     * Gets a list of users that are not event crews of event with "eventId".
+     * @return a list of all the non event crew users.
+     */
+    public List<UserDTO> getNotEventCrewUsers (Pageable pageable, Long eventId){
+        List<UserDTO> userDTOList = userRepository.findAllByLoginNot(pageable, Constants.ANONYMOUS_USER).map(UserDTO::new).getContent();
+        return userDTOList
+            .stream()
+            .filter(user -> !eventCrewRepository.findByUserIdAndAndEventId(user.getId(), eventId).isPresent())
+            .collect(Collectors.toList());
+    }
+
 }

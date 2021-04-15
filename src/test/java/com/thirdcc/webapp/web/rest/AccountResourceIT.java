@@ -1,33 +1,37 @@
 package com.thirdcc.webapp.web.rest;
 
 import com.thirdcc.webapp.ClubmanagementApp;
+import com.thirdcc.webapp.annotations.authorization.*;
+import com.thirdcc.webapp.annotations.init.InitYearSession;
 import com.thirdcc.webapp.config.Constants;
-import com.thirdcc.webapp.domain.Authority;
+import com.thirdcc.webapp.domain.EventCrew;
 import com.thirdcc.webapp.domain.User;
+import com.thirdcc.webapp.exception.BadRequestException;
 import com.thirdcc.webapp.repository.AuthorityRepository;
+import com.thirdcc.webapp.repository.EventCrewRepository;
 import com.thirdcc.webapp.repository.UserRepository;
 import com.thirdcc.webapp.security.AuthoritiesConstants;
+import com.thirdcc.webapp.security.SecurityUtils;
 import com.thirdcc.webapp.service.MailService;
 import com.thirdcc.webapp.service.UserService;
 import com.thirdcc.webapp.service.dto.PasswordChangeDTO;
 import com.thirdcc.webapp.service.dto.UserDTO;
-import com.thirdcc.webapp.web.rest.errors.ExceptionTranslator;
 import com.thirdcc.webapp.web.rest.vm.KeyAndPasswordVM;
 import com.thirdcc.webapp.web.rest.vm.ManagedUserVM;
 import org.apache.commons.lang3.RandomStringUtils;
 
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
-import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
@@ -36,7 +40,6 @@ import java.util.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -44,7 +47,28 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * Integration tests for the {@link AccountResource} REST controller.
  */
 @SpringBootTest(classes = ClubmanagementApp.class)
+@AutoConfigureMockMvc
+@WithMockUser(value = AccountResourceIT.TEST_USER_LOGIN)
+@InitYearSession
 public class AccountResourceIT {
+
+    static final String TEST_USER_LOGIN = "test";
+
+    private static final String CC_HEAD_FIRST_NAME = "CC_HEAD_FIRST_NAME";
+    private static final String CC_HEAD_EMAIL = "cc_head@localhost.testing";
+    private static final String CC_HEAD_IMAGE_URL = "CC_HEAD_IMAGE_URL";
+
+    private static final String CC_ADMIN_FIRST_NAME = "CC_ADMIN_FIRST_NAME";
+    private static final String CC_ADMIN_EMAIL = "cc_admin@localhost.testing";
+    private static final String CC_ADMIN_IMAGE_URL = "CC_ADMIN_IMAGE_URL";
+
+    private static final String EVENT_HEAD_FIRST_NAME = "EVENT_HEAD_FIRST_NAME";
+    private static final String EVENT_HEAD_EMAIL = "event_head@localhost.testing";
+    private static final String EVENT_HEAD_IMAGE_URL = "EVENT_HEAD_IMAGE_URL";
+
+    private static final String EVENT_CREW_FIRST_NAME = "EVENT_CREW_FIRST_NAME";
+    private static final String EVENT_CREW_EMAIL = "event_crew@localhost.testing";
+    private static final String EVENT_CREW_IMAGE_URL = "EVENT_CREW_IMAGE_URL";
 
     @Autowired
     private UserRepository userRepository;
@@ -53,16 +77,13 @@ public class AccountResourceIT {
     private AuthorityRepository authorityRepository;
 
     @Autowired
+    private EventCrewRepository eventCrewRepository;
+
+    @Autowired
     private UserService userService;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
-
-    @Autowired
-    private HttpMessageConverter<?>[] httpMessageConverters;
-
-    @Autowired
-    private ExceptionTranslator exceptionTranslator;
 
     @Mock
     private UserService mockUserService;
@@ -70,31 +91,19 @@ public class AccountResourceIT {
     @Mock
     private MailService mockMailService;
 
+    @Autowired
     private MockMvc restMvc;
-
-    private MockMvc restUserMockMvc;
 
     @BeforeEach
     public void setup() {
         MockitoAnnotations.initMocks(this);
         doNothing().when(mockMailService).sendActivationEmail(any());
-        AccountResource accountResource =
-            new AccountResource(userRepository, userService, mockMailService);
-
-        AccountResource accountUserMockResource =
-            new AccountResource(userRepository, mockUserService, mockMailService);
-        this.restMvc = MockMvcBuilders.standaloneSetup(accountResource)
-            .setMessageConverters(httpMessageConverters)
-            .setControllerAdvice(exceptionTranslator)
-            .build();
-        this.restUserMockMvc = MockMvcBuilders.standaloneSetup(accountUserMockResource)
-            .setControllerAdvice(exceptionTranslator)
-            .build();
     }
 
     @Test
+    @WithUnauthenticatedMockUser
     public void testNonAuthenticatedUser() throws Exception {
-        restUserMockMvc.perform(get("/api/authenticate")
+        restMvc.perform(get("/api/authenticate")
             .accept(MediaType.APPLICATION_JSON))
             .andExpect(status().isOk())
             .andExpect(content().string(""));
@@ -102,53 +111,132 @@ public class AccountResourceIT {
 
     @Test
     public void testAuthenticatedUser() throws Exception {
-        restUserMockMvc.perform(get("/api/authenticate")
+        restMvc.perform(get("/api/authenticate")
             .with(request -> {
-                request.setRemoteUser("test");
+                request.setRemoteUser(TEST_USER_LOGIN);
                 return request;
             })
             .accept(MediaType.APPLICATION_JSON))
             .andExpect(status().isOk())
-            .andExpect(content().string("test"));
+            .andExpect(content().string(TEST_USER_LOGIN));
     }
 
     @Test
-    public void testGetExistingAccount() throws Exception {
-        Set<Authority> authorities = new HashSet<>();
-        Authority authority = new Authority();
-        authority.setName(AuthoritiesConstants.ADMIN);
-        authorities.add(authority);
-
-        User user = new User();
-        user.setLogin("test");
-        user.setFirstName("john");
-        user.setLastName("doe");
-        user.setEmail("john.doe@jhipster.com");
-        user.setImageUrl("http://placehold.it/50x50");
-        user.setLangKey("en");
-        user.setAuthorities(authorities);
-        when(mockUserService.getUserWithAuthorities()).thenReturn(Optional.of(user));
-
-        restUserMockMvc.perform(get("/api/account")
+    @WithCurrentCCHead(firstName = CC_HEAD_FIRST_NAME, email = CC_HEAD_EMAIL, imageUrl = CC_HEAD_IMAGE_URL)
+    public void getAccountDetails_WithCurrentCCHead() throws Exception {
+        User currentUser = userService
+            .getUserWithAuthorities()
+            .orElseThrow(() -> new RuntimeException("Cannot get current user"));
+        restMvc.perform(get("/api/account")
             .accept(MediaType.APPLICATION_JSON))
             .andExpect(status().isOk())
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
-            .andExpect(jsonPath("$.login").value("test"))
-            .andExpect(jsonPath("$.firstName").value("john"))
-            .andExpect(jsonPath("$.lastName").value("doe"))
-            .andExpect(jsonPath("$.email").value("john.doe@jhipster.com"))
-            .andExpect(jsonPath("$.imageUrl").value("http://placehold.it/50x50"))
-            .andExpect(jsonPath("$.langKey").value("en"))
-            .andExpect(jsonPath("$.authorities").value(AuthoritiesConstants.ADMIN));
+            .andExpect(jsonPath("$.id").value(currentUser.getId()))
+            .andExpect(jsonPath("$.firstName").value(CC_HEAD_FIRST_NAME))
+            .andExpect(jsonPath("$.email").value(CC_HEAD_EMAIL))
+            .andExpect(jsonPath("$.imageUrl").value(CC_HEAD_IMAGE_URL))
+            .andExpect(jsonPath("$.authorities").value(Matchers.hasItems(AuthoritiesConstants.ADMIN, AuthoritiesConstants.USER)))
+            .andExpect(jsonPath("$.isCurrentCCHead").value(Boolean.TRUE))
+            .andExpect(jsonPath("$.isCurrentAdministrator").value(Boolean.TRUE))
+            .andExpect(jsonPath("$.eventHeadEventIds").isEmpty())
+            .andExpect(jsonPath("$.eventCrewEventIds").isEmpty());
     }
 
     @Test
-    public void testGetUnknownAccount() throws Exception {
-        when(mockUserService.getUserWithAuthorities()).thenReturn(Optional.empty());
+    @WithCurrentCCAdministrator(firstName = CC_ADMIN_FIRST_NAME, email = CC_ADMIN_EMAIL, imageUrl = CC_ADMIN_IMAGE_URL)
+    public void getAccountDetails_WithCurrentCCAdministrator() throws Exception {
+        User currentUser = userService
+            .getUserWithAuthorities()
+            .orElseThrow(() -> new RuntimeException("Cannot get current user"));
+        restMvc.perform(get("/api/account")
+            .accept(MediaType.APPLICATION_JSON))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
+            .andExpect(jsonPath("$.id").value(currentUser.getId()))
+            .andExpect(jsonPath("$.firstName").value(CC_ADMIN_FIRST_NAME))
+            .andExpect(jsonPath("$.email").value(CC_ADMIN_EMAIL))
+            .andExpect(jsonPath("$.imageUrl").value(CC_ADMIN_IMAGE_URL))
+            .andExpect(jsonPath("$.authorities").value(Matchers.hasItems(AuthoritiesConstants.ADMIN, AuthoritiesConstants.USER)))
+            .andExpect(jsonPath("$.isCurrentCCHead").value(Boolean.FALSE))
+            .andExpect(jsonPath("$.isCurrentAdministrator").value(Boolean.TRUE))
+            .andExpect(jsonPath("$.eventHeadEventIds").isEmpty())
+            .andExpect(jsonPath("$.eventCrewEventIds").isEmpty());
+    }
 
-        restUserMockMvc.perform(get("/api/account")
+    @Test
+    @WithEventHead(firstName = EVENT_HEAD_FIRST_NAME, email = EVENT_HEAD_EMAIL, imageUrl = EVENT_HEAD_IMAGE_URL)
+    public void getAccountDetails_WithEventHead() throws Exception {
+        User currentUser = userService
+            .getUserWithAuthorities()
+            .orElseThrow(() -> new RuntimeException("Cannot get current user"));
+        EventCrew eventCrew = getEventCrewByCurrentLoginUser();
+        restMvc.perform(get("/api/account")
+            .accept(MediaType.APPLICATION_JSON))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
+            .andExpect(jsonPath("$.id").value(currentUser.getId()))
+            .andExpect(jsonPath("$.firstName").value(EVENT_HEAD_FIRST_NAME))
+            .andExpect(jsonPath("$.email").value(EVENT_HEAD_EMAIL))
+            .andExpect(jsonPath("$.imageUrl").value(EVENT_HEAD_IMAGE_URL))
+            .andExpect(jsonPath("$.authorities").value(Matchers.hasItems(AuthoritiesConstants.USER)))
+            .andExpect(jsonPath("$.isCurrentCCHead").value(Boolean.FALSE))
+            .andExpect(jsonPath("$.isCurrentAdministrator").value(Boolean.FALSE))
+            .andExpect(jsonPath("$.eventHeadEventIds").value(Matchers.hasItem(eventCrew.getEventId().intValue())))
+            .andExpect(jsonPath("$.eventHeadEventIds").value(Matchers.hasSize(1)))
+            .andExpect(jsonPath("$.eventCrewEventIds").value(Matchers.hasItem(eventCrew.getEventId().intValue())))
+            .andExpect(jsonPath("$.eventCrewEventIds").value(Matchers.hasSize(1)));
+    }
+
+    @Test
+    @WithEventCrew(firstName = EVENT_CREW_FIRST_NAME, email = EVENT_CREW_EMAIL, imageUrl = EVENT_CREW_IMAGE_URL)
+    public void getAccountDetails_WithEventCrew() throws Exception {
+        User currentUser = userService
+            .getUserWithAuthorities()
+            .orElseThrow(() -> new RuntimeException("Cannot get current user"));
+        EventCrew eventCrew = getEventCrewByCurrentLoginUser();
+        restMvc.perform(get("/api/account")
+            .accept(MediaType.APPLICATION_JSON))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
+            .andExpect(jsonPath("$.id").value(currentUser.getId()))
+            .andExpect(jsonPath("$.firstName").value(EVENT_CREW_FIRST_NAME))
+            .andExpect(jsonPath("$.email").value(EVENT_CREW_EMAIL))
+            .andExpect(jsonPath("$.imageUrl").value(EVENT_CREW_IMAGE_URL))
+            .andExpect(jsonPath("$.authorities").value(Matchers.hasItems(AuthoritiesConstants.USER)))
+            .andExpect(jsonPath("$.isCurrentCCHead").value(Boolean.FALSE))
+            .andExpect(jsonPath("$.isCurrentAdministrator").value(Boolean.FALSE))
+            .andExpect(jsonPath("$.eventHeadEventIds").isEmpty())
+            .andExpect(jsonPath("$.eventCrewEventIds").value(Matchers.hasItem(eventCrew.getEventId().intValue())))
+            .andExpect(jsonPath("$.eventCrewEventIds").value(Matchers.hasSize(1)));
+    }
+
+    @Test
+    @WithMockUser
+    public void getAccountDetails_WithNormalUser() throws Exception {
+        User currentUser = userService
+            .getUserWithAuthorities()
+            .orElseThrow(() -> new RuntimeException("Cannot get current user"));
+        restMvc.perform(get("/api/account")
+            .accept(MediaType.APPLICATION_JSON))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
+            .andExpect(jsonPath("$.id").value(currentUser.getId()))
+            .andExpect(jsonPath("$.firstName").value("User"))
+            .andExpect(jsonPath("$.email").value("user@localhost"))
+            .andExpect(jsonPath("$.imageUrl").value(""))
+            .andExpect(jsonPath("$.authorities").value(Matchers.hasItems(AuthoritiesConstants.USER)))
+            .andExpect(jsonPath("$.isCurrentCCHead").value(Boolean.FALSE))
+            .andExpect(jsonPath("$.isCurrentAdministrator").value(Boolean.FALSE))
+            .andExpect(jsonPath("$.eventHeadEventIds").isEmpty())
+            .andExpect(jsonPath("$.eventCrewEventIds").isEmpty());
+    }
+
+    @Test
+    @WithUnauthenticatedMockUser
+    public void getAccountDetails_WithUnauthenticatedUser_ShouldThrow500() throws Exception {
+        restMvc.perform(get("/api/account")
             .accept(MediaType.APPLICATION_PROBLEM_JSON))
-            .andExpect(status().isInternalServerError());
+            .andExpect(status().isUnauthorized());
     }
 
     @Test
@@ -188,7 +276,7 @@ public class AccountResourceIT {
         invalidUser.setLangKey(Constants.DEFAULT_LANGUAGE);
         invalidUser.setAuthorities(Collections.singleton(AuthoritiesConstants.USER));
 
-        restUserMockMvc.perform(
+        restMvc.perform(
             post("/api/register")
                 .contentType(TestUtil.APPLICATION_JSON_UTF8)
                 .content(TestUtil.convertObjectToJsonBytes(invalidUser)))
@@ -212,7 +300,7 @@ public class AccountResourceIT {
         invalidUser.setLangKey(Constants.DEFAULT_LANGUAGE);
         invalidUser.setAuthorities(Collections.singleton(AuthoritiesConstants.USER));
 
-        restUserMockMvc.perform(
+        restMvc.perform(
             post("/api/register")
                 .contentType(TestUtil.APPLICATION_JSON_UTF8)
                 .content(TestUtil.convertObjectToJsonBytes(invalidUser)))
@@ -236,7 +324,7 @@ public class AccountResourceIT {
         invalidUser.setLangKey(Constants.DEFAULT_LANGUAGE);
         invalidUser.setAuthorities(Collections.singleton(AuthoritiesConstants.USER));
 
-        restUserMockMvc.perform(
+        restMvc.perform(
             post("/api/register")
                 .contentType(TestUtil.APPLICATION_JSON_UTF8)
                 .content(TestUtil.convertObjectToJsonBytes(invalidUser)))
@@ -260,7 +348,7 @@ public class AccountResourceIT {
         invalidUser.setLangKey(Constants.DEFAULT_LANGUAGE);
         invalidUser.setAuthorities(Collections.singleton(AuthoritiesConstants.USER));
 
-        restUserMockMvc.perform(
+        restMvc.perform(
             post("/api/register")
                 .contentType(TestUtil.APPLICATION_JSON_UTF8)
                 .content(TestUtil.convertObjectToJsonBytes(invalidUser)))
@@ -809,5 +897,16 @@ public class AccountResourceIT {
                 .contentType(TestUtil.APPLICATION_JSON_UTF8)
                 .content(TestUtil.convertObjectToJsonBytes(keyAndPassword)))
             .andExpect(status().isInternalServerError());
+    }
+
+    private EventCrew getEventCrewByCurrentLoginUser() {
+        User currentUser = SecurityUtils
+            .getCurrentUserLogin()
+            .flatMap(userRepository::findOneWithAuthoritiesByLogin)
+            .orElseThrow(() -> new BadRequestException("Cannot find user"));
+        List<EventCrew> eventCrewList = eventCrewRepository
+            .findAllByUserId(currentUser.getId());
+        assertThat(eventCrewList).hasSize(1);
+        return eventCrewList.get(0);
     }
 }

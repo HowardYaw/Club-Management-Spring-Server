@@ -3,6 +3,8 @@ import java.time.Instant;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.Objects;
+
+import com.thirdcc.webapp.domain.enumeration.TransactionStatus;
 import com.thirdcc.webapp.domain.enumeration.TransactionType;
 
 /**
@@ -22,6 +24,8 @@ public class TransactionDTO implements Serializable {
 
     private String details;
 
+    private TransactionStatus status;
+
     private String createdBy;
 
     private Instant createdDate;
@@ -29,6 +33,10 @@ public class TransactionDTO implements Serializable {
     private String lastModifiedBy;
 
     private Instant lastModifiedDate;
+
+    private String eventName;
+
+    private ReceiptDTO receiptDTO;
 
 
     public Long getId() {
@@ -146,5 +154,29 @@ public class TransactionDTO implements Serializable {
             ", lastModifiedBy='" + getLastModifiedBy() + "'" +
             ", lastModifiedDate='" + getLastModifiedDate() + "'" +
             "}";
+    }
+
+    public String getEventName() {
+        return eventName;
+    }
+
+    public void setEventName(String eventName) {
+        this.eventName = eventName;
+    }
+
+    public ReceiptDTO getReceiptDTO() {
+        return receiptDTO;
+    }
+
+    public void setReceiptDTO(ReceiptDTO receiptDTO) {
+        this.receiptDTO = receiptDTO;
+    }
+
+    public TransactionStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(TransactionStatus status) {
+        this.status = status;
     }
 }

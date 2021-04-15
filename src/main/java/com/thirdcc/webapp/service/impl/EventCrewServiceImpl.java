@@ -1,13 +1,21 @@
 package com.thirdcc.webapp.service.impl;
 
+import com.thirdcc.webapp.domain.Event;
+import com.thirdcc.webapp.domain.User;
+import com.thirdcc.webapp.exception.BadRequestException;
+import com.thirdcc.webapp.repository.EventRepository;
+import com.thirdcc.webapp.repository.UserRepository;
 import com.thirdcc.webapp.service.EventCrewService;
 import com.thirdcc.webapp.domain.EventCrew;
 import com.thirdcc.webapp.repository.EventCrewRepository;
+import com.thirdcc.webapp.service.EventService;
 import com.thirdcc.webapp.service.dto.EventCrewDTO;
 import com.thirdcc.webapp.service.mapper.EventCrewMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,11 +35,20 @@ public class EventCrewServiceImpl implements EventCrewService {
 
     private final EventCrewRepository eventCrewRepository;
 
+    private final UserRepository userRepository;
+
+    private final EventRepository eventRepository;
+
     private final EventCrewMapper eventCrewMapper;
 
-    public EventCrewServiceImpl(EventCrewRepository eventCrewRepository, EventCrewMapper eventCrewMapper) {
+    private final EventService eventService;
+
+    public EventCrewServiceImpl(EventCrewRepository eventCrewRepository, UserRepository userRepository, EventRepository eventRepository, EventCrewMapper eventCrewMapper, EventService eventService) {
         this.eventCrewRepository = eventCrewRepository;
+        this.userRepository = userRepository;
+        this.eventRepository = eventRepository;
         this.eventCrewMapper = eventCrewMapper;
+        this.eventService = eventService;
     }
 
     /**
@@ -62,6 +79,23 @@ public class EventCrewServiceImpl implements EventCrewService {
             .collect(Collectors.toCollection(LinkedList::new));
     }
 
+    /**
+     * Get all the eventCrews.
+     *
+     *
+     * @param eventId the id of the event entity.
+     * @return the list of entities.
+     */
+    @Override
+    @Transactional
+    public Page<EventCrewDTO> findAllByEventId(Pageable pageable, Long eventId){
+        log.debug("Request to get all EventCrews with event Id : {}", eventId);
+
+        return eventCrewRepository.findAllByEventId(pageable, eventId)
+            .map(eventCrewMapper::toDto)
+            .map(this::mapUserDetails);
+
+    }
 
     /**
      * Get one eventCrew by id.
@@ -74,7 +108,9 @@ public class EventCrewServiceImpl implements EventCrewService {
     public Optional<EventCrewDTO> findOne(Long id) {
         log.debug("Request to get EventCrew : {}", id);
         return eventCrewRepository.findById(id)
-            .map(eventCrewMapper::toDto);
+            .map(eventCrewMapper::toDto)
+            .map(this::mapUserDetails)
+            .map(this::mapEventName);
     }
 
     /**
@@ -85,6 +121,40 @@ public class EventCrewServiceImpl implements EventCrewService {
     @Override
     public void delete(Long id) {
         log.debug("Request to delete EventCrew : {}", id);
+        EventCrew eventCrew = eventCrewRepository
+            .findById(id)
+            .orElseThrow(() -> new BadRequestException("Cannot delete non existing event crew"));
+
         eventCrewRepository.deleteById(id);
+    }
+
+    /**
+     * Assign user details(name and contact number) to the eventCrewDTO.
+     *
+     * @param eventCrewDTO to add on the user details' prop.
+     */
+    private EventCrewDTO mapUserDetails(EventCrewDTO eventCrewDTO) {
+        Optional<User> dbUser = userRepository.findById(eventCrewDTO.getUserId());
+        if(dbUser.isPresent()){
+            User user = dbUser.get();
+            String lastName = (user.getLastName() != null ? " " + user.getLastName(): "");
+            String userName = user.getFirstName() + lastName;
+            eventCrewDTO.setUserName(userName);
+        }
+        return eventCrewDTO;
+    }
+
+    /**
+     * Assign event name to the eventCrewDTO.
+     *
+     * @param eventCrewDTO to add on the eventName prop.
+     * */
+    private EventCrewDTO mapEventName(EventCrewDTO eventCrewDTO) {
+        Optional<Event> dbEvent = eventRepository.findById(eventCrewDTO.getEventId());
+        if(dbEvent.isPresent()){
+            Event event = dbEvent.get();
+            eventCrewDTO.setEventName(event.getName());
+        }
+        return eventCrewDTO;
     }
 }

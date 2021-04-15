@@ -1,8 +1,10 @@
 package com.thirdcc.webapp.service;
 
 import com.thirdcc.webapp.service.dto.BudgetDTO;
+import com.thirdcc.webapp.service.dto.EventBudgetTotalDTO;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
-import java.util.List;
 import java.util.Optional;
 
 /**
@@ -10,34 +12,15 @@ import java.util.Optional;
  */
 public interface BudgetService {
 
-    /**
-     * Save a budget.
-     *
-     * @param budgetDTO the entity to save.
-     * @return the persisted entity.
-     */
     BudgetDTO save(BudgetDTO budgetDTO);
 
-    /**
-     * Get all the budgets.
-     *
-     * @return the list of entities.
-     */
-    List<BudgetDTO> findAll();
+    BudgetDTO update(BudgetDTO budgetDTO);
 
+    Page<BudgetDTO> findAllByEventId(Pageable pageable, Long eventId);
 
-    /**
-     * Get the "id" budget.
-     *
-     * @param id the id of the entity.
-     * @return the entity.
-     */
-    Optional<BudgetDTO> findOne(Long id);
+    Optional<BudgetDTO> findOneByEventIdAndId(Long eventId, Long id);
 
-    /**
-     * Delete the "id" budget.
-     *
-     * @param id the id of the entity.
-     */
-    void delete(Long id);
+    void delete(Long eventId, Long id);
+
+    EventBudgetTotalDTO findTotalEventBudgetByEventId(Long eventId);
 }

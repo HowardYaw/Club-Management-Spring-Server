@@ -29,6 +29,16 @@ public interface EventService {
      */
     Page<EventDTO> findAll(Pageable pageable);
 
+    /**
+     * Get all the events and filter by date.
+     *
+     * @param pageable the pagination information.
+     * @param fromDate the starting of start_date to query the entity.
+     * @param toDate the ending of start_date to query the entity.
+     * @return the list of entities.
+     */
+    Page<EventDTO> findAllByDateRange(Pageable pageable, String fromDate, String toDate);
+
 
     /**
      * Get the "id" event.
@@ -45,5 +55,18 @@ public interface EventService {
      */
     void delete(Long id);
 
+    /**
+     * Find the "id" event with not cancelled status.
+     *
+     * @param eventId the id of the entity.
+     */
     Event findEventByIdAndNotCancelledStatus(Long eventId);
+
+    /**
+     * Cancel the "id" event.
+     *
+     * @param eventId the id of the entity.
+     */
+    EventDTO cancelEventById(Long eventId);
+
 }

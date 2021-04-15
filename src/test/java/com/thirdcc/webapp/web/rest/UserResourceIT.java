@@ -2,7 +2,13 @@ package com.thirdcc.webapp.web.rest;
 
 import com.thirdcc.webapp.ClubmanagementApp;
 import com.thirdcc.webapp.domain.Authority;
+import com.thirdcc.webapp.domain.Event;
+import com.thirdcc.webapp.domain.EventCrew;
 import com.thirdcc.webapp.domain.User;
+import com.thirdcc.webapp.domain.enumeration.EventCrewRole;
+import com.thirdcc.webapp.domain.enumeration.EventStatus;
+import com.thirdcc.webapp.repository.EventCrewRepository;
+import com.thirdcc.webapp.repository.EventRepository;
 import com.thirdcc.webapp.repository.UserRepository;
 import com.thirdcc.webapp.security.AuthoritiesConstants;
 import com.thirdcc.webapp.service.MailService;
@@ -15,22 +21,25 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cache.CacheManager;
 import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.EntityManager;
+import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.hamcrest.Matchers.hasItems;
-import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -38,6 +47,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * Integration tests for the {@link UserResource} REST controller.
  */
 @SpringBootTest(classes = ClubmanagementApp.class)
+@AutoConfigureMockMvc
+@WithMockUser(username = "admin", roles = "ADMIN")
 public class UserResourceIT {
 
     private static final String DEFAULT_LOGIN = "johndoe";
@@ -63,8 +74,33 @@ public class UserResourceIT {
     private static final String DEFAULT_LANGKEY = "en";
     private static final String UPDATED_LANGKEY = "fr";
 
+    private static final String DEFAULT_EVENT_NAME = "DEFAULT_EVENT_NAME";
+    private static final String DEFAULT_EVENT_DESCRIPTION = "DEFAULT_EVENT_DESCRIPTION";
+    private static final String DEFAULT_EVENT_REMARKS = "DEFAULT_EVENT_REMARKS";
+    private static final String DEFAULT_EVENT_VENUE = "DEFAULT_EVENT_VENUE";
+    private static final Instant DEFAULT_EVENT_START_DATE = Instant.now().minus(5, ChronoUnit.DAYS);
+    private static final Instant DEFAULT_EVENT_END_DATE = Instant.now().plus(5, ChronoUnit.DAYS);
+    private static final BigDecimal DEFAULT_EVENT_FEE = new BigDecimal(2123);
+    private static final Boolean DEFAULT_EVENT_REQUIRED_TRANSPORT = Boolean.TRUE;
+    private static final EventStatus DEFAULT_EVENT_STATUS = EventStatus.OPEN;
+
+    private static final Long DEFAULT_USER_ID = 1L;
+    private static final Long UPDATED_USER_ID = 2L;
+
+    private static final Long DEFAULT_EVENT_ID = 1L;
+    private static final Long UPDATED_EVENT_ID = 2L;
+
+    private static final EventCrewRole DEFAULT_ROLE = EventCrewRole.HEAD;
+    private static final EventCrewRole UPDATED_ROLE = EventCrewRole.HEAD;
+
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private EventCrewRepository eventCrewRepository;
+
+    @Autowired
+    private EventRepository eventRepository;
 
     @Autowired
     private MailService mailService;
@@ -90,6 +126,7 @@ public class UserResourceIT {
     @Autowired
     private CacheManager cacheManager;
 
+    @Autowired
     private MockMvc restUserMockMvc;
 
     private User user;
@@ -100,11 +137,11 @@ public class UserResourceIT {
         cacheManager.getCache(UserRepository.USERS_BY_EMAIL_CACHE).clear();
         UserResource userResource = new UserResource(userService, userRepository, mailService);
 
-        this.restUserMockMvc = MockMvcBuilders.standaloneSetup(userResource)
-            .setCustomArgumentResolvers(pageableArgumentResolver)
-            .setControllerAdvice(exceptionTranslator)
-            .setMessageConverters(jacksonMessageConverter)
-            .build();
+//        this.restUserMockMvc = MockMvcBuilders.standaloneSetup(userResource)
+//            .setCustomArgumentResolvers(pageableArgumentResolver)
+//            .setControllerAdvice(exceptionTranslator)
+//            .setMessageConverters(jacksonMessageConverter)
+//            .build();
     }
 
     /**
@@ -113,7 +150,7 @@ public class UserResourceIT {
      * This is a static method, as tests for other entities might also need it,
      * if they test an entity which has a required relationship to the User entity.
      */
-    public static User createEntity(EntityManager em) {
+    public static User createUserEntity(EntityManager em) {
         User user = new User();
         user.setLogin(DEFAULT_LOGIN + RandomStringUtils.randomAlphabetic(5));
         user.setPassword(RandomStringUtils.random(60));
@@ -126,9 +163,31 @@ public class UserResourceIT {
         return user;
     }
 
+    public static Event createEventEntity() {
+        Event event = new Event();
+        event.setName(DEFAULT_EVENT_NAME);
+        event.setDescription(DEFAULT_EVENT_DESCRIPTION);
+        event.setRemarks(DEFAULT_EVENT_REMARKS);
+        event.setVenue(DEFAULT_EVENT_VENUE);
+        event.setStartDate(DEFAULT_EVENT_START_DATE);
+        event.setEndDate(DEFAULT_EVENT_END_DATE);
+        event.setFee(DEFAULT_EVENT_FEE);
+        event.setRequiredTransport(DEFAULT_EVENT_REQUIRED_TRANSPORT);
+        event.setStatus(DEFAULT_EVENT_STATUS);
+        return event;
+    }
+
+    public static EventCrew createEventCrewEntity() {
+        EventCrew eventCrew = new EventCrew()
+            .userId(DEFAULT_USER_ID)
+            .eventId(DEFAULT_EVENT_ID)
+            .role(DEFAULT_ROLE);
+        return eventCrew;
+    }
+
     @BeforeEach
     public void initTest() {
-        user = createEntity(em);
+        user = createUserEntity(em);
         user.setLogin(DEFAULT_LOGIN);
         user.setEmail(DEFAULT_EMAIL);
     }
@@ -600,4 +659,50 @@ public class UserResourceIT {
         assertThat(authorityA).isEqualTo(authorityB);
         assertThat(authorityA.hashCode()).isEqualTo(authorityB.hashCode());
     }
+
+    @Test
+    @Transactional
+    public void getAllNotEventCrewUsers() throws Exception {
+        // Initialize the database
+        userRepository.saveAndFlush(user);
+
+        // Get all the users
+        restUserMockMvc.perform(get("/api/users/event-crews/{eventId}", Long.MAX_VALUE)
+            .accept(MediaType.APPLICATION_JSON))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
+            .andExpect(jsonPath("$.[*].login").value(hasItem(DEFAULT_LOGIN)))
+            .andExpect(jsonPath("$.[*].firstName").value(hasItem(DEFAULT_FIRSTNAME)))
+            .andExpect(jsonPath("$.[*].lastName").value(hasItem(DEFAULT_LASTNAME)))
+            .andExpect(jsonPath("$.[*].email").value(hasItem(DEFAULT_EMAIL)))
+            .andExpect(jsonPath("$.[*].imageUrl").value(hasItem(DEFAULT_IMAGEURL)))
+            .andExpect(jsonPath("$.[*].langKey").value(hasItem(DEFAULT_LANGKEY)));
+    }
+
+    @Test
+    @Transactional
+    public void getAllNotEventCrewUsers_WithEventCrewUser() throws Exception  {
+        // Initialize the database
+        Event event = createEventEntity();
+
+        Event savedEvent = eventRepository.saveAndFlush(event);
+        User savedUser = userRepository.saveAndFlush(user);
+
+        EventCrew eventCrew = createEventCrewEntity();
+        eventCrew.setUserId(savedUser.getId());
+        eventCrew.setEventId(savedEvent.getId());
+        eventCrewRepository.saveAndFlush(eventCrew);
+
+        // Get all the users
+        restUserMockMvc.perform(get("/api/users/event-crews/{eventId}", savedEvent.getId())
+            .accept(MediaType.APPLICATION_JSON))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
+            .andExpect(jsonPath("$.[*].login").value(not(hasItem(DEFAULT_LOGIN))))
+            .andExpect(jsonPath("$.[*].firstName").value(not(hasItem(DEFAULT_FIRSTNAME))))
+            .andExpect(jsonPath("$.[*].lastName").value(not(hasItem(DEFAULT_LASTNAME))))
+            .andExpect(jsonPath("$.[*].email").value(not(hasItem(DEFAULT_EMAIL))))
+            .andExpect(jsonPath("$.[*].imageUrl").value(not(hasItem(DEFAULT_IMAGEURL))));
+    }
+
 }

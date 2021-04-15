@@ -1,16 +1,24 @@
 package com.thirdcc.webapp.web.rest;
 
+import com.thirdcc.webapp.domain.User;
 import com.thirdcc.webapp.service.EventCrewService;
 import com.thirdcc.webapp.web.rest.errors.BadRequestAlertException;
 import com.thirdcc.webapp.service.dto.EventCrewDTO;
 
 import io.github.jhipster.web.util.HeaderUtil;
+import io.github.jhipster.web.util.PaginationUtil;
 import io.github.jhipster.web.util.ResponseUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -46,6 +54,7 @@ public class EventCrewResource {
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
     @PostMapping("/event-crews")
+    @PreAuthorize("@managementTeamSecurityExpression.isCurrentAdministrator() || @managementTeamSecurityExpression.isEventHead(#eventCrewDTO.getEventId())")
     public ResponseEntity<EventCrewDTO> createEventCrew(@RequestBody EventCrewDTO eventCrewDTO) throws URISyntaxException {
         log.debug("REST request to save EventCrew : {}", eventCrewDTO);
         if (eventCrewDTO.getId() != null) {
@@ -67,6 +76,7 @@ public class EventCrewResource {
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
     @PutMapping("/event-crews")
+    @PreAuthorize("@managementTeamSecurityExpression.isCurrentAdministrator() || @managementTeamSecurityExpression.isEventHead(#eventCrewDTO.getEventId())")
     public ResponseEntity<EventCrewDTO> updateEventCrew(@RequestBody EventCrewDTO eventCrewDTO) throws URISyntaxException {
         log.debug("REST request to update EventCrew : {}", eventCrewDTO);
         if (eventCrewDTO.getId() == null) {
@@ -94,12 +104,29 @@ public class EventCrewResource {
      *
      * @param id the id of the eventCrewDTO to retrieve.
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the eventCrewDTO, or with status {@code 404 (Not Found)}.
+     * @usage Use for getting eventCrew data when update
      */
     @GetMapping("/event-crews/{id}")
-    public ResponseEntity<EventCrewDTO> getEventCrew(@PathVariable Long id) {
+    @PreAuthorize("@managementTeamSecurityExpression.isCurrentAdministrator() || @managementTeamSecurityExpression.isEventHead(#eventId)")
+    public ResponseEntity<EventCrewDTO> getEventCrew(@PathVariable Long id, @RequestParam(value = "eventId") String eventId) {
         log.debug("REST request to get EventCrew : {}", id);
         Optional<EventCrewDTO> eventCrewDTO = eventCrewService.findOne(id);
         return ResponseUtil.wrapOrNotFound(eventCrewDTO);
+    }
+
+    /**
+     * {@code GET  /event-crews/event/:eventId} : get the eventCrew from "eventId" event.
+     *
+     * @param eventId the id of the event to retrieve eventCrewDTO.
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the eventCrewDTO, or with status {@code 404 (Not Found)}.
+     */
+    @GetMapping("/event-crews/event/{eventId}")
+    @PreAuthorize("@managementTeamSecurityExpression.isCurrentAdministrator() || @managementTeamSecurityExpression.isEventCrew(#eventId)")
+    public ResponseEntity<List<EventCrewDTO>> getEventCrewWithEventId(Pageable pageable, @PathVariable Long eventId, @RequestParam MultiValueMap<String, String> queryParams, UriComponentsBuilder uriBuilder) {
+        log.debug("REST request to get EventCrew with Event Id: {}", eventId);
+        Page<EventCrewDTO> page = eventCrewService.findAllByEventId(pageable, eventId);
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(uriBuilder.queryParams(queryParams), page);
+        return ResponseEntity.ok().headers(headers).body(page.getContent());
     }
 
     /**
@@ -109,7 +136,8 @@ public class EventCrewResource {
      * @return the {@link ResponseEntity} with status {@code 204 (NO_CONTENT)}.
      */
     @DeleteMapping("/event-crews/{id}")
-    public ResponseEntity<Void> deleteEventCrew(@PathVariable Long id) {
+    @PreAuthorize("@managementTeamSecurityExpression.isCurrentAdministrator() || @managementTeamSecurityExpression.isEventHead(#eventId)")
+    public ResponseEntity<Void> deleteEventCrew(@PathVariable Long id, @RequestParam(value = "eventId") String eventId) {
         log.debug("REST request to delete EventCrew : {}", id);
         eventCrewService.delete(id);
         return ResponseEntity.noContent().headers(HeaderUtil.createEntityDeletionAlert(applicationName, true, ENTITY_NAME, id.toString())).build();

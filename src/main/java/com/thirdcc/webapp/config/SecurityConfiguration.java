@@ -3,8 +3,6 @@ package com.thirdcc.webapp.config;
 import com.thirdcc.webapp.security.*;
 import com.thirdcc.webapp.security.jwt.*;
 
-import org.springframework.beans.factory.BeanInitializationException;
-import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpMethod;
@@ -26,13 +24,13 @@ import org.zalando.problem.spring.web.advice.security.SecurityProblemSupport;
 @Import(SecurityProblemSupport.class)
 public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 
-    private final TokenProvider tokenProvider;
+    private final AccessTokenProvider accessTokenProvider;
 
     private final CorsFilter corsFilter;
     private final SecurityProblemSupport problemSupport;
 
-    public SecurityConfiguration(TokenProvider tokenProvider, CorsFilter corsFilter, SecurityProblemSupport problemSupport) {
-        this.tokenProvider = tokenProvider;
+    public SecurityConfiguration(AccessTokenProvider accessTokenProvider, CorsFilter corsFilter, SecurityProblemSupport problemSupport) {
+        this.accessTokenProvider = accessTokenProvider;
         this.corsFilter = corsFilter;
         this.problemSupport = problemSupport;
     }
@@ -76,6 +74,8 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
         .and()
             .authorizeRequests()
             .antMatchers("/api/authenticate").permitAll()
+            .antMatchers("/api/authenticate/firebase").permitAll()
+            .antMatchers("/api/authenticate/refresh").permitAll()
             .antMatchers("/api/register").permitAll()
             .antMatchers("/api/activate").permitAll()
             .antMatchers("/api/account/reset-password/init").permitAll()
@@ -93,6 +93,6 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
     }
 
     private JWTConfigurer securityConfigurerAdapter() {
-        return new JWTConfigurer(tokenProvider);
+        return new JWTConfigurer(accessTokenProvider);
     }
 }

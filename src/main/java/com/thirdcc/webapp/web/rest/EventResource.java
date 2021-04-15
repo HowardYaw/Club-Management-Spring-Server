@@ -1,5 +1,6 @@
 package com.thirdcc.webapp.web.rest;
 
+import com.thirdcc.webapp.security.AuthoritiesConstants;
 import com.thirdcc.webapp.service.EventService;
 import com.thirdcc.webapp.web.rest.errors.BadRequestAlertException;
 import com.thirdcc.webapp.service.dto.EventDTO;
@@ -14,6 +15,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.springframework.http.ResponseEntity;
@@ -53,6 +55,7 @@ public class EventResource {
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
     @PostMapping("/events")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     public ResponseEntity<EventDTO> createEvent(@RequestBody EventDTO eventDTO) throws URISyntaxException {
         log.debug("REST request to save Event : {}", eventDTO);
         if (eventDTO.getId() != null) {
@@ -74,6 +77,7 @@ public class EventResource {
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
     @PutMapping("/events")
+    @PreAuthorize("hasRole(\"" + AuthoritiesConstants.ADMIN + "\") || @managementTeamSecurityExpression.isEventHead(#eventDTO.getId()) || @managementTeamSecurityExpression.isCurrentAdministrator()")
     public ResponseEntity<EventDTO> updateEvent(@RequestBody EventDTO eventDTO) throws URISyntaxException {
         log.debug("REST request to update Event : {}", eventDTO);
         if (eventDTO.getId() == null) {
@@ -96,7 +100,11 @@ public class EventResource {
     @GetMapping("/events")
     public ResponseEntity<List<EventDTO>> getAllEvents(Pageable pageable, @RequestParam MultiValueMap<String, String> queryParams, UriComponentsBuilder uriBuilder) {
         log.debug("REST request to get a page of Events");
-        Page<EventDTO> page = eventService.findAll(pageable);
+
+        Page<EventDTO> page = (queryParams.containsKey("from") && queryParams.containsKey("to")) ?
+            eventService.findAllByDateRange(pageable, queryParams.getFirst("from"), queryParams.getFirst("to")) :
+            eventService.findAll(pageable);
+
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(uriBuilder.queryParams(queryParams), page);
         return ResponseEntity.ok().headers(headers).body(page.getContent());
     }
@@ -121,9 +129,27 @@ public class EventResource {
      * @return the {@link ResponseEntity} with status {@code 204 (NO_CONTENT)}.
      */
     @DeleteMapping("/events/{id}")
+    @PreAuthorize("hasRole(\"" + AuthoritiesConstants.ADMIN + "\") || @managementTeamSecurityExpression.isEventHead(#id) || @managementTeamSecurityExpression.isCurrentAdministrator()")
     public ResponseEntity<Void> deleteEvent(@PathVariable Long id) {
         log.debug("REST request to delete Event : {}", id);
         eventService.delete(id);
         return ResponseEntity.noContent().headers(HeaderUtil.createEntityDeletionAlert(applicationName, true, ENTITY_NAME, id.toString())).build();
+    }
+
+    /**
+     {@code POST  /event/{eventId}/deactivate} : cancel "id" event.
+     *
+     * @param eventId the id of the eventDTO to cancel.
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and 400 ()}.
+     */
+
+    @PutMapping("/event/{eventId}/deactivate")
+    @PreAuthorize("@managementTeamSecurityExpression.hasRoleAdminOrIsEventHead(#eventId)")
+    public ResponseEntity<EventDTO> cancelEvent(@PathVariable Long eventId ){
+        log.debug("REST request to cancel Event: {}", eventId);
+        EventDTO eventDTO = eventService.cancelEventById(eventId);
+        return ResponseEntity.ok()
+            .headers(HeaderUtil.createEntityUpdateAlert(applicationName, true, ENTITY_NAME, eventDTO.getId().toString()))
+            .body(eventDTO);
     }
 }

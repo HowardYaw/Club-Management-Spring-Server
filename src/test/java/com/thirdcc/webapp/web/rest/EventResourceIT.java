@@ -1,44 +1,52 @@
 package com.thirdcc.webapp.web.rest;
 
 import com.thirdcc.webapp.ClubmanagementApp;
+import com.thirdcc.webapp.domain.Administrator;
 import com.thirdcc.webapp.domain.Event;
+import com.thirdcc.webapp.domain.User;
+import com.thirdcc.webapp.domain.YearSession;
+import com.thirdcc.webapp.repository.AdministratorRepository;
 import com.thirdcc.webapp.repository.EventRepository;
+import com.thirdcc.webapp.repository.YearSessionRepository;
+import com.thirdcc.webapp.service.EventCrewService;
 import com.thirdcc.webapp.service.EventService;
+import com.thirdcc.webapp.service.UserService;
+import com.thirdcc.webapp.service.dto.EventCrewDTO;
 import com.thirdcc.webapp.service.dto.EventDTO;
 import com.thirdcc.webapp.service.mapper.EventMapper;
-import com.thirdcc.webapp.web.rest.errors.ExceptionTranslator;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
 import org.springframework.http.MediaType;
-import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.Base64Utils;
-import org.springframework.validation.Validator;
 
 import javax.persistence.EntityManager;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Optional;
 
-import static com.thirdcc.webapp.web.rest.TestUtil.createFormattingConversionService;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import com.thirdcc.webapp.domain.enumeration.EventStatus;
+
 /**
  * Integration tests for the {@Link EventResource} REST controller.
  */
 @SpringBootTest(classes = ClubmanagementApp.class)
+@AutoConfigureMockMvc
+@WithMockUser()
 public class EventResourceIT {
 
     private static final String DEFAULT_NAME = "AAAAAAAAAA";
@@ -67,6 +75,9 @@ public class EventResourceIT {
 
     private static final EventStatus DEFAULT_STATUS = EventStatus.OPEN;
     private static final EventStatus UPDATED_STATUS = EventStatus.CLOSED;
+    private static final EventStatus CANCELLED_STATUS = EventStatus.CANCELLED;
+
+    private static final String DEFAULT_YEAR_SESSION_VALUE = "2021/2022";
 
     @Autowired
     private EventRepository eventRepository;
@@ -75,23 +86,18 @@ public class EventResourceIT {
     private EventMapper eventMapper;
 
     @Autowired
-    private EventService eventService;
+    private YearSessionRepository yearSessionRepository;
 
     @Autowired
-    private MappingJackson2HttpMessageConverter jacksonMessageConverter;
+    private EventCrewService eventCrewService;
 
     @Autowired
-    private PageableHandlerMethodArgumentResolver pageableArgumentResolver;
-
-    @Autowired
-    private ExceptionTranslator exceptionTranslator;
+    private UserService userService;
 
     @Autowired
     private EntityManager em;
 
     @Autowired
-    private Validator validator;
-
     private MockMvc restEventMockMvc;
 
     private Event event;
@@ -99,13 +105,6 @@ public class EventResourceIT {
     @BeforeEach
     public void setup() {
         MockitoAnnotations.initMocks(this);
-        final EventResource eventResource = new EventResource(eventService);
-        this.restEventMockMvc = MockMvcBuilders.standaloneSetup(eventResource)
-            .setCustomArgumentResolvers(pageableArgumentResolver)
-            .setControllerAdvice(exceptionTranslator)
-            .setConversionService(createFormattingConversionService())
-            .setMessageConverters(jacksonMessageConverter)
-            .setValidator(validator).build();
     }
 
     /**
@@ -115,7 +114,7 @@ public class EventResourceIT {
      * if they test an entity which requires the current entity.
      */
     public static Event createEntity(EntityManager em) {
-        Event event = new Event()
+        return new Event()
             .name(DEFAULT_NAME)
             .description(DEFAULT_DESCRIPTION)
             .remarks(DEFAULT_REMARKS)
@@ -125,7 +124,6 @@ public class EventResourceIT {
             .fee(DEFAULT_FEE)
             .requiredTransport(DEFAULT_REQUIRED_TRANSPORT)
             .status(DEFAULT_STATUS);
-        return event;
     }
     /**
      * Create an updated entity for this test.
@@ -134,7 +132,7 @@ public class EventResourceIT {
      * if they test an entity which requires the current entity.
      */
     public static Event createUpdatedEntity(EntityManager em) {
-        Event event = new Event()
+        return new Event()
             .name(UPDATED_NAME)
             .description(UPDATED_DESCRIPTION)
             .remarks(UPDATED_REMARKS)
@@ -144,7 +142,11 @@ public class EventResourceIT {
             .fee(UPDATED_FEE)
             .requiredTransport(UPDATED_REQUIRED_TRANSPORT)
             .status(UPDATED_STATUS);
-        return event;
+    }
+
+    private YearSession initYearSessionDB() {
+        return yearSessionRepository.saveAndFlush(new YearSession()
+            .value(DEFAULT_YEAR_SESSION_VALUE));
     }
 
     @BeforeEach
@@ -154,6 +156,7 @@ public class EventResourceIT {
 
     @Test
     @Transactional
+    @WithMockUser(username = "admin", password = "admin", roles = "ADMIN")
     public void createEvent() throws Exception {
         int databaseSizeBeforeCreate = eventRepository.findAll().size();
 
@@ -179,8 +182,24 @@ public class EventResourceIT {
         assertThat(testEvent.getStatus()).isEqualTo(DEFAULT_STATUS);
     }
 
+
     @Test
     @Transactional
+    public void createEventWithUserRole() throws Exception {
+
+        // Create the Event
+        EventDTO eventDTO = eventMapper.toDto(event);
+        restEventMockMvc.perform(post("/api/events").with(user("user").password("user").roles("USER"))
+            .contentType(TestUtil.APPLICATION_JSON_UTF8)
+            .content(TestUtil.convertObjectToJsonBytes(eventDTO)))
+            .andExpect(status().isForbidden());
+
+    }
+
+
+    @Test
+    @Transactional
+    @WithMockUser(username = "admin", password = "admin", roles = "ADMIN")
     public void createEventWithExistingId() throws Exception {
         int databaseSizeBeforeCreate = eventRepository.findAll().size();
 
@@ -207,21 +226,62 @@ public class EventResourceIT {
         eventRepository.saveAndFlush(event);
 
         // Get all the eventList
-        restEventMockMvc.perform(get("/api/events?sort=id,desc"))
+        restEventMockMvc.perform(get("/api/events?sort=id,desc")
+            .with(user("user").password("user").roles("USER")))
             .andExpect(status().isOk())
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
             .andExpect(jsonPath("$.[*].id").value(hasItem(event.getId().intValue())))
-            .andExpect(jsonPath("$.[*].name").value(hasItem(DEFAULT_NAME.toString())))
-            .andExpect(jsonPath("$.[*].description").value(hasItem(DEFAULT_DESCRIPTION.toString())))
-            .andExpect(jsonPath("$.[*].remarks").value(hasItem(DEFAULT_REMARKS.toString())))
-            .andExpect(jsonPath("$.[*].venue").value(hasItem(DEFAULT_VENUE.toString())))
+            .andExpect(jsonPath("$.[*].name").value(hasItem(DEFAULT_NAME)))
+            .andExpect(jsonPath("$.[*].description").value(hasItem(DEFAULT_DESCRIPTION)))
+            .andExpect(jsonPath("$.[*].remarks").value(hasItem(DEFAULT_REMARKS)))
+            .andExpect(jsonPath("$.[*].venue").value(hasItem(DEFAULT_VENUE)))
             .andExpect(jsonPath("$.[*].startDate").value(hasItem(DEFAULT_START_DATE.toString())))
             .andExpect(jsonPath("$.[*].endDate").value(hasItem(DEFAULT_END_DATE.toString())))
             .andExpect(jsonPath("$.[*].fee").value(hasItem(DEFAULT_FEE.intValue())))
-            .andExpect(jsonPath("$.[*].requiredTransport").value(hasItem(DEFAULT_REQUIRED_TRANSPORT.booleanValue())))
+            .andExpect(jsonPath("$.[*].requiredTransport").value(hasItem(DEFAULT_REQUIRED_TRANSPORT)))
             .andExpect(jsonPath("$.[*].status").value(hasItem(DEFAULT_STATUS.toString())));
     }
-    
+
+
+    @Test
+    @Transactional
+    public void getAllEventsWithDateRange() throws Exception {
+        // Initialize the database
+        eventRepository.saveAndFlush(event);
+
+        // Get all the eventList with date range
+        restEventMockMvc.perform(get("/api/events?page=0&size=3&sort=startDate,desc&from="+DEFAULT_START_DATE.minusSeconds(60 * 60 * 24)+"&to="+DEFAULT_START_DATE.plusSeconds(60 * 60 * 24))
+            .with(user("user").password("user").roles("USER")))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
+            .andExpect(jsonPath("$.[*].id").value(hasItem(event.getId().intValue())))
+            .andExpect(jsonPath("$.[*].name").value(hasItem(DEFAULT_NAME)))
+            .andExpect(jsonPath("$.[*].description").value(hasItem(DEFAULT_DESCRIPTION)))
+            .andExpect(jsonPath("$.[*].remarks").value(hasItem(DEFAULT_REMARKS)))
+            .andExpect(jsonPath("$.[*].venue").value(hasItem(DEFAULT_VENUE)))
+            .andExpect(jsonPath("$.[*].startDate").value(hasItem(DEFAULT_START_DATE.toString())))
+            .andExpect(jsonPath("$.[*].endDate").value(hasItem(DEFAULT_END_DATE.toString())))
+            .andExpect(jsonPath("$.[*].fee").value(hasItem(DEFAULT_FEE.intValue())))
+            .andExpect(jsonPath("$.[*].requiredTransport").value(hasItem(DEFAULT_REQUIRED_TRANSPORT)))
+            .andExpect(jsonPath("$.[*].status").value(hasItem(DEFAULT_STATUS.toString())));
+    }
+
+
+    @Test
+    @Transactional
+    public void getAllEventsWithNonExistentDateRange() throws Exception {
+        // Initialize the database
+        eventRepository.saveAndFlush(event);
+
+        // Get all the eventList with date range but should return empty array
+        restEventMockMvc.perform(get("/api/events?page=0&size=3&sort=startDate,desc&from="+Instant.now().minusSeconds(60 * 60 * 24)+"&to="+Instant.now().plusSeconds(60 * 60 * 24))
+            .with(user("user").password("user").roles("USER")))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$").isArray())
+            .andExpect(jsonPath("$").isEmpty());
+    }
+
+
     @Test
     @Transactional
     public void getEvent() throws Exception {
@@ -229,18 +289,19 @@ public class EventResourceIT {
         eventRepository.saveAndFlush(event);
 
         // Get the event
-        restEventMockMvc.perform(get("/api/events/{id}", event.getId()))
+        restEventMockMvc.perform(get("/api/events/{id}", event.getId())
+            .with(user("user").password("user").roles("USER")))
             .andExpect(status().isOk())
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
             .andExpect(jsonPath("$.id").value(event.getId().intValue()))
-            .andExpect(jsonPath("$.name").value(DEFAULT_NAME.toString()))
-            .andExpect(jsonPath("$.description").value(DEFAULT_DESCRIPTION.toString()))
-            .andExpect(jsonPath("$.remarks").value(DEFAULT_REMARKS.toString()))
-            .andExpect(jsonPath("$.venue").value(DEFAULT_VENUE.toString()))
+            .andExpect(jsonPath("$.name").value(DEFAULT_NAME))
+            .andExpect(jsonPath("$.description").value(DEFAULT_DESCRIPTION))
+            .andExpect(jsonPath("$.remarks").value(DEFAULT_REMARKS))
+            .andExpect(jsonPath("$.venue").value(DEFAULT_VENUE))
             .andExpect(jsonPath("$.startDate").value(DEFAULT_START_DATE.toString()))
             .andExpect(jsonPath("$.endDate").value(DEFAULT_END_DATE.toString()))
             .andExpect(jsonPath("$.fee").value(DEFAULT_FEE.intValue()))
-            .andExpect(jsonPath("$.requiredTransport").value(DEFAULT_REQUIRED_TRANSPORT.booleanValue()))
+            .andExpect(jsonPath("$.requiredTransport").value(DEFAULT_REQUIRED_TRANSPORT))
             .andExpect(jsonPath("$.status").value(DEFAULT_STATUS.toString()));
     }
 
@@ -248,17 +309,27 @@ public class EventResourceIT {
     @Transactional
     public void getNonExistingEvent() throws Exception {
         // Get the event
-        restEventMockMvc.perform(get("/api/events/{id}", Long.MAX_VALUE))
+        restEventMockMvc.perform(get("/api/events/{id}", Long.MAX_VALUE)
+            .with(user("user").password("user").roles("USER")))
             .andExpect(status().isNotFound());
     }
 
     @Test
     @Transactional
+    @WithMockUser(username = "user", password = "user", roles = "ADMIN")
     public void updateEvent() throws Exception {
         // Initialize the database
+        YearSession savedYearSession = initYearSessionDB();
         eventRepository.saveAndFlush(event);
 
         int databaseSizeBeforeUpdate = eventRepository.findAll().size();
+
+        // Mock user for Authorization Checking
+        Optional<User> currentUser = userService.getUserWithAuthorities();
+        EventCrewDTO eventCrewDTO = new EventCrewDTO();
+        eventCrewDTO.setEventId(event.getId());
+        eventCrewDTO.setUserId(currentUser.get().getId());
+        eventCrewService.save(eventCrewDTO);
 
         // Update the event
         Event updatedEvent = eventRepository.findById(event.getId()).get();
@@ -298,11 +369,64 @@ public class EventResourceIT {
 
     @Test
     @Transactional
+    @WithMockUser(username = "admin", password = "admin", roles = "ADMIN")
+    public void cancelEvent() throws Exception {
+        // Initialize the database
+        eventRepository.saveAndFlush(event);
+
+        // Cancel the event
+        restEventMockMvc.perform(put("/api/event/{eventId}/deactivate", event.getId()))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
+            .andExpect(jsonPath("$.id").value(event.getId().intValue()))
+            .andExpect(jsonPath("$.name").value(DEFAULT_NAME.toString()))
+            .andExpect(jsonPath("$.description").value(DEFAULT_DESCRIPTION.toString()))
+            .andExpect(jsonPath("$.remarks").value(DEFAULT_REMARKS.toString()))
+            .andExpect(jsonPath("$.venue").value(DEFAULT_VENUE.toString()))
+            .andExpect(jsonPath("$.startDate").value(DEFAULT_START_DATE.toString()))
+            .andExpect(jsonPath("$.endDate").value(DEFAULT_END_DATE.toString()))
+            .andExpect(jsonPath("$.fee").value(DEFAULT_FEE.intValue()))
+            .andExpect(jsonPath("$.requiredTransport").value(DEFAULT_REQUIRED_TRANSPORT.booleanValue()))
+            .andExpect(jsonPath("$.status").value(CANCELLED_STATUS.toString()));
+    }
+
+    @Test
+    @Transactional
+    @WithMockUser(username="user", roles="USER")
+    public void cancelEvent_AsNonAdminUser_ShouldReturn403() throws Exception {
+        // Initialize the database
+        eventRepository.saveAndFlush(event);
+
+        // Cancel the event
+        restEventMockMvc.perform(put("/api/event/{eventId}/deactivate", event.getId()))
+            .andExpect(status().isForbidden());
+    }
+
+
+    @Test
+    @Transactional
+    @WithMockUser(username = "admin", password = "admin", roles = "ADMIN")
+    public void cancelEvent_WithNonExistingEventId_ShouldReturn400() throws Exception {
+
+        restEventMockMvc.perform(put("/api/event/{eventId}/deactivate", Long.MAX_VALUE))
+            .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @Transactional
+    @WithMockUser(username = "admin", password = "admin", roles = "ADMIN")
     public void updateNonExistingEvent() throws Exception {
         int databaseSizeBeforeUpdate = eventRepository.findAll().size();
 
         // Create the Event
         EventDTO eventDTO = eventMapper.toDto(event);
+
+        // Mock user for Authorization Checking
+        Optional<User> currentUser = userService.getUserWithAuthorities();
+        EventCrewDTO eventCrewDTO = new EventCrewDTO();
+        eventCrewDTO.setEventId(event.getId());
+        eventCrewDTO.setUserId(currentUser.get().getId());
+        eventCrewService.save(eventCrewDTO);
 
         // If the entity doesn't have an ID, it will throw BadRequestAlertException
         restEventMockMvc.perform(put("/api/events")
@@ -317,8 +441,10 @@ public class EventResourceIT {
 
     @Test
     @Transactional
+    @WithMockUser(username = "user", password = "user", roles = "ADMIN")
     public void deleteEvent() throws Exception {
         // Initialize the database
+        YearSession savedYearSession = initYearSessionDB();
         eventRepository.saveAndFlush(event);
 
         int databaseSizeBeforeDelete = eventRepository.findAll().size();
