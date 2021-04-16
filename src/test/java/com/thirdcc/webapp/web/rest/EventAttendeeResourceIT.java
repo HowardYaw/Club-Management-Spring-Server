@@ -77,13 +77,11 @@ public class EventAttendeeResourceIT {
     private static final EventStatus DEFAULT_EVENT_STATUS = EventStatus.OPEN;
 
     // User Uni Info Default Value
-    private static final String DEFAULT_FACULTY = "AAAAAAAAAA";
-    private static final String DEFAULT_PROGRAM = "AAAAAAAAAA";
+    private static final Long DEFAULT_COURSE_PROGRAM_ID = 1L;
     private static final String DEFAULT_YEAR_SESSION = "AAAAAAAAAA";
     private static final Integer DEFAULT_INTAKE_SEMESTER = 1;
-    private static final BigDecimal DEFAULT_YEAR_OF_STUDY = new BigDecimal(1);
     private static final String DEFAULT_STAY_IN = "AAAAAAAAAA";
-    private static final UserUniStatus DEFAULT_STATUS = UserUniStatus.GRADUATED;
+    private static final UserUniStatus DEFAULT_USER_UNI_STATUS = UserUniStatus.STUDYING;
 
     private static User user;
 
@@ -171,17 +169,15 @@ public class EventAttendeeResourceIT {
             .provideTransport(UPDATED_PROVIDE_TRANSPORT);
         return eventAttendee;
     }
-    
+
     public static UserUniInfo createUserUniInfoEntity() {
-        UserUniInfo userUniInfo = new UserUniInfo()
-            .userId(DEFAULT_USER_ID)
-            .faculty(DEFAULT_FACULTY)
-            .program(DEFAULT_PROGRAM)
-            .yearSession(DEFAULT_YEAR_SESSION)
-            .intakeSemester(DEFAULT_INTAKE_SEMESTER)
-            .yearOfStudy(DEFAULT_YEAR_OF_STUDY)
-            .stayIn(DEFAULT_STAY_IN)
-            .status(DEFAULT_STATUS);
+        UserUniInfo userUniInfo = new UserUniInfo();
+        userUniInfo.setUserId(DEFAULT_USER_ID);
+        userUniInfo.setCourseProgramId(DEFAULT_COURSE_PROGRAM_ID);
+        userUniInfo.setYearSession(DEFAULT_YEAR_SESSION);
+        userUniInfo.setIntakeSemester(DEFAULT_INTAKE_SEMESTER);
+        userUniInfo.setStayIn(DEFAULT_STAY_IN);
+        userUniInfo.setStatus(DEFAULT_USER_UNI_STATUS);
         return userUniInfo;
     }
 
@@ -597,7 +593,7 @@ public class EventAttendeeResourceIT {
         userUniInfo.setUserId(user.getId());
         return userUniInfoRepository.saveAndFlush(userUniInfo);
     }
-    
+
     private User getLoggedInUser() {
         return userService.getUserWithAuthorities()
             .orElseThrow(() -> new BadRequestException("User not login"));
