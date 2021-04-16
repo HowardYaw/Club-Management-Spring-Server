@@ -23,7 +23,7 @@ eureka:
 spring:
   test:
     mockmvc:
-      print=none:
+      print: none
   application:
     name: clubmanagement
   datasource:
