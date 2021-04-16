@@ -1,6 +1,10 @@
 package com.thirdcc.webapp.service.impl;
 
+import com.thirdcc.webapp.domain.User;
 import com.thirdcc.webapp.exception.BadRequestException;
+import com.thirdcc.webapp.repository.CourseProgramRepository;
+import com.thirdcc.webapp.repository.UserRepository;
+import com.thirdcc.webapp.security.SecurityUtils;
 import com.thirdcc.webapp.service.UserUniInfoService;
 import com.thirdcc.webapp.domain.UserUniInfo;
 import com.thirdcc.webapp.repository.UserUniInfoRepository;
@@ -31,9 +35,15 @@ public class UserUniInfoServiceImpl implements UserUniInfoService {
 
     private final UserUniInfoMapper userUniInfoMapper;
 
-    public UserUniInfoServiceImpl(UserUniInfoRepository userUniInfoRepository, UserUniInfoMapper userUniInfoMapper) {
+    private final UserRepository userRepository;
+
+    private final CourseProgramRepository courseProgramRepository;
+
+    public UserUniInfoServiceImpl(UserUniInfoRepository userUniInfoRepository, UserUniInfoMapper userUniInfoMapper, UserRepository userRepository, CourseProgramRepository courseProgramRepository) {
         this.userUniInfoRepository = userUniInfoRepository;
         this.userUniInfoMapper = userUniInfoMapper;
+        this.userRepository = userRepository;
+        this.courseProgramRepository = courseProgramRepository;
     }
 
     /**
@@ -46,6 +56,15 @@ public class UserUniInfoServiceImpl implements UserUniInfoService {
     public UserUniInfoDTO save(UserUniInfoDTO userUniInfoDTO) {
         log.debug("Request to save UserUniInfo : {}", userUniInfoDTO);
         UserUniInfo userUniInfo = userUniInfoMapper.toEntity(userUniInfoDTO);
+        User currentUser = SecurityUtils
+            .getCurrentUserLogin()
+            .flatMap(userRepository::findOneWithAuthoritiesByLogin)
+            .orElseThrow(() -> new BadRequestException("Cannot find user"));
+        userUniInfo.setUserId(currentUser.getId());
+        boolean isCourseProgramIdValid = courseProgramRepository.existsById(userUniInfo.getCourseProgramId());
+        if (!isCourseProgramIdValid) {
+            throw new BadRequestException("Invalid Course Program Id");
+        }
         userUniInfo = userUniInfoRepository.save(userUniInfo);
         return userUniInfoMapper.toDto(userUniInfo);
     }
@@ -91,7 +110,7 @@ public class UserUniInfoServiceImpl implements UserUniInfoService {
     }
 
     @Override
-    public boolean isUserUniInfoCompleted(Long userId) {
+    public boolean  isUserUniInfoCompleted(Long userId) {
         UserUniInfo userUniInfo = userUniInfoRepository
             .findOneByUserId(userId)
             .orElse(new UserUniInfo());

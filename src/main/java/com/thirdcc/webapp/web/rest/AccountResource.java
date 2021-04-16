@@ -231,7 +231,7 @@ public class AccountResource {
             .getCurrentUserLogin()
             .flatMap(userRepository::findOneWithAuthoritiesByLogin)
             .orElseThrow(() -> new BadRequestException("Cannot find user"));
-        boolean isBasicProfileCompleted = userService.isBasicProfileCompleted();
+        boolean isBasicProfileCompleted = userService.isBasicProfileCompleted(currentUser.getId());
         boolean isUserUniInfoCompleted = userUniInfoService.isUserUniInfoCompleted(currentUser.getId());
         boolean isProfileCompleted = isBasicProfileCompleted && isUserUniInfoCompleted;
         Map<String, Boolean> result = new HashMap<>();
@@ -240,10 +240,9 @@ public class AccountResource {
     }
 
     @PostMapping("/account/profile")
-    public ResponseEntity<UserUniInfoDTO> completeProfile() {
-        // save in userService
-        // save in userUniInfoService
-        UserUniInfoDTO result = null;
+    public ResponseEntity<UserUniInfoDTO> completeProfile(@RequestBody UserUniInfoDTO userUniInfoDTO) {
+        userService.updateUser(userUniInfoDTO);
+        UserUniInfoDTO result = userUniInfoService.save(userUniInfoDTO);
         return ResponseEntity.ok().headers(null).body(result);
     }
 

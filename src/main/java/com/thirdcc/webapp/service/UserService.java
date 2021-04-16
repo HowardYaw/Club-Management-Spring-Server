@@ -12,6 +12,7 @@ import com.thirdcc.webapp.security.AuthoritiesConstants;
 import com.thirdcc.webapp.security.SecurityUtils;
 import com.thirdcc.webapp.service.dto.EventCrewDTO;
 import com.thirdcc.webapp.service.dto.UserDTO;
+import com.thirdcc.webapp.service.dto.UserUniInfoDTO;
 import com.thirdcc.webapp.service.util.RandomUtil;
 import com.thirdcc.webapp.web.rest.errors.*;
 
@@ -229,6 +230,20 @@ public class UserService {
             .map(UserDTO::new);
     }
 
+    public User updateUser(UserUniInfoDTO userUniInfoDTO) {
+        User currentUser = SecurityUtils
+            .getCurrentUserLogin()
+            .flatMap(userRepository::findOneWithAuthoritiesByLogin)
+            .orElseThrow(() -> new BadRequestException("Cannot find user"));
+
+        currentUser.setFirstName(userUniInfoDTO.getFirstName());
+        currentUser.setLastName(userUniInfoDTO.getLastName());
+        currentUser.setGender(userUniInfoDTO.getGender());
+        currentUser.setPhoneNumber(userUniInfoDTO.getPhoneNumber());
+        currentUser.setDateOfBirth(userUniInfoDTO.getDateOfBirth());
+
+        return userRepository.save(currentUser);
+    }
 
     public void deleteUser(String login) {
         userRepository.findOneByLogin(login).ifPresent(user -> {
@@ -351,17 +366,15 @@ public class UserService {
             .collect(Collectors.toList());
     }
 
-    public boolean isBasicProfileCompleted() {
-        User currentUser = SecurityUtils
-            .getCurrentUserLogin()
-            .flatMap(userRepository::findOneWithAuthoritiesByLogin)
-            .orElseThrow(() -> new BadRequestException("Cannot find user"));
-
-        boolean hasFirstName = StringUtils.isNotBlank(currentUser.getFirstName());
-        boolean hasLastName = StringUtils.isNotBlank(currentUser.getLastName());
-        boolean hasGender = currentUser.getGender() != null;
-        boolean hasPhoneNumber = StringUtils.isNotBlank(currentUser.getPhoneNumber());
-        boolean hasDateOfBirth = currentUser.getDateOfBirth() != null;
+    public boolean isBasicProfileCompleted(Long userId) {
+        User user = userRepository
+            .findById(userId)
+            .orElseThrow(() -> new BadRequestException("user not found"));
+        boolean hasFirstName = StringUtils.isNotBlank(user.getFirstName());
+        boolean hasLastName = StringUtils.isNotBlank(user.getLastName());
+        boolean hasGender = user.getGender() != null;
+        boolean hasPhoneNumber = StringUtils.isNotBlank(user.getPhoneNumber());
+        boolean hasDateOfBirth = user.getDateOfBirth() != null;
 
         return hasFirstName && hasLastName && hasGender && hasPhoneNumber && hasDateOfBirth;
     }
