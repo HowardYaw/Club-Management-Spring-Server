@@ -21,6 +21,9 @@ eureka:
     instanceId: clubmanagement:${spring.application.instance-id:${random.value}}
 
 spring:
+  test:
+    mockmvc:
+      print=none:
   application:
     name: clubmanagement
   datasource:
