@@ -4,23 +4,25 @@ import com.thirdcc.webapp.ClubmanagementApp;
 import com.thirdcc.webapp.annotations.authorization.*;
 import com.thirdcc.webapp.annotations.init.InitYearSession;
 import com.thirdcc.webapp.config.Constants;
-import com.thirdcc.webapp.domain.EventCrew;
-import com.thirdcc.webapp.domain.User;
+import com.thirdcc.webapp.domain.*;
+import com.thirdcc.webapp.domain.enumeration.Gender;
+import com.thirdcc.webapp.domain.enumeration.UserUniStatus;
 import com.thirdcc.webapp.exception.BadRequestException;
-import com.thirdcc.webapp.repository.AuthorityRepository;
-import com.thirdcc.webapp.repository.EventCrewRepository;
-import com.thirdcc.webapp.repository.UserRepository;
+import com.thirdcc.webapp.repository.*;
 import com.thirdcc.webapp.security.AuthoritiesConstants;
 import com.thirdcc.webapp.security.SecurityUtils;
 import com.thirdcc.webapp.service.MailService;
 import com.thirdcc.webapp.service.UserService;
 import com.thirdcc.webapp.service.dto.PasswordChangeDTO;
 import com.thirdcc.webapp.service.dto.UserDTO;
+import com.thirdcc.webapp.service.dto.UserUniInfoDTO;
+import com.thirdcc.webapp.utils.YearSessionUtils;
 import com.thirdcc.webapp.web.rest.vm.KeyAndPasswordVM;
 import com.thirdcc.webapp.web.rest.vm.ManagedUserVM;
 import org.apache.commons.lang3.RandomStringUtils;
 
 import org.hamcrest.Matchers;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -35,6 +37,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -70,6 +73,18 @@ public class AccountResourceIT {
     private static final String EVENT_CREW_EMAIL = "event_crew@localhost.testing";
     private static final String EVENT_CREW_IMAGE_URL = "EVENT_CREW_IMAGE_URL";
 
+    private static final Long DEFAULT_USER_ID = 1L;
+    private static final Long DEFAULT_COURSE_PROGRAM_ID = 1L;
+    private static final String DEFAULT_FIRST_NAME = "DEFAULT_FIRST_NAME";
+    private static final String DEFAULT_LAST_NAME = "DEFAULT_FIRST_NAME";
+    private static final Gender DEFAULT_GENDER = Gender.MALE;
+    private static final String DEFAULT_PHONE_NUMBER = "DEFAULT_PHONE_NUMBER";
+    private static final LocalDate DEFAULT_DATE_OF_BIRTH = LocalDate.ofEpochDay(1232L);
+    private static final String DEFAULT_YEAR_SESSION = "DEFAULT_YEAR_SESSION";
+    private static final Integer DEFAULT_INTAKE_SEMESTER = 1;
+    private static final String DEFAULT_STAY_IN = "DEFAULT_STAY_IN";
+    private static final UserUniStatus DEFAULT_USER_UNI_STATUS = UserUniStatus.STUDYING;
+
     @Autowired
     private UserRepository userRepository;
 
@@ -78,6 +93,12 @@ public class AccountResourceIT {
 
     @Autowired
     private EventCrewRepository eventCrewRepository;
+
+    @Autowired
+    private UserUniInfoRepository userUniInfoRepository;
+
+    @Autowired
+    private CourseProgramRepository courseProgramRepository;
 
     @Autowired
     private UserService userService;
@@ -98,6 +119,27 @@ public class AccountResourceIT {
     public void setup() {
         MockitoAnnotations.initMocks(this);
         doNothing().when(mockMailService).sendActivationEmail(any());
+    }
+
+    @AfterEach
+    public void cleanUp() {
+        userUniInfoRepository.deleteAll();
+    }
+
+    private UserUniInfoDTO createUserUniInfoDTO() {
+        UserUniInfoDTO dto = new UserUniInfoDTO();
+        dto.setFirstName(DEFAULT_FIRST_NAME);
+        dto.setLastName(DEFAULT_LAST_NAME);
+        dto.setGender(DEFAULT_GENDER);
+        dto.setPhoneNumber(DEFAULT_PHONE_NUMBER);
+        dto.setDateOfBirth(DEFAULT_DATE_OF_BIRTH);
+        dto.setUserId(DEFAULT_USER_ID);
+        dto.setCourseProgramId(DEFAULT_COURSE_PROGRAM_ID);
+        dto.setYearSession(DEFAULT_YEAR_SESSION);
+        dto.setIntakeSemester(DEFAULT_INTAKE_SEMESTER);
+        dto.setStayIn(DEFAULT_STAY_IN);
+        dto.setStatus(DEFAULT_USER_UNI_STATUS);
+        return dto;
     }
 
     @Test
@@ -897,6 +939,172 @@ public class AccountResourceIT {
                 .contentType(TestUtil.APPLICATION_JSON_UTF8)
                 .content(TestUtil.convertObjectToJsonBytes(keyAndPassword)))
             .andExpect(status().isInternalServerError());
+    }
+
+
+    @Test
+    @WithNormalUser
+    public void isProfileCompleted_WithProfileCompleted() throws Exception {
+        CourseProgram courseProgram = courseProgramRepository
+            .findById(1L)
+            .orElseThrow(() -> new RuntimeException("CourseProgram not loaded via liquibase testFaker context"));
+
+        User currentUser = SecurityUtils
+            .getCurrentUserLogin()
+            .flatMap(userRepository::findOneWithAuthoritiesByLogin)
+            .orElseThrow(() -> new BadRequestException("Cannot find user"));
+
+        currentUser.setFirstName(DEFAULT_FIRST_NAME);
+        currentUser.setLastName(DEFAULT_LAST_NAME);
+        currentUser.setGender(DEFAULT_GENDER);
+        currentUser.setPhoneNumber(DEFAULT_PHONE_NUMBER);
+        currentUser.setDateOfBirth(DEFAULT_DATE_OF_BIRTH);
+        userRepository.saveAndFlush(currentUser);
+
+        UserUniInfo userUniInfo = new UserUniInfo();
+        userUniInfo.setUserId(currentUser.getId());
+        userUniInfo.setCourseProgramId(courseProgram.getId());
+        userUniInfo.setYearSession(DEFAULT_YEAR_SESSION);
+        userUniInfo.setIntakeSemester(DEFAULT_INTAKE_SEMESTER);
+        userUniInfo.setStayIn(DEFAULT_STAY_IN);
+        userUniInfo.setStatus(DEFAULT_USER_UNI_STATUS);
+        userUniInfoRepository.saveAndFlush(userUniInfo);
+
+        restMvc.perform(get("/api/account/is-profile-completed"))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
+            .andExpect(jsonPath("$.isProfileCompleted").value(true));
+    }
+
+    @Test
+    @WithNormalUser
+    public void isProfileCompleted_WithBasicProfileIncomplete_ShouldReturnFalse() throws Exception {
+        CourseProgram courseProgram = courseProgramRepository
+            .findById(1L)
+            .orElseThrow(() -> new RuntimeException("CourseProgram not loaded via liquibase testFaker context"));
+
+        User currentUser = SecurityUtils
+            .getCurrentUserLogin()
+            .flatMap(userRepository::findOneWithAuthoritiesByLogin)
+            .orElseThrow(() -> new BadRequestException("Cannot find user"));
+
+        currentUser.setFirstName("");
+        currentUser.setLastName(DEFAULT_LAST_NAME);
+        currentUser.setGender(DEFAULT_GENDER);
+        currentUser.setPhoneNumber(DEFAULT_PHONE_NUMBER);
+        currentUser.setDateOfBirth(DEFAULT_DATE_OF_BIRTH);
+        userRepository.saveAndFlush(currentUser);
+
+        UserUniInfo userUniInfo = new UserUniInfo();
+        userUniInfo.setUserId(currentUser.getId());
+        userUniInfo.setCourseProgramId(courseProgram.getId());
+        userUniInfo.setYearSession(DEFAULT_YEAR_SESSION);
+        userUniInfo.setIntakeSemester(DEFAULT_INTAKE_SEMESTER);
+        userUniInfo.setStayIn(DEFAULT_STAY_IN);
+        userUniInfo.setStatus(DEFAULT_USER_UNI_STATUS);
+        userUniInfoRepository.saveAndFlush(userUniInfo);
+
+        restMvc.perform(get("/api/account/is-profile-completed"))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
+            .andExpect(jsonPath("$.isProfileCompleted").value(false));
+    }
+
+    @Test
+    @WithNormalUser
+    public void isProfileCompleted_WithBasicUserUniInfoIncomplete_ShouldReturnFalse() throws Exception {
+        CourseProgram courseProgram = courseProgramRepository
+            .findById(1L)
+            .orElseThrow(() -> new RuntimeException("CourseProgram not loaded via liquibase testFaker context"));
+
+        User currentUser = SecurityUtils
+            .getCurrentUserLogin()
+            .flatMap(userRepository::findOneWithAuthoritiesByLogin)
+            .orElseThrow(() -> new BadRequestException("Cannot find user"));
+
+        currentUser.setFirstName(DEFAULT_FIRST_NAME);
+        currentUser.setLastName(DEFAULT_LAST_NAME);
+        currentUser.setGender(DEFAULT_GENDER);
+        currentUser.setPhoneNumber(DEFAULT_PHONE_NUMBER);
+        currentUser.setDateOfBirth(DEFAULT_DATE_OF_BIRTH);
+        userRepository.saveAndFlush(currentUser);
+
+        UserUniInfo userUniInfo = new UserUniInfo();
+        userUniInfo.setUserId(currentUser.getId());
+        userUniInfo.setCourseProgramId(courseProgram.getId());
+        userUniInfo.setYearSession("");
+        userUniInfo.setIntakeSemester(DEFAULT_INTAKE_SEMESTER);
+        userUniInfo.setStayIn(DEFAULT_STAY_IN);
+        userUniInfo.setStatus(DEFAULT_USER_UNI_STATUS);
+        userUniInfoRepository.saveAndFlush(userUniInfo);
+
+        restMvc.perform(get("/api/account/is-profile-completed"))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
+            .andExpect(jsonPath("$.isProfileCompleted").value(false));
+    }
+
+    @Test
+    @WithNormalUser
+    public void completeProfile()  throws Exception {
+
+        CourseProgram courseProgram = courseProgramRepository
+            .findById(1L)
+            .orElseThrow(() -> new RuntimeException("CourseProgram not loaded via liquibase testFaker context"));
+
+        User currentUser = SecurityUtils
+            .getCurrentUserLogin()
+            .flatMap(userRepository::findOneWithAuthoritiesByLogin)
+            .orElseThrow(() -> new BadRequestException("Cannot find user"));
+
+        int userUniInfoDBSizeB4Create = userUniInfoRepository.findAll().size();
+        int userDBSizeB4Create = userRepository.findAll().size();
+
+        UserUniInfoDTO userUniInfoDTO = createUserUniInfoDTO();
+
+        restMvc.perform(post("/api/account/profile")
+            .contentType(TestUtil.APPLICATION_JSON_UTF8)
+            .content(TestUtil.convertObjectToJsonBytes(userUniInfoDTO)))
+            .andExpect(status().isOk());
+
+        List<User> userList = userRepository.findAll();
+        assertThat(userList).hasSize(userDBSizeB4Create);
+        User user = userRepository
+            .findById(currentUser.getId())
+            .orElseThrow(() -> new RuntimeException("Cannot find user"));
+        assertThat(user.getId()).isEqualTo(currentUser.getId());
+        assertThat(user.getFirstName()).isEqualTo(DEFAULT_FIRST_NAME);
+        assertThat(user.getLastName()).isEqualTo(DEFAULT_LAST_NAME);
+        assertThat(user.getGender()).isEqualTo(DEFAULT_GENDER);
+        assertThat(user.getPhoneNumber()).isEqualTo(DEFAULT_PHONE_NUMBER);
+        assertThat(user.getDateOfBirth()).isEqualTo(DEFAULT_DATE_OF_BIRTH);
+
+        List<UserUniInfo> userUniInfoList = userUniInfoRepository.findAll();
+        assertThat(userUniInfoList).hasSize(userUniInfoDBSizeB4Create + 1);
+        UserUniInfo testUserUniInfo = userUniInfoList.get(userUniInfoList.size() - 1);
+        assertThat(testUserUniInfo.getUserId()).isEqualTo(currentUser.getId());
+        assertThat(testUserUniInfo.getCourseProgramId()).isEqualTo(courseProgram.getId());
+        assertThat(testUserUniInfo.getYearSession()).isEqualTo(DEFAULT_YEAR_SESSION);
+        assertThat(testUserUniInfo.getIntakeSemester()).isEqualTo(DEFAULT_INTAKE_SEMESTER);
+        assertThat(testUserUniInfo.getStayIn()).isEqualTo(DEFAULT_STAY_IN);
+        assertThat(testUserUniInfo.getStatus()).isEqualTo(DEFAULT_USER_UNI_STATUS);
+    }
+
+    @Test
+    @WithNormalUser
+    public void completeProfile_WithInvalidCourseProgram()  throws Exception {
+        int userUniInfoDBSizeB4Create = userUniInfoRepository.findAll().size();
+
+        UserUniInfoDTO userUniInfoDTO = createUserUniInfoDTO();
+        userUniInfoDTO.setCourseProgramId(Long.MAX_VALUE);
+
+        restMvc.perform(post("/api/account/profile")
+            .contentType(TestUtil.APPLICATION_JSON_UTF8)
+            .content(TestUtil.convertObjectToJsonBytes(userUniInfoDTO)))
+            .andExpect(status().isBadRequest());
+
+        List<UserUniInfo> userUniInfoList = userUniInfoRepository.findAll();
+        assertThat(userUniInfoList).hasSize(userUniInfoDBSizeB4Create);
     }
 
     private EventCrew getEventCrewByCurrentLoginUser() {

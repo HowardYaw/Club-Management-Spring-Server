@@ -1,8 +1,13 @@
 package com.thirdcc.webapp.web.rest;
 
 import com.thirdcc.webapp.ClubmanagementApp;
+import com.thirdcc.webapp.annotations.authorization.WithNormalUser;
+import com.thirdcc.webapp.domain.User;
 import com.thirdcc.webapp.domain.UserUniInfo;
+import com.thirdcc.webapp.exception.BadRequestException;
+import com.thirdcc.webapp.repository.UserRepository;
 import com.thirdcc.webapp.repository.UserUniInfoRepository;
+import com.thirdcc.webapp.security.SecurityUtils;
 import com.thirdcc.webapp.service.UserUniInfoService;
 import com.thirdcc.webapp.service.dto.UserUniInfoDTO;
 import com.thirdcc.webapp.service.mapper.UserUniInfoMapper;
@@ -39,8 +44,8 @@ public class UserUniInfoResourceIT {
     private static final Long DEFAULT_USER_ID = 1L;
     private static final Long UPDATED_USER_ID = 2L;
 
-    private static final Long DEFAULT_COURSE_PROGRAM_ID = 52L;
-    private static final Long UPDATED_COURSE_PROGRAM_ID = 53L;
+    private static final Long DEFAULT_COURSE_PROGRAM_ID = 1L;
+    private static final Long UPDATED_COURSE_PROGRAM_ID = 1L;
 
     private static final String DEFAULT_PROGRAM = "DEFAULT_PROGRAM";
     private static final String UPDATED_PROGRAM = "UPDATED_PROGRAM";
@@ -68,6 +73,9 @@ public class UserUniInfoResourceIT {
 
     @Autowired
     private UserUniInfoService userUniInfoService;
+
+    @Autowired
+    private UserRepository userRepository;
 
     @Autowired
     private EntityManager em;
@@ -122,7 +130,13 @@ public class UserUniInfoResourceIT {
 
     @Test
     @Transactional
+    @WithNormalUser
     public void createUserUniInfo() throws Exception {
+        User currentUser = SecurityUtils
+            .getCurrentUserLogin()
+            .flatMap(userRepository::findOneWithAuthoritiesByLogin)
+            .orElseThrow(() -> new BadRequestException("Cannot find user"));
+
         int databaseSizeBeforeCreate = userUniInfoRepository.findAll().size();
 
         // Create the UserUniInfo
@@ -136,7 +150,7 @@ public class UserUniInfoResourceIT {
         List<UserUniInfo> userUniInfoList = userUniInfoRepository.findAll();
         assertThat(userUniInfoList).hasSize(databaseSizeBeforeCreate + 1);
         UserUniInfo testUserUniInfo = userUniInfoList.get(userUniInfoList.size() - 1);
-        assertThat(testUserUniInfo.getUserId()).isEqualTo(DEFAULT_USER_ID);
+        assertThat(testUserUniInfo.getUserId()).isEqualTo(currentUser.getId());
         assertThat(testUserUniInfo.getCourseProgramId()).isEqualTo(DEFAULT_COURSE_PROGRAM_ID);
         assertThat(testUserUniInfo.getYearSession()).isEqualTo(DEFAULT_YEAR_SESSION);
         assertThat(testUserUniInfo.getIntakeSemester()).isEqualTo(DEFAULT_INTAKE_SEMESTER);
@@ -213,7 +227,14 @@ public class UserUniInfoResourceIT {
 
     @Test
     @Transactional
+    @WithNormalUser
     public void updateUserUniInfo() throws Exception {
+
+        User currentUser = SecurityUtils
+            .getCurrentUserLogin()
+            .flatMap(userRepository::findOneWithAuthoritiesByLogin)
+            .orElseThrow(() -> new BadRequestException("Cannot find user"));
+
         // Initialize the database
         userUniInfoRepository.saveAndFlush(userUniInfo);
 
@@ -240,7 +261,7 @@ public class UserUniInfoResourceIT {
         List<UserUniInfo> userUniInfoList = userUniInfoRepository.findAll();
         assertThat(userUniInfoList).hasSize(databaseSizeBeforeUpdate);
         UserUniInfo testUserUniInfo = userUniInfoList.get(userUniInfoList.size() - 1);
-        assertThat(testUserUniInfo.getUserId()).isEqualTo(UPDATED_USER_ID);
+        assertThat(testUserUniInfo.getUserId()).isEqualTo(currentUser.getId());
         assertThat(testUserUniInfo.getCourseProgramId()).isEqualTo(UPDATED_COURSE_PROGRAM_ID);
         assertThat(testUserUniInfo.getYearSession()).isEqualTo(UPDATED_YEAR_SESSION);
         assertThat(testUserUniInfo.getIntakeSemester()).isEqualTo(UPDATED_INTAKE_SEMESTER);
