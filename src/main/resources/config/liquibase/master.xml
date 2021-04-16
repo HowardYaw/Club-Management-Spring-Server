@@ -33,6 +33,7 @@
     <include file="config/liquibase/changelog/20201028013345_added_entity_YearSession.xml" relativeToChangelogFile="false"/>
     <include file="config/liquibase/changelog/20201028013346_added_entity_Faculty.xml" relativeToChangelogFile="false"/>
 
+    <include file="config/liquibase/changelog/20201206135020_added_entity_EventRegistrationClosingCriteria.xml" relativeToChangelogFile="false"/>
     <!-- jhipster-needle-liquibase-add-changelog - JHipster will add liquibase changelogs here -->
     <!-- jhipster-needle-liquibase-add-constraints-changelog - JHipster will add liquibase constraints changelogs here -->
 

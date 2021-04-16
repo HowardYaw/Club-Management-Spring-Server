@@ -2,9 +2,12 @@ package com.thirdcc.webapp.service.impl;
 
 import com.thirdcc.webapp.service.ClaimService;
 import com.thirdcc.webapp.domain.Claim;
+import com.thirdcc.webapp.domain.enumeration.ClaimStatus;
+import com.thirdcc.webapp.exception.BadRequestException;
 import com.thirdcc.webapp.repository.ClaimRepository;
 import com.thirdcc.webapp.service.dto.ClaimDTO;
 import com.thirdcc.webapp.service.mapper.ClaimMapper;
+import java.util.HashSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,44 +49,42 @@ public class ClaimServiceImpl implements ClaimService {
         claim = claimRepository.save(claim);
         return claimMapper.toDto(claim);
     }
-
+    
     /**
-     * Get all the claims.
+     * Update the claimStatus of the claim to "claimStatus" for "id" claim
+     *
+     * @param id the id of the entity
+     * @param claimStatus the new claimStatus of the entity
+     * @return the entity.
+     */
+    @Override
+    public ClaimDTO updateStatus(Long id, ClaimStatus claimStatus) {
+        log.debug("Request to update status of claim: {}, to {}", id, claimStatus);
+        Claim claim = claimRepository.findById(id)
+            .orElseThrow(() -> new BadRequestException("Claim not exists for id: " + id));
+        if(!ClaimStatus.OPEN.equals(claim.getStatus())){
+            throw new BadRequestException("Claim is not open, not allow to update");
+        }
+        claim.setStatus(claimStatus);
+        return claimMapper.toDto(
+            claimRepository.save(claim)
+        );
+    }
+    
+    /**
+     * Get all claims with OPEN status.
      *
      * @param pageable the pagination information.
      * @return the list of entities.
      */
     @Override
     @Transactional(readOnly = true)
-    public Page<ClaimDTO> findAll(Pageable pageable) {
+    public Page<ClaimDTO> findAllOpenClaims(Pageable pageable) {
         log.debug("Request to get all Claims");
-        return claimRepository.findAll(pageable)
+        HashSet<ClaimStatus> openClaimStatus = new HashSet<ClaimStatus>() {{
+            add(ClaimStatus.OPEN);
+        }};
+        return claimRepository.findAllByStatusIn(pageable, openClaimStatus)
             .map(claimMapper::toDto);
-    }
-
-
-    /**
-     * Get one claim by id.
-     *
-     * @param id the id of the entity.
-     * @return the entity.
-     */
-    @Override
-    @Transactional(readOnly = true)
-    public Optional<ClaimDTO> findOne(Long id) {
-        log.debug("Request to get Claim : {}", id);
-        return claimRepository.findById(id)
-            .map(claimMapper::toDto);
-    }
-
-    /**
-     * Delete the claim by id.
-     *
-     * @param id the id of the entity.
-     */
-    @Override
-    public void delete(Long id) {
-        log.debug("Request to delete Claim : {}", id);
-        claimRepository.deleteById(id);
     }
 }
