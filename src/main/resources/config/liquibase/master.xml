@@ -45,4 +45,8 @@
     <include file="config/liquibase/changelog/20210413_added_columns_User.xml" relativeToChangelogFile="false" />
     <include file="config/liquibase/changelog/20210413_added_entity_CourseProgram.xml" relativeToChangelogFile="false" />
     <include file="config/liquibase/changelog/20210413_alter_columns_UserUniInfo.xml" relativeToChangelogFile="false" />
+
+    <include file="config/liquibase/changelog/20210416_load_test_faker_Faculty.xml" relativeToChangelogFile="false" />
+    <include file="config/liquibase/changelog/20210416_load_test_faker_CourseProgram.xml" relativeToChangelogFile="false" />
+
 </databaseChangeLog>
