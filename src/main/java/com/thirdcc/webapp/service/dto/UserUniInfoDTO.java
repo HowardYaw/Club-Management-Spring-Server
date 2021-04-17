@@ -1,7 +1,11 @@
 package com.thirdcc.webapp.service.dto;
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.Objects;
+
+import com.thirdcc.webapp.domain.UserUniInfo;
+import com.thirdcc.webapp.domain.enumeration.Gender;
 import com.thirdcc.webapp.domain.enumeration.UserUniStatus;
 
 /**
@@ -13,20 +17,25 @@ public class UserUniInfoDTO implements Serializable {
 
     private Long userId;
 
-    private String faculty;
+    private String firstName;
 
-    private String program;
+    private String lastName;
+
+    private Gender gender;
+
+    private String phoneNumber;
+
+    private LocalDate dateOfBirth;
+
+    private Long courseProgramId;
 
     private String yearSession;
 
     private Integer intakeSemester;
 
-    private BigDecimal yearOfStudy;
-
     private String stayIn;
 
     private UserUniStatus status;
-
 
     public Long getId() {
         return id;
@@ -44,20 +53,52 @@ public class UserUniInfoDTO implements Serializable {
         this.userId = userId;
     }
 
-    public String getFaculty() {
-        return faculty;
+    public String getFirstName() {
+        return firstName;
     }
 
-    public void setFaculty(String faculty) {
-        this.faculty = faculty;
+    public void setFirstName(String firstName) {
+        this.firstName = firstName;
     }
 
-    public String getProgram() {
-        return program;
+    public String getLastName() {
+        return lastName;
     }
 
-    public void setProgram(String program) {
-        this.program = program;
+    public void setLastName(String lastName) {
+        this.lastName = lastName;
+    }
+
+    public Gender getGender() {
+        return gender;
+    }
+
+    public void setGender(Gender gender) {
+        this.gender = gender;
+    }
+
+    public String getPhoneNumber() {
+        return phoneNumber;
+    }
+
+    public void setPhoneNumber(String phoneNumber) {
+        this.phoneNumber = phoneNumber;
+    }
+
+    public LocalDate getDateOfBirth() {
+        return dateOfBirth;
+    }
+
+    public void setDateOfBirth(LocalDate dateOfBirth) {
+        this.dateOfBirth = dateOfBirth;
+    }
+
+    public Long getCourseProgramId() {
+        return courseProgramId;
+    }
+
+    public void setCourseProgramId(Long courseProgramId) {
+        this.courseProgramId = courseProgramId;
     }
 
     public String getYearSession() {
@@ -74,14 +115,6 @@ public class UserUniInfoDTO implements Serializable {
 
     public void setIntakeSemester(Integer intakeSemester) {
         this.intakeSemester = intakeSemester;
-    }
-
-    public BigDecimal getYearOfStudy() {
-        return yearOfStudy;
-    }
-
-    public void setYearOfStudy(BigDecimal yearOfStudy) {
-        this.yearOfStudy = yearOfStudy;
     }
 
     public String getStayIn() {
@@ -105,34 +138,32 @@ public class UserUniInfoDTO implements Serializable {
         if (this == o) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (!(o instanceof UserUniInfoDTO)) {
             return false;
         }
-
-        UserUniInfoDTO userUniInfoDTO = (UserUniInfoDTO) o;
-        if (userUniInfoDTO.getId() == null || getId() == null) {
-            return false;
-        }
-        return Objects.equals(getId(), userUniInfoDTO.getId());
+        return id != null && id.equals(((UserUniInfoDTO) o).id);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(getId());
+        return 31;
     }
 
     @Override
     public String toString() {
         return "UserUniInfoDTO{" +
-            "id=" + getId() +
-            ", userId=" + getUserId() +
-            ", faculty='" + getFaculty() + "'" +
-            ", program='" + getProgram() + "'" +
-            ", yearSession='" + getYearSession() + "'" +
-            ", intakeSemester=" + getIntakeSemester() +
-            ", yearOfStudy=" + getYearOfStudy() +
-            ", stayIn='" + getStayIn() + "'" +
-            ", status='" + getStatus() + "'" +
-            "}";
+            "id=" + id +
+            ", userId=" + userId +
+            ", firstName='" + firstName + '\'' +
+            ", lastName='" + lastName + '\'' +
+            ", gender=" + gender +
+            ", phoneNumber='" + phoneNumber + '\'' +
+            ", dateOfBirth=" + dateOfBirth +
+            ", courseProgramId=" + courseProgramId +
+            ", yearSession='" + yearSession + '\'' +
+            ", intakeSemester=" + intakeSemester +
+            ", stayIn='" + stayIn + '\'' +
+            ", status=" + status +
+            '}';
     }
 }

@@ -40,4 +40,6 @@ public interface UserUniInfoService {
      * @param id the id of the entity.
      */
     void delete(Long id);
+
+    boolean isUserUniInfoCompleted(Long userId);
 }
