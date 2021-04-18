@@ -8,7 +8,7 @@
 
     <changeSet id="20210416_load_test_faker_Faculty-1" author="KaChun" context="testFaker">
         <loadData
-                  file="config/liquibase/data/faculty.csv"
+                  file="config/liquibase/data/faculty_TestFaker.csv"
                   separator=";"
                   tableName="faculty">
             <column name="id" type="numeric"/>
