@@ -27,6 +27,8 @@ public class UserUniInfoDTO implements Serializable {
 
     private LocalDate dateOfBirth;
 
+    private String imageUrl;
+
     private Long courseProgramId;
 
     private String yearSession;
@@ -133,6 +135,14 @@ public class UserUniInfoDTO implements Serializable {
         this.status = status;
     }
 
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -164,6 +174,7 @@ public class UserUniInfoDTO implements Serializable {
             ", intakeSemester=" + intakeSemester +
             ", stayIn='" + stayIn + '\'' +
             ", status=" + status +
+            ", imageUrl=" + imageUrl +
             '}';
     }
 }

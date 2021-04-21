@@ -1,5 +1,9 @@
 package com.thirdcc.webapp.web.rest;
 
+import com.thirdcc.webapp.domain.User;
+import com.thirdcc.webapp.exception.BadRequestException;
+import com.thirdcc.webapp.security.SecurityUtils;
+import com.thirdcc.webapp.service.UserService;
 import com.thirdcc.webapp.service.UserUniInfoService;
 import com.thirdcc.webapp.web.rest.errors.BadRequestAlertException;
 import com.thirdcc.webapp.service.dto.UserUniInfoDTO;
@@ -34,8 +38,13 @@ public class UserUniInfoResource {
 
     private final UserUniInfoService userUniInfoService;
 
-    public UserUniInfoResource(UserUniInfoService userUniInfoService) {
+    private final UserService userService;
+
+    public UserUniInfoResource(UserUniInfoService userUniInfoService,
+                               UserService userService
+    ) {
         this.userUniInfoService = userUniInfoService;
+        this.userService = userService;
     }
 
     /**
@@ -99,6 +108,24 @@ public class UserUniInfoResource {
     public ResponseEntity<UserUniInfoDTO> getUserUniInfo(@PathVariable Long id) {
         log.debug("REST request to get UserUniInfo : {}", id);
         Optional<UserUniInfoDTO> userUniInfoDTO = userUniInfoService.findOne(id);
+        return ResponseUtil.wrapOrNotFound(userUniInfoDTO);
+    }
+
+    /**
+     * {@code GET /users/current} : get current login user details
+     *
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the user, or with status {@code 404 (Not Found)}.
+     */
+    @GetMapping("/user-uni-infos/current")
+    public ResponseEntity<UserUniInfoDTO> getCurrentUserDetailsWithUniInfo() {
+        log.debug("REST request to get Current User Details with Uni Info");
+        String userLogin = SecurityUtils
+            .getCurrentUserLogin()
+            .orElseThrow(() -> new BadRequestException("User not Login"));
+        User user = userService.getUserByLogin(userLogin)
+            .orElseThrow(() -> new BadRequestException("User not found"));
+        Optional<UserUniInfoDTO> userUniInfoDTO = userUniInfoService.getUserUniInfoByUserId(user.getId());
+        userUniInfoDTO = userUniInfoService.mapUserUniInfoWithUser(userUniInfoDTO.orElse(new UserUniInfoDTO()), user);
         return ResponseUtil.wrapOrNotFound(userUniInfoDTO);
     }
 

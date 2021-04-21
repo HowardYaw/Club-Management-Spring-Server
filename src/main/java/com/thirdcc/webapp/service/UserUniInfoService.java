@@ -1,5 +1,6 @@
 package com.thirdcc.webapp.service;
 
+import com.thirdcc.webapp.domain.User;
 import com.thirdcc.webapp.service.dto.UserUniInfoDTO;
 
 import java.util.List;
@@ -42,4 +43,8 @@ public interface UserUniInfoService {
     void delete(Long id);
 
     boolean isUserUniInfoCompleted(Long userId);
+
+    Optional<UserUniInfoDTO> getUserUniInfoByUserId(Long id);
+
+    Optional<UserUniInfoDTO> mapUserUniInfoWithUser(UserUniInfoDTO userUniInfoDTO, User user);
 }
