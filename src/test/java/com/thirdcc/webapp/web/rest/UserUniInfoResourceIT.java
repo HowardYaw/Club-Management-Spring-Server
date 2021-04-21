@@ -228,6 +228,33 @@ public class UserUniInfoResourceIT {
     @Test
     @Transactional
     @WithNormalUser
+    public void getCurrentUserDetailsWithUniInfo() throws Exception {
+        User user = getCurrentUser();
+        UserUniInfo userUniInfo = createEntity(em);
+        userUniInfo.setUserId(user.getId());
+        userUniInfoRepository.save(userUniInfo);
+
+        restUserUniInfoMockMvc.perform(get("/api/user-uni-infos/current"))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
+            .andExpect(jsonPath("$.id").value(userUniInfo.getId().intValue()))
+            .andExpect(jsonPath("$.userId").value(user.getId().intValue()))
+            .andExpect(jsonPath("$.courseProgramId").value(DEFAULT_COURSE_PROGRAM_ID.intValue()))
+            .andExpect(jsonPath("$.yearSession").value(DEFAULT_YEAR_SESSION))
+            .andExpect(jsonPath("$.intakeSemester").value(DEFAULT_INTAKE_SEMESTER))
+            .andExpect(jsonPath("$.stayIn").value(DEFAULT_STAY_IN))
+            .andExpect(jsonPath("$.status").value(DEFAULT_STATUS.toString()))
+            .andExpect(jsonPath("$.firstName").value(user.getFirstName()))
+            .andExpect(jsonPath("$.lastName").value(user.getLastName()))
+            .andExpect(jsonPath("$.gender").value(user.getGender()))
+            .andExpect(jsonPath("$.dateOfBirth").value(user.getDateOfBirth()))
+            .andExpect(jsonPath("$.phoneNumber").value(user.getPhoneNumber()))
+            .andExpect(jsonPath("$.imageUrl").value(user.getImageUrl()));
+    }
+
+    @Test
+    @Transactional
+    @WithNormalUser
     public void updateUserUniInfo() throws Exception {
 
         User currentUser = SecurityUtils
@@ -342,5 +369,12 @@ public class UserUniInfoResourceIT {
     public void testEntityFromId() {
         assertThat(userUniInfoMapper.fromId(42L).getId()).isEqualTo(42);
         assertThat(userUniInfoMapper.fromId(null)).isNull();
+    }
+
+    private User getCurrentUser() {
+        return SecurityUtils
+            .getCurrentUserLogin()
+            .flatMap(userRepository::findOneWithAuthoritiesByLogin)
+            .orElseThrow(() -> new BadRequestException("Cannot find user"));
     }
 }
