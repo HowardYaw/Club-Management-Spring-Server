@@ -148,13 +148,12 @@ public class EventAttendeeResource {
      *
      * @param eventId the id of the event to retrieve list of eventAttendeeDTO.
      * @param userId theid of the user to retrieve list of eventAttendeeDTO.
-     * @return the {@link ResponseEntity} with status {@code 200 (OK) or 400 (BadRequest)}.
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)}.
      */
     @GetMapping("/event-attendees/event/{eventId}/user/{userId}")
     public ResponseEntity<EventAttendeeDTO> getEventAttendeeByEventIdAndUserId(@PathVariable Long eventId, @PathVariable Long userId) {
         log.debug("REST request to get a EventAttendee with event Id and user Id");
         Optional<EventAttendeeDTO> eventAttendeeDTO = eventAttendeeService.findOneByEventIdAndUserId(eventId, userId);
-
         return ResponseEntity.ok().body(eventAttendeeDTO.orElse(new EventAttendeeDTO()));
     }
 }
