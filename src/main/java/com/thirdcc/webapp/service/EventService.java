@@ -39,6 +39,21 @@ public interface EventService {
      */
     Page<EventDTO> findAllByDateRange(Pageable pageable, String fromDate, String toDate);
 
+    /**
+     * Get all the upcoming events.
+     *
+     * @param pageable the pagination information.
+     * @return the list of entities.
+     */
+    Page<EventDTO> findAllUpcomingEvents(Pageable pageable);
+
+    /**
+     * Get all the past events.
+     *
+     * @param pageable the pagination information.
+     * @return the list of entities.
+     */
+    Page<EventDTO> findAllPastEvents(Pageable pageable);
 
     /**
      * Get the "id" event.

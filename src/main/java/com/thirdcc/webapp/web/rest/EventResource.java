@@ -110,6 +110,43 @@ public class EventResource {
     }
 
     /**
+     * {@code GET  /events} : get all the upcoming events.
+     *
+     * @param pageable the pagination information.
+     * @param queryParams a {@link MultiValueMap} query parameters.
+     * @param uriBuilder a {@link UriComponentsBuilder} URI builder.
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the list of events in body.
+     */
+    @GetMapping("/events/upcoming")
+    public ResponseEntity<List<EventDTO>> getAllUpcomingEvents(Pageable pageable, @RequestParam MultiValueMap<String, String> queryParams, UriComponentsBuilder uriBuilder) {
+        log.debug("REST request to get a page of past Events");
+
+        Page<EventDTO> page = eventService.findAllUpcomingEvents(pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(uriBuilder.queryParams(queryParams), page);
+        return ResponseEntity.ok().headers(headers).body(page.getContent());
+    }
+
+
+    /**
+     * {@code GET  /events} : get all the past events.
+     *
+     * @param pageable the pagination information.
+     * @param queryParams a {@link MultiValueMap} query parameters.
+     * @param uriBuilder a {@link UriComponentsBuilder} URI builder.
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the list of events in body.
+     */
+    @GetMapping("/events/past")
+    public ResponseEntity<List<EventDTO>> getAllPastEvents(Pageable pageable, @RequestParam MultiValueMap<String, String> queryParams, UriComponentsBuilder uriBuilder) {
+        log.debug("REST request to get a page of past Events");
+
+        Page<EventDTO> page = eventService.findAllPastEvents(pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(uriBuilder.queryParams(queryParams), page);
+        return ResponseEntity.ok().headers(headers).body(page.getContent());
+    }
+
+    /**
      * {@code GET  /events/:id} : get the "id" event.
      *
      * @param id the id of the eventDTO to retrieve.

@@ -76,6 +76,45 @@ public class EventServiceImpl implements EventService {
             .map(eventMapper::toDto);
     }
 
+    /**
+     * Get all the upcoming events.
+     *
+     * @return the list of entity.
+     */
+    @Override
+    public Page<EventDTO> findAllUpcomingEvents(Pageable pageable) {
+        log.debug("Request to get all Upcoming Events");
+
+        Set<EventStatus> eventStatuses = new HashSet<EventStatus>() {{
+            add(EventStatus.OPEN);
+            add(EventStatus.POSTPONED);
+        }};
+
+        Instant from = Instant.now();
+
+        return eventRepository.findEventsByStartDateAfterAndStatusIn(from, eventStatuses, pageable)
+            .map(eventMapper::toDto);
+    }
+
+    /**
+     * Get all the past events.
+     *
+     * @return the list of entity.
+     */
+    @Override
+    public Page<EventDTO> findAllPastEvents(Pageable pageable) {
+        log.debug("Request to get all Past Events");
+
+        Set<EventStatus> eventStatuses = new HashSet<EventStatus>() {{
+            add(EventStatus.CANCELLED);
+        }};
+
+        Instant from = Instant.now();
+
+        return eventRepository.findEventsByStartDateBeforeOrStatusIn(from, eventStatuses, pageable)
+            .map(eventMapper::toDto);
+    }
+
 
     /**
      * Get one event by id.
