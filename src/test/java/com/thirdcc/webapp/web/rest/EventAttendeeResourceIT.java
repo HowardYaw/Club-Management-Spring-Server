@@ -44,6 +44,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.nullValue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -171,7 +172,7 @@ public class EventAttendeeResourceIT {
             .provideTransport(UPDATED_PROVIDE_TRANSPORT);
         return eventAttendee;
     }
-    
+
     public static UserUniInfo createUserUniInfoEntity() {
         UserUniInfo userUniInfo = new UserUniInfo()
             .userId(DEFAULT_USER_ID)
@@ -531,19 +532,29 @@ public class EventAttendeeResourceIT {
 
         //Save events and attendee
         restEventAttendeeMockMvc.perform(get("/api/event-attendees/event/{eventId}/user/{userId}", savedEvent.getId(), Long.MAX_VALUE ))
-            .andExpect(status().isNotFound());
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
+            .andExpect(jsonPath("$.id").value(nullValue()))
+            .andExpect(jsonPath("$.userId").value(nullValue()))
+            .andExpect(jsonPath("$.eventId").value(nullValue()))
+            .andExpect(jsonPath("$.provideTransport").value(nullValue()));
 
     }
 
     @Test
-    public void getEventAttendeeByEventIdAndUserId_withNonExistingEvent_ShouldThrow404() throws Exception {
+    public void getEventAttendeeByEventIdAndUserId_withNonExistingEvent_ShouldThrow200() throws Exception {
         //Initialize the event and eventAttendee
         Event savedEvent = initEventDB();
         initEventAttendeeDB();
 
         //Save events and attendee
         restEventAttendeeMockMvc.perform(get("/api/event-attendees/event/{eventId}/user/{userId}", Long.MAX_VALUE, user.getId() ))
-            .andExpect(status().isNotFound());
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
+            .andExpect(jsonPath("$.id").value(nullValue()))
+            .andExpect(jsonPath("$.userId").value(nullValue()))
+            .andExpect(jsonPath("$.eventId").value(nullValue()))
+            .andExpect(jsonPath("$.provideTransport").value(nullValue()));
     }
 
     @Test
@@ -597,7 +608,7 @@ public class EventAttendeeResourceIT {
         userUniInfo.setUserId(user.getId());
         return userUniInfoRepository.saveAndFlush(userUniInfo);
     }
-    
+
     private User getLoggedInUser() {
         return userService.getUserWithAuthorities()
             .orElseThrow(() -> new BadRequestException("User not login"));

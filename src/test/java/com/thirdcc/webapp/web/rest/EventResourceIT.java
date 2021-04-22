@@ -95,9 +95,6 @@ public class EventResourceIT {
     private UserService userService;
 
     @Autowired
-    private EntityManager em;
-
-    @Autowired
     private MockMvc restEventMockMvc;
 
     private Event event;
@@ -113,7 +110,7 @@ public class EventResourceIT {
      * This is a static method, as tests for other entities might also need it,
      * if they test an entity which requires the current entity.
      */
-    public static Event createEntity(EntityManager em) {
+    public static Event createEntity() {
         return new Event()
             .name(DEFAULT_NAME)
             .description(DEFAULT_DESCRIPTION)
@@ -125,13 +122,14 @@ public class EventResourceIT {
             .requiredTransport(DEFAULT_REQUIRED_TRANSPORT)
             .status(DEFAULT_STATUS);
     }
+
     /**
      * Create an updated entity for this test.
      *
      * This is a static method, as tests for other entities might also need it,
      * if they test an entity which requires the current entity.
      */
-    public static Event createUpdatedEntity(EntityManager em) {
+    public static Event createUpdatedEntity() {
         return new Event()
             .name(UPDATED_NAME)
             .description(UPDATED_DESCRIPTION)
@@ -151,7 +149,7 @@ public class EventResourceIT {
 
     @BeforeEach
     public void initTest() {
-        event = createEntity(em);
+        event = createEntity();
     }
 
     @Test
@@ -236,6 +234,54 @@ public class EventResourceIT {
             .andExpect(jsonPath("$.[*].remarks").value(hasItem(DEFAULT_REMARKS)))
             .andExpect(jsonPath("$.[*].venue").value(hasItem(DEFAULT_VENUE)))
             .andExpect(jsonPath("$.[*].startDate").value(hasItem(DEFAULT_START_DATE.toString())))
+            .andExpect(jsonPath("$.[*].endDate").value(hasItem(DEFAULT_END_DATE.toString())))
+            .andExpect(jsonPath("$.[*].fee").value(hasItem(DEFAULT_FEE.intValue())))
+            .andExpect(jsonPath("$.[*].requiredTransport").value(hasItem(DEFAULT_REQUIRED_TRANSPORT)))
+            .andExpect(jsonPath("$.[*].status").value(hasItem(DEFAULT_STATUS.toString())));
+    }
+
+    @Test
+    @Transactional
+    public void getAllUpcomingEvents() throws Exception {
+        // Initialize the database
+        Event savedEvent = createEntity();
+        savedEvent.setStartDate(Instant.now().plus(20, ChronoUnit.DAYS));
+        eventRepository.saveAndFlush(savedEvent);
+
+        // Get all the eventList
+        restEventMockMvc.perform(get("/api/events?sort=id,desc"))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
+            .andExpect(jsonPath("$.[*].id").value(hasItem(savedEvent.getId().intValue())))
+            .andExpect(jsonPath("$.[*].name").value(hasItem(DEFAULT_NAME)))
+            .andExpect(jsonPath("$.[*].description").value(hasItem(DEFAULT_DESCRIPTION)))
+            .andExpect(jsonPath("$.[*].remarks").value(hasItem(DEFAULT_REMARKS)))
+            .andExpect(jsonPath("$.[*].venue").value(hasItem(DEFAULT_VENUE)))
+            .andExpect(jsonPath("$.[*].startDate").value(hasItem(savedEvent.getStartDate().toString())))
+            .andExpect(jsonPath("$.[*].endDate").value(hasItem(DEFAULT_END_DATE.toString())))
+            .andExpect(jsonPath("$.[*].fee").value(hasItem(DEFAULT_FEE.intValue())))
+            .andExpect(jsonPath("$.[*].requiredTransport").value(hasItem(DEFAULT_REQUIRED_TRANSPORT)))
+            .andExpect(jsonPath("$.[*].status").value(hasItem(DEFAULT_STATUS.toString())));
+    }
+
+    @Test
+    @Transactional
+    public void getAllPastEvents() throws Exception {
+        // Initialize the database
+        Event savedEvent = createEntity();
+        savedEvent.setStartDate(Instant.now().minus(20, ChronoUnit.DAYS));
+        eventRepository.saveAndFlush(savedEvent);
+
+        // Get all the eventList
+        restEventMockMvc.perform(get("/api/events?sort=id,desc"))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
+            .andExpect(jsonPath("$.[*].id").value(hasItem(savedEvent.getId().intValue())))
+            .andExpect(jsonPath("$.[*].name").value(hasItem(DEFAULT_NAME)))
+            .andExpect(jsonPath("$.[*].description").value(hasItem(DEFAULT_DESCRIPTION)))
+            .andExpect(jsonPath("$.[*].remarks").value(hasItem(DEFAULT_REMARKS)))
+            .andExpect(jsonPath("$.[*].venue").value(hasItem(DEFAULT_VENUE)))
+            .andExpect(jsonPath("$.[*].startDate").value(hasItem(savedEvent.getStartDate().toString())))
             .andExpect(jsonPath("$.[*].endDate").value(hasItem(DEFAULT_END_DATE.toString())))
             .andExpect(jsonPath("$.[*].fee").value(hasItem(DEFAULT_FEE.intValue())))
             .andExpect(jsonPath("$.[*].requiredTransport").value(hasItem(DEFAULT_REQUIRED_TRANSPORT)))
@@ -334,7 +380,6 @@ public class EventResourceIT {
         // Update the event
         Event updatedEvent = eventRepository.findById(event.getId()).get();
         // Disconnect from session so that the updates on updatedEvent are not directly saved in db
-        em.detach(updatedEvent);
         updatedEvent
             .name(UPDATED_NAME)
             .description(UPDATED_DESCRIPTION)
