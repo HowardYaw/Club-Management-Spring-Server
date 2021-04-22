@@ -171,7 +171,7 @@ public class EventAttendeeResourceIT {
             .provideTransport(UPDATED_PROVIDE_TRANSPORT);
         return eventAttendee;
     }
-    
+
     public static UserUniInfo createUserUniInfoEntity() {
         UserUniInfo userUniInfo = new UserUniInfo()
             .userId(DEFAULT_USER_ID)
@@ -524,26 +524,26 @@ public class EventAttendeeResourceIT {
     }
 
     @Test
-    public void getEventAttendeeByEventIdAndUserId_withNonExistingUser_ShouldThrow404() throws Exception {
+    public void getEventAttendeeByEventIdAndUserId_withNonExistingUser_ShouldReturnOk() throws Exception {
         //Initialize the event and eventAttendee
         Event savedEvent = initEventDB();
         initEventAttendeeDB();
 
         //Save events and attendee
         restEventAttendeeMockMvc.perform(get("/api/event-attendees/event/{eventId}/user/{userId}", savedEvent.getId(), Long.MAX_VALUE ))
-            .andExpect(status().isNotFound());
+            .andExpect(status().isOk());
 
     }
 
     @Test
-    public void getEventAttendeeByEventIdAndUserId_withNonExistingEvent_ShouldThrow404() throws Exception {
+    public void getEventAttendeeByEventIdAndUserId_withNonExistingEvent_ShouldReturnOk() throws Exception {
         //Initialize the event and eventAttendee
         Event savedEvent = initEventDB();
         initEventAttendeeDB();
 
         //Save events and attendee
         restEventAttendeeMockMvc.perform(get("/api/event-attendees/event/{eventId}/user/{userId}", Long.MAX_VALUE, user.getId() ))
-            .andExpect(status().isNotFound());
+            .andExpect(status().isOk());
     }
 
     @Test
@@ -597,7 +597,7 @@ public class EventAttendeeResourceIT {
         userUniInfo.setUserId(user.getId());
         return userUniInfoRepository.saveAndFlush(userUniInfo);
     }
-    
+
     private User getLoggedInUser() {
         return userService.getUserWithAuthorities()
             .orElseThrow(() -> new BadRequestException("User not login"));

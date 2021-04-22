@@ -7,6 +7,7 @@ import com.thirdcc.webapp.domain.Event;
 import com.thirdcc.webapp.repository.EventRepository;
 import com.thirdcc.webapp.service.dto.EventDTO;
 import com.thirdcc.webapp.service.mapper.EventMapper;
+import com.thirdcc.webapp.web.rest.errors.BadRequestAlertException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,6 +27,8 @@ import java.util.Set;
 @Service
 @Transactional
 public class EventServiceImpl implements EventService {
+
+    private static final String ENTITY_NAME = "event";
 
     private final Logger log = LoggerFactory.getLogger(EventServiceImpl.class);
 
@@ -47,6 +50,9 @@ public class EventServiceImpl implements EventService {
     @Override
     public EventDTO save(EventDTO eventDTO) {
         log.debug("Request to save Event : {}", eventDTO);
+        if (eventDTO.getName().isEmpty()){
+            throw new BadRequestAlertException("Invalid Parameters", ENTITY_NAME, "noname");
+        }
         Event event = eventMapper.toEntity(eventDTO);
         event = eventRepository.save(event);
         return eventMapper.toDto(event);

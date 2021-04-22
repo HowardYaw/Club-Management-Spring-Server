@@ -154,6 +154,7 @@ public class EventAttendeeResource {
     public ResponseEntity<EventAttendeeDTO> getEventAttendeeByEventIdAndUserId(@PathVariable Long eventId, @PathVariable Long userId) {
         log.debug("REST request to get a EventAttendee with event Id and user Id");
         Optional<EventAttendeeDTO> eventAttendeeDTO = eventAttendeeService.findOneByEventIdAndUserId(eventId, userId);
-        return ResponseUtil.wrapOrNotFound(eventAttendeeDTO);
+
+        return ResponseEntity.ok().body(eventAttendeeDTO.orElse(new EventAttendeeDTO()));
     }
 }
