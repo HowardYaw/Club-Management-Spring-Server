@@ -525,36 +525,26 @@ public class EventAttendeeResourceIT {
     }
 
     @Test
-    public void getEventAttendeeByEventIdAndUserId_withNonExistingUser_ShouldThrow404() throws Exception {
+    public void getEventAttendeeByEventIdAndUserId_withNonExistingUser_ShouldReturnOk() throws Exception {
         //Initialize the event and eventAttendee
         Event savedEvent = initEventDB();
         initEventAttendeeDB();
 
         //Save events and attendee
         restEventAttendeeMockMvc.perform(get("/api/event-attendees/event/{eventId}/user/{userId}", savedEvent.getId(), Long.MAX_VALUE ))
-            .andExpect(status().isOk())
-            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
-            .andExpect(jsonPath("$.id").value(nullValue()))
-            .andExpect(jsonPath("$.userId").value(nullValue()))
-            .andExpect(jsonPath("$.eventId").value(nullValue()))
-            .andExpect(jsonPath("$.provideTransport").value(nullValue()));
+            .andExpect(status().isOk());
 
     }
 
     @Test
-    public void getEventAttendeeByEventIdAndUserId_withNonExistingEvent_ShouldThrow200() throws Exception {
+    public void getEventAttendeeByEventIdAndUserId_withNonExistingEvent_ShouldReturnOk() throws Exception {
         //Initialize the event and eventAttendee
         Event savedEvent = initEventDB();
         initEventAttendeeDB();
 
         //Save events and attendee
         restEventAttendeeMockMvc.perform(get("/api/event-attendees/event/{eventId}/user/{userId}", Long.MAX_VALUE, user.getId() ))
-            .andExpect(status().isOk())
-            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
-            .andExpect(jsonPath("$.id").value(nullValue()))
-            .andExpect(jsonPath("$.userId").value(nullValue()))
-            .andExpect(jsonPath("$.eventId").value(nullValue()))
-            .andExpect(jsonPath("$.provideTransport").value(nullValue()));
+            .andExpect(status().isOk());
     }
 
     @Test
