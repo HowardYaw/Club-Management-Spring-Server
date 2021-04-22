@@ -249,7 +249,7 @@ public class EventResourceIT {
         eventRepository.saveAndFlush(savedEvent);
 
         // Get all the eventList
-        restEventMockMvc.perform(get("/api/events?sort=id,desc"))
+        restEventMockMvc.perform(get("/api/events/upcoming"))
             .andExpect(status().isOk())
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
             .andExpect(jsonPath("$.[*].id").value(hasItem(savedEvent.getId().intValue())))
@@ -273,7 +273,7 @@ public class EventResourceIT {
         eventRepository.saveAndFlush(savedEvent);
 
         // Get all the eventList
-        restEventMockMvc.perform(get("/api/events?sort=id,desc"))
+        restEventMockMvc.perform(get("/api/events/past"))
             .andExpect(status().isOk())
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
             .andExpect(jsonPath("$.[*].id").value(hasItem(savedEvent.getId().intValue())))
