@@ -46,5 +46,5 @@ public interface UserUniInfoService {
 
     Optional<UserUniInfoDTO> getUserUniInfoByUserId(Long id);
 
-    Optional<UserUniInfoDTO> mapUserUniInfoWithUser(UserUniInfoDTO userUniInfoDTO, User user);
+    UserUniInfoDTO mapUserUniInfoWithUser(UserUniInfoDTO userUniInfoDTO, User user);
 }

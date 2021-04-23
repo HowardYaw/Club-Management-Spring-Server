@@ -125,8 +125,8 @@ public class UserUniInfoResource {
         User user = userService.getUserByLogin(userLogin)
             .orElseThrow(() -> new BadRequestException("User not found"));
         Optional<UserUniInfoDTO> userUniInfoDTO = userUniInfoService.getUserUniInfoByUserId(user.getId());
-        userUniInfoDTO = userUniInfoService.mapUserUniInfoWithUser(userUniInfoDTO.orElse(new UserUniInfoDTO()), user);
-        return ResponseUtil.wrapOrNotFound(userUniInfoDTO);
+        UserUniInfoDTO result = userUniInfoService.mapUserUniInfoWithUser(userUniInfoDTO.orElse(new UserUniInfoDTO()), user);
+        return ResponseEntity.ok().body(result);
     }
 
     /**

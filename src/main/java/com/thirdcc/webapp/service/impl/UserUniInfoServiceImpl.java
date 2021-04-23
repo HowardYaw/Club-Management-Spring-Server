@@ -131,13 +131,14 @@ public class UserUniInfoServiceImpl implements UserUniInfoService {
     }
 
     @Override
-    public Optional<UserUniInfoDTO> mapUserUniInfoWithUser(UserUniInfoDTO userUniInfoDTO, User user) {
+    public UserUniInfoDTO mapUserUniInfoWithUser(UserUniInfoDTO userUniInfoDTO, User user) {
+        userUniInfoDTO.setUserId(user.getId());
         userUniInfoDTO.setFirstName(user.getFirstName());
         userUniInfoDTO.setLastName(user.getLastName());
         userUniInfoDTO.setGender(user.getGender());
         userUniInfoDTO.setPhoneNumber(user.getPhoneNumber());
         userUniInfoDTO.setDateOfBirth(user.getDateOfBirth());
         userUniInfoDTO.setImageUrl(user.getImageUrl());
-        return Optional.of(userUniInfoDTO);
+        return userUniInfoDTO;
     }
 }
