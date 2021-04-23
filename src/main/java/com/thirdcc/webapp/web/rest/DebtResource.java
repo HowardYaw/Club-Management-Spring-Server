@@ -20,6 +20,9 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import org.springframework.security.access.prepost.PreAuthorize;
+import com.thirdcc.webapp.web.rest.errors.BadRequestAlertException;
+import java.net.URI;
+import java.net.URISyntaxException;
 
 /**
  * REST controller for managing {@link com.thirdcc.webapp.domain.Debt}.
@@ -39,6 +42,25 @@ public class DebtResource {
 
     public DebtResource(DebtService debtService) {
         this.debtService = debtService;
+    }
+    
+    /**
+     * {@code POST  /debts} : Create a new debt.
+     *
+     * @param debtDTO the debtDTO to create.
+     * @return the {@link ResponseEntity} with status {@code 201 (Created)} and with body the new debtDTO, or with status {@code 400 (Bad Request)} if the debt has already an ID.
+     * @throws URISyntaxException if the Location URI syntax is incorrect.
+     */
+    @PostMapping("/debts")
+    public ResponseEntity<DebtDTO> createDebt(@RequestBody DebtDTO debtDTO) throws URISyntaxException {
+        log.debug("REST request to save Debt : {}", debtDTO);
+        if (debtDTO.getId() != null) {
+            throw new BadRequestAlertException("A new debt cannot already have an ID", ENTITY_NAME, "idexists");
+        }
+        DebtDTO result = debtService.save(debtDTO);
+        return ResponseEntity.created(new URI("/api/debts/" + result.getId()))
+            .headers(HeaderUtil.createEntityCreationAlert(applicationName, true, ENTITY_NAME, result.getId().toString()))
+            .body(result);
     }
 
     @PutMapping("/debts/{id}/status/{debtStatus}")

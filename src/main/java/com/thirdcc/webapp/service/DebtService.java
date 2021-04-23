@@ -11,13 +11,13 @@ import org.springframework.data.domain.Pageable;
  */
 public interface DebtService {
 
-//    /**
-//     * Save a debt.
-//     *
-//     * @param debtDTO the entity to save.
-//     * @return the persisted entity.
-//     */
-//    DebtDTO save(DebtDTO debtDTO);
+    /**
+     * Save a debt.
+     *
+     * @param debtDTO the entity to save.
+     * @return the persisted entity.
+     */
+    DebtDTO save(DebtDTO debtDTO);
 //    
 //    /**
 //     * Update a debt.

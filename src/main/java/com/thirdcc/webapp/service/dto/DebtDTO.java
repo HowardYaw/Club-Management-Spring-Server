@@ -27,6 +27,10 @@ public class DebtDTO implements Serializable {
     private Instant lastModifiedDate;
 
     private String lastModifiedBy;
+    
+    private String userName;
+    
+    private String eventName;
 
 
     public Long getId() {
@@ -99,6 +103,22 @@ public class DebtDTO implements Serializable {
 
     public void setLastModifiedBy(String lastModifiedBy) {
         this.lastModifiedBy = lastModifiedBy;
+    }
+
+    public String getUserName() {
+        return userName;
+    }
+
+    public void setUserName(String userName) {
+        this.userName = userName;
+    }
+
+    public String getEventName() {
+        return eventName;
+    }
+
+    public void setEventName(String eventName) {
+        this.eventName = eventName;
     }
 
     @Override
