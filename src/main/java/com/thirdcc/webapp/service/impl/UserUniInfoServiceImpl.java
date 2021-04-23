@@ -1,6 +1,7 @@
 package com.thirdcc.webapp.service.impl;
 
 import com.thirdcc.webapp.domain.User;
+import com.thirdcc.webapp.domain.enumeration.UserUniStatus;
 import com.thirdcc.webapp.exception.BadRequestException;
 import com.thirdcc.webapp.repository.CourseProgramRepository;
 import com.thirdcc.webapp.repository.UserRepository;
@@ -55,12 +56,19 @@ public class UserUniInfoServiceImpl implements UserUniInfoService {
     @Override
     public UserUniInfoDTO save(UserUniInfoDTO userUniInfoDTO) {
         log.debug("Request to save UserUniInfo : {}", userUniInfoDTO);
-        UserUniInfo userUniInfo = userUniInfoMapper.toEntity(userUniInfoDTO);
         User currentUser = SecurityUtils
             .getCurrentUserLogin()
             .flatMap(userRepository::findOneWithAuthoritiesByLogin)
             .orElseThrow(() -> new BadRequestException("Cannot find user"));
+        UserUniInfo userUniInfo = userUniInfoRepository
+            .findOneByUserId(currentUser.getId())
+            .orElse(new UserUniInfo());
         userUniInfo.setUserId(currentUser.getId());
+        userUniInfo.setCourseProgramId(userUniInfoDTO.getCourseProgramId());
+        userUniInfo.setYearSession(userUniInfoDTO.getYearSession());
+        userUniInfo.setIntakeSemester(userUniInfoDTO.getIntakeSemester());
+        userUniInfo.setStayIn(userUniInfoDTO.getStayIn());
+        userUniInfo.setStatus(UserUniStatus.STUDYING);
         boolean isCourseProgramIdValid = courseProgramRepository.existsById(userUniInfo.getCourseProgramId());
         if (!isCourseProgramIdValid) {
             throw new BadRequestException("Invalid Course Program Id");
@@ -110,7 +118,7 @@ public class UserUniInfoServiceImpl implements UserUniInfoService {
     }
 
     @Override
-    public boolean  isUserUniInfoCompleted(Long userId) {
+    public boolean isUserUniInfoCompleted(Long userId) {
         UserUniInfo userUniInfo = userUniInfoRepository
             .findOneByUserId(userId)
             .orElse(new UserUniInfo());

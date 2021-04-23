@@ -155,7 +155,7 @@ public class UserUniInfoResourceIT {
         assertThat(testUserUniInfo.getYearSession()).isEqualTo(DEFAULT_YEAR_SESSION);
         assertThat(testUserUniInfo.getIntakeSemester()).isEqualTo(DEFAULT_INTAKE_SEMESTER);
         assertThat(testUserUniInfo.getStayIn()).isEqualTo(DEFAULT_STAY_IN);
-        assertThat(testUserUniInfo.getStatus()).isEqualTo(DEFAULT_STATUS);
+        assertThat(testUserUniInfo.getStatus()).isEqualTo(UserUniStatus.STUDYING);
     }
 
     @Test
@@ -183,14 +183,18 @@ public class UserUniInfoResourceIT {
     @Transactional
     public void getAllUserUniInfos() throws Exception {
         // Initialize the database
-        userUniInfoRepository.saveAndFlush(userUniInfo);
+        UserUniInfo savedUserUniInfo = initUserUniInfoDB();
+        User currentUser = SecurityUtils
+            .getCurrentUserLogin()
+            .flatMap(userRepository::findOneWithAuthoritiesByLogin)
+            .orElseThrow(() -> new BadRequestException("Cannot find user"));
 
         // Get all the userUniInfoList
         restUserUniInfoMockMvc.perform(get("/api/user-uni-infos?sort=id,desc"))
             .andExpect(status().isOk())
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
-            .andExpect(jsonPath("$.[*].id").value(hasItem(userUniInfo.getId().intValue())))
-            .andExpect(jsonPath("$.[*].userId").value(hasItem(DEFAULT_USER_ID.intValue())))
+            .andExpect(jsonPath("$.[*].id").value(hasItem(savedUserUniInfo.getId().intValue())))
+            .andExpect(jsonPath("$.[*].userId").value(hasItem(currentUser.getId().intValue())))
             .andExpect(jsonPath("$.[*].courseProgramId").value(hasItem(DEFAULT_COURSE_PROGRAM_ID.intValue())))
             .andExpect(jsonPath("$.[*].yearSession").value(hasItem(DEFAULT_YEAR_SESSION.toString())))
             .andExpect(jsonPath("$.[*].intakeSemester").value(hasItem(DEFAULT_INTAKE_SEMESTER)))
@@ -202,14 +206,18 @@ public class UserUniInfoResourceIT {
     @Transactional
     public void getUserUniInfo() throws Exception {
         // Initialize the database
-        userUniInfoRepository.saveAndFlush(userUniInfo);
+        UserUniInfo savedUserUniInfo = initUserUniInfoDB();
+        User currentUser = SecurityUtils
+            .getCurrentUserLogin()
+            .flatMap(userRepository::findOneWithAuthoritiesByLogin)
+            .orElseThrow(() -> new BadRequestException("Cannot find user"));
 
         // Get the userUniInfo
-        restUserUniInfoMockMvc.perform(get("/api/user-uni-infos/{id}", userUniInfo.getId()))
+        restUserUniInfoMockMvc.perform(get("/api/user-uni-infos/{id}", savedUserUniInfo.getId()))
             .andExpect(status().isOk())
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
-            .andExpect(jsonPath("$.id").value(userUniInfo.getId().intValue()))
-            .andExpect(jsonPath("$.userId").value(DEFAULT_USER_ID.intValue()))
+            .andExpect(jsonPath("$.id").value(savedUserUniInfo.getId().intValue()))
+            .andExpect(jsonPath("$.userId").value(currentUser.getId().intValue()))
             .andExpect(jsonPath("$.courseProgramId").value(DEFAULT_COURSE_PROGRAM_ID.intValue()))
             .andExpect(jsonPath("$.yearSession").value(DEFAULT_YEAR_SESSION.toString()))
             .andExpect(jsonPath("$.intakeSemester").value(DEFAULT_INTAKE_SEMESTER))
@@ -227,7 +235,6 @@ public class UserUniInfoResourceIT {
 
     @Test
     @Transactional
-    @WithNormalUser
     public void updateUserUniInfo() throws Exception {
 
         User currentUser = SecurityUtils
@@ -236,14 +243,13 @@ public class UserUniInfoResourceIT {
             .orElseThrow(() -> new BadRequestException("Cannot find user"));
 
         // Initialize the database
-        userUniInfoRepository.saveAndFlush(userUniInfo);
+        UserUniInfo savedUserUniInfo = initUserUniInfoDB();
 
         int databaseSizeBeforeUpdate = userUniInfoRepository.findAll().size();
 
         // Update the userUniInfo
-        UserUniInfo updatedUserUniInfo = userUniInfoRepository.findById(userUniInfo.getId()).get();
-        // Disconnect from session so that the updates on updatedUserUniInfo are not directly saved in db
-        em.detach(updatedUserUniInfo);
+        UserUniInfo updatedUserUniInfo = new UserUniInfo();
+        updatedUserUniInfo.setId(savedUserUniInfo.getId());
         updatedUserUniInfo.setUserId(UPDATED_USER_ID);
         updatedUserUniInfo.setCourseProgramId(UPDATED_COURSE_PROGRAM_ID);
         updatedUserUniInfo.setYearSession(UPDATED_YEAR_SESSION);
@@ -292,12 +298,12 @@ public class UserUniInfoResourceIT {
     @Transactional
     public void deleteUserUniInfo() throws Exception {
         // Initialize the database
-        userUniInfoRepository.saveAndFlush(userUniInfo);
+        UserUniInfo savedUserUniInfo = initUserUniInfoDB();
 
         int databaseSizeBeforeDelete = userUniInfoRepository.findAll().size();
 
         // Delete the userUniInfo
-        restUserUniInfoMockMvc.perform(delete("/api/user-uni-infos/{id}", userUniInfo.getId())
+        restUserUniInfoMockMvc.perform(delete("/api/user-uni-infos/{id}", savedUserUniInfo.getId())
             .accept(TestUtil.APPLICATION_JSON_UTF8))
             .andExpect(status().isNoContent());
 
@@ -342,5 +348,15 @@ public class UserUniInfoResourceIT {
     public void testEntityFromId() {
         assertThat(userUniInfoMapper.fromId(42L).getId()).isEqualTo(42);
         assertThat(userUniInfoMapper.fromId(null)).isNull();
+    }
+
+    private UserUniInfo initUserUniInfoDB() {
+        User currentUser = SecurityUtils
+            .getCurrentUserLogin()
+            .flatMap(userRepository::findOneWithAuthoritiesByLogin)
+            .orElseThrow(() -> new BadRequestException("Cannot find user"));
+        UserUniInfo userUniInfo = createEntity(em);
+        userUniInfo.setUserId(currentUser.getId());
+        return userUniInfoRepository.saveAndFlush(userUniInfo);
     }
 }
