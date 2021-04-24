@@ -23,7 +23,7 @@ public interface EventRepository extends JpaRepository<Event, Long> {
 
     Page<Event> findEventsByStartDateBetween(Instant fromDate, Instant toDate, Pageable pageable);
 
-    Page<Event> findEventsByStartDateBeforeOrStatusIn(Instant fromDate, Set<EventStatus> eventStatus, Pageable pageable);
+    Page<Event> findEventsByStartDateBeforeAndStatusIn(Instant fromDate, Set<EventStatus> eventStatus, Pageable pageable);
 
     Page<Event> findEventsByStartDateAfterAndStatusIn(Instant fromDate, Set<EventStatus> eventStatus, Pageable pageable);
 }
