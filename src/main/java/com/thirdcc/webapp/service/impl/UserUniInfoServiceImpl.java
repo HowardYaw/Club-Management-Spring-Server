@@ -40,6 +40,8 @@ public class UserUniInfoServiceImpl implements UserUniInfoService {
 
     private final CourseProgramRepository courseProgramRepository;
 
+    private static final UserUniStatus DEFAULT_USER_UNI_STATUS = UserUniStatus.STUDYING;
+
     public UserUniInfoServiceImpl(UserUniInfoRepository userUniInfoRepository, UserUniInfoMapper userUniInfoMapper, UserRepository userRepository, CourseProgramRepository courseProgramRepository) {
         this.userUniInfoRepository = userUniInfoRepository;
         this.userUniInfoMapper = userUniInfoMapper;
@@ -60,19 +62,23 @@ public class UserUniInfoServiceImpl implements UserUniInfoService {
             .getCurrentUserLogin()
             .flatMap(userRepository::findOneWithAuthoritiesByLogin)
             .orElseThrow(() -> new BadRequestException("Cannot find user"));
+        boolean isCourseProgramIdValid = courseProgramRepository.existsById(userUniInfoDTO.getCourseProgramId());
+        if (!isCourseProgramIdValid) {
+            throw new BadRequestException("Invalid Course Program Id");
+        }
         UserUniInfo userUniInfo = userUniInfoRepository
             .findOneByUserId(currentUser.getId())
             .orElse(new UserUniInfo());
+        UserUniStatus userUniStatus = userUniInfoDTO.getStatus();
+        if (userUniStatus == null) {
+            userUniStatus = DEFAULT_USER_UNI_STATUS;
+        }
         userUniInfo.setUserId(currentUser.getId());
         userUniInfo.setCourseProgramId(userUniInfoDTO.getCourseProgramId());
         userUniInfo.setYearSession(userUniInfoDTO.getYearSession());
         userUniInfo.setIntakeSemester(userUniInfoDTO.getIntakeSemester());
         userUniInfo.setStayIn(userUniInfoDTO.getStayIn());
-        userUniInfo.setStatus(UserUniStatus.STUDYING);
-        boolean isCourseProgramIdValid = courseProgramRepository.existsById(userUniInfo.getCourseProgramId());
-        if (!isCourseProgramIdValid) {
-            throw new BadRequestException("Invalid Course Program Id");
-        }
+        userUniInfo.setStatus(userUniStatus);
         userUniInfo = userUniInfoRepository.save(userUniInfo);
         return userUniInfoMapper.toDto(userUniInfo);
     }

@@ -92,7 +92,7 @@ public class AccountResourceIT {
     private static final Integer UPDATED_INTAKE_SEMESTER = 1;
     private static final String DEFAULT_STAY_IN = "DEFAULT_STAY_IN";
     private static final String UPDATED_STAY_IN = "UPDATED_STAY_IN";
-    private static final UserUniStatus DEFAULT_USER_UNI_STATUS = UserUniStatus.STUDYING;
+    private static final UserUniStatus DEFAULT_USER_UNI_STATUS = UserUniStatus.EXTENDED;
     private static final UserUniStatus UPDATED_USER_UNI_STATUS = UserUniStatus.GRADUATED;
 
     @Autowired
@@ -1113,6 +1113,55 @@ public class AccountResourceIT {
         assertThat(testUserUniInfo.getYearSession()).isEqualTo(DEFAULT_YEAR_SESSION);
         assertThat(testUserUniInfo.getIntakeSemester()).isEqualTo(DEFAULT_INTAKE_SEMESTER);
         assertThat(testUserUniInfo.getStayIn()).isEqualTo(DEFAULT_STAY_IN);
+        assertThat(testUserUniInfo.getStatus()).isEqualTo(DEFAULT_USER_UNI_STATUS);
+    }
+
+    @Test
+    @WithNormalUser
+    public void completeProfile_WithUserUniStatusIsNull_ShouldDefaultItAsStudying()  throws Exception {
+
+        CourseProgram courseProgram = courseProgramRepository
+            .findById(1L)
+            .orElseThrow(() -> new RuntimeException("CourseProgram not loaded via liquibase testFaker context"));
+
+        User currentUser = SecurityUtils
+            .getCurrentUserLogin()
+            .flatMap(userRepository::findOneWithAuthoritiesByLogin)
+            .orElseThrow(() -> new BadRequestException("Cannot find user"));
+
+        int userUniInfoDBSizeB4Create = userUniInfoRepository.findAll().size();
+        int userDBSizeB4Create = userRepository.findAll().size();
+
+        UserUniInfoDTO userUniInfoDTO = createDefaultUserUniInfoDTO();
+        userUniInfoDTO.setStatus(null);
+
+        assertThat(userUniInfoDTO.getStatus()).isNull();
+
+        restMvc.perform(post("/api/account/profile")
+            .contentType(TestUtil.APPLICATION_JSON_UTF8)
+            .content(TestUtil.convertObjectToJsonBytes(userUniInfoDTO)))
+            .andExpect(status().isOk());
+
+        List<User> userList = userRepository.findAll();
+        assertThat(userList).hasSize(userDBSizeB4Create);
+        User user = userRepository
+            .findById(currentUser.getId())
+            .orElseThrow(() -> new RuntimeException("Cannot find user"));
+        assertThat(user.getId()).isEqualTo(currentUser.getId());
+        assertThat(user.getFirstName()).isEqualTo(DEFAULT_FIRST_NAME);
+        assertThat(user.getLastName()).isEqualTo(DEFAULT_LAST_NAME);
+        assertThat(user.getGender()).isEqualTo(DEFAULT_GENDER);
+        assertThat(user.getPhoneNumber()).isEqualTo(DEFAULT_PHONE_NUMBER);
+        assertThat(user.getDateOfBirth()).isEqualTo(DEFAULT_DATE_OF_BIRTH);
+
+        List<UserUniInfo> userUniInfoList = userUniInfoRepository.findAll();
+        assertThat(userUniInfoList).hasSize(userUniInfoDBSizeB4Create + 1);
+        UserUniInfo testUserUniInfo = userUniInfoList.get(userUniInfoList.size() - 1);
+        assertThat(testUserUniInfo.getUserId()).isEqualTo(currentUser.getId());
+        assertThat(testUserUniInfo.getCourseProgramId()).isEqualTo(courseProgram.getId());
+        assertThat(testUserUniInfo.getYearSession()).isEqualTo(DEFAULT_YEAR_SESSION);
+        assertThat(testUserUniInfo.getIntakeSemester()).isEqualTo(DEFAULT_INTAKE_SEMESTER);
+        assertThat(testUserUniInfo.getStayIn()).isEqualTo(DEFAULT_STAY_IN);
         assertThat(testUserUniInfo.getStatus()).isEqualTo(UserUniStatus.STUDYING);
     }
 
@@ -1160,7 +1209,7 @@ public class AccountResourceIT {
         assertThat(testUserUniInfo.getYearSession()).isEqualTo(UPDATED_YEAR_SESSION);
         assertThat(testUserUniInfo.getIntakeSemester()).isEqualTo(UPDATED_INTAKE_SEMESTER);
         assertThat(testUserUniInfo.getStayIn()).isEqualTo(UPDATED_STAY_IN);
-        assertThat(testUserUniInfo.getStatus()).isEqualTo(UserUniStatus.STUDYING);
+        assertThat(testUserUniInfo.getStatus()).isEqualTo(UPDATED_USER_UNI_STATUS);
     }
 
     @Test

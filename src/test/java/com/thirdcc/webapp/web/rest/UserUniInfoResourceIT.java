@@ -155,7 +155,7 @@ public class UserUniInfoResourceIT {
         assertThat(testUserUniInfo.getYearSession()).isEqualTo(DEFAULT_YEAR_SESSION);
         assertThat(testUserUniInfo.getIntakeSemester()).isEqualTo(DEFAULT_INTAKE_SEMESTER);
         assertThat(testUserUniInfo.getStayIn()).isEqualTo(DEFAULT_STAY_IN);
-        assertThat(testUserUniInfo.getStatus()).isEqualTo(UserUniStatus.STUDYING);
+        assertThat(testUserUniInfo.getStatus()).isEqualTo(DEFAULT_STATUS);
     }
 
     @Test
