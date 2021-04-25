@@ -112,12 +112,13 @@ public class EventServiceImpl implements EventService {
         log.debug("Request to get all Past Events");
 
         Set<EventStatus> eventStatuses = new HashSet<EventStatus>() {{
-            add(EventStatus.CANCELLED);
+            add(EventStatus.OPEN);
+            add(EventStatus.POSTPONED);
         }};
 
         Instant from = Instant.now();
 
-        return eventRepository.findEventsByStartDateBeforeOrStatusIn(from, eventStatuses, pageable)
+        return eventRepository.findEventsByStartDateBeforeAndStatusIn(from, eventStatuses, pageable)
             .map(eventMapper::toDto);
     }
 

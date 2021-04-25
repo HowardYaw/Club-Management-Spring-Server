@@ -266,6 +266,28 @@ public class EventResourceIT {
 
     @Test
     @Transactional
+    public void getAllUpcomingEvents_WithCancelledStatus() throws Exception {
+        int databaseSizeBeforeCreate = eventRepository.findAll().size();
+
+        // Initialize the database
+        Event savedEvent = createEntity();
+        savedEvent.setStartDate(Instant.now().plus(20, ChronoUnit.DAYS));
+        savedEvent.setStatus(CANCELLED_STATUS);
+        eventRepository.saveAndFlush(savedEvent);
+
+        // Get all the eventList
+        restEventMockMvc.perform(get("/api/events/upcoming"))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
+            .andExpect(jsonPath("$.[*].id").value(not(hasItem(savedEvent.getId().intValue()))));
+
+        // Validate the Event in the database
+        List<Event> eventList = eventRepository.findAll();
+        assertThat(eventList).hasSize(databaseSizeBeforeCreate + 1);
+    }
+
+    @Test
+    @Transactional
     public void getAllPastEvents() throws Exception {
         // Initialize the database
         Event savedEvent = createEntity();
@@ -286,6 +308,28 @@ public class EventResourceIT {
             .andExpect(jsonPath("$.[*].fee").value(hasItem(DEFAULT_FEE.intValue())))
             .andExpect(jsonPath("$.[*].requiredTransport").value(hasItem(DEFAULT_REQUIRED_TRANSPORT)))
             .andExpect(jsonPath("$.[*].status").value(hasItem(DEFAULT_STATUS.toString())));
+    }
+
+    @Test
+    @Transactional
+    public void getAllPastEvents_WithCancelledStatus() throws Exception {
+        int databaseSizeBeforeCreate = eventRepository.findAll().size();
+
+        // Initialize the database
+        Event savedEvent = createEntity();
+        savedEvent.setStatus(CANCELLED_STATUS);
+        savedEvent.setStartDate(Instant.now().minus(20, ChronoUnit.DAYS));
+        eventRepository.saveAndFlush(savedEvent);
+
+        // Get all the eventList
+        restEventMockMvc.perform(get("/api/events/past"))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
+            .andExpect(jsonPath("$.[*].id").value(not(hasItem(savedEvent.getId().intValue()))));
+
+        // Validate the Event in the database
+        List<Event> eventList = eventRepository.findAll();
+        assertThat(eventList).hasSize(databaseSizeBeforeCreate + 1);
     }
 
 
