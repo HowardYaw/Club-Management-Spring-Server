@@ -18,6 +18,10 @@ public class UserCCInfoDTO implements Serializable {
 
     private String yearSession;
 
+    private String clubFamilyName;
+
+    private String clubFamilySlogan;
+
 
     public Long getId() {
         return id;
@@ -89,5 +93,21 @@ public class UserCCInfoDTO implements Serializable {
             ", familyRole='" + getFamilyRole() + "'" +
             ", yearSession='" + getYearSession() + "'" +
             "}";
+    }
+
+    public String getClubFamilySlogan() {
+        return clubFamilySlogan;
+    }
+
+    public void setClubFamilySlogan(String clubFamilySlogan) {
+        this.clubFamilySlogan = clubFamilySlogan;
+    }
+
+    public String getClubFamilyName() {
+        return clubFamilyName;
+    }
+
+    public void setClubFamilyName(String clubFamilyName) {
+        this.clubFamilyName = clubFamilyName;
     }
 }

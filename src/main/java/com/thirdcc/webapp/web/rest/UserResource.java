@@ -2,10 +2,14 @@ package com.thirdcc.webapp.web.rest;
 
 import com.thirdcc.webapp.config.Constants;
 import com.thirdcc.webapp.domain.User;
+import com.thirdcc.webapp.exception.BadRequestException;
 import com.thirdcc.webapp.repository.UserRepository;
 import com.thirdcc.webapp.security.AuthoritiesConstants;
+import com.thirdcc.webapp.security.SecurityUtils;
 import com.thirdcc.webapp.service.MailService;
+import com.thirdcc.webapp.service.UserCCInfoService;
 import com.thirdcc.webapp.service.UserService;
+import com.thirdcc.webapp.service.dto.UserCCInfoDTO;
 import com.thirdcc.webapp.service.dto.UserDTO;
 import com.thirdcc.webapp.web.rest.errors.BadRequestAlertException;
 import com.thirdcc.webapp.web.rest.errors.EmailAlreadyUsedException;
@@ -72,11 +76,14 @@ public class UserResource {
 
     private final MailService mailService;
 
-    public UserResource(UserService userService, UserRepository userRepository, MailService mailService) {
+    private final UserCCInfoService userCCInfoService;
+
+    public UserResource(UserService userService, UserRepository userRepository, MailService mailService, UserCCInfoService userCCInfoService) {
 
         this.userService = userService;
         this.userRepository = userRepository;
         this.mailService = mailService;
+        this.userCCInfoService = userCCInfoService;
     }
 
     /**
@@ -185,9 +192,16 @@ public class UserResource {
     @GetMapping("/users/current")
     public ResponseEntity<UserDTO> getCurrentLoginUser() {
         log.debug("REST request to get Current Login User");
-        return ResponseUtil.wrapOrNotFound(
-            userService.getUserWithAuthorities()
-                .map(UserDTO::new));
+        String userLogin = SecurityUtils
+            .getCurrentUserLogin()
+            .orElseThrow(() -> new BadRequestException("User not Login"));
+        UserDTO userDTO = userService.getUserByLogin(userLogin)
+            .map(UserDTO::new)
+            .orElseThrow(() -> new BadRequestException("User not found"));
+        userCCInfoService.findOneByUserId(userDTO.getId())
+            .ifPresent(userCCInfoDTO -> userService.mapUserWithUserCCInfo(userDTO, userCCInfoDTO));
+        log.debug("User DTO after map: {}", userDTO);
+        return ResponseEntity.ok().body(userDTO);
     }
 
     /**

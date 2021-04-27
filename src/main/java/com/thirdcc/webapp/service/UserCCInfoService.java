@@ -35,6 +35,14 @@ public interface UserCCInfoService {
     Optional<UserCCInfoDTO> findOne(Long id);
 
     /**
+     * Get the "userId" userCCInfo.
+     *
+     * @param userId the userId of the entity.
+     * @return the entity.
+     */
+    Optional<UserCCInfoDTO> findOneByUserId(Long userId);
+
+    /**
      * Delete the "id" userCCInfo.
      *
      * @param id the id of the entity.

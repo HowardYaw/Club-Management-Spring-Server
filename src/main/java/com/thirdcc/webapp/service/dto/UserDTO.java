@@ -53,6 +53,10 @@ public class UserDTO {
 
     private Set<String> authorities;
 
+    private String clubFamilyName;
+
+    private String clubFamilySlogan;
+
     public UserDTO() {
         // Empty constructor needed for Jackson.
     }
@@ -195,5 +199,21 @@ public class UserDTO {
             ", lastModifiedDate=" + lastModifiedDate +
             ", authorities=" + authorities +
             "}";
+    }
+
+    public String getClubFamilySlogan() {
+        return clubFamilySlogan;
+    }
+
+    public void setClubFamilySlogan(String clubFamilySlogan) {
+        this.clubFamilySlogan = clubFamilySlogan;
+    }
+
+    public String getClubFamilyName() {
+        return clubFamilyName;
+    }
+
+    public void setClubFamilyName(String clubFamilyName) {
+        this.clubFamilyName = clubFamilyName;
     }
 }

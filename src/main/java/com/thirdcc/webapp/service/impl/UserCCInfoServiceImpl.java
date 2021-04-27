@@ -1,9 +1,11 @@
 package com.thirdcc.webapp.service.impl;
 
+import com.thirdcc.webapp.service.ClubFamilyService;
 import com.thirdcc.webapp.service.UserCCInfoService;
 import com.thirdcc.webapp.domain.UserCCInfo;
 import com.thirdcc.webapp.repository.UserCCInfoRepository;
 import com.thirdcc.webapp.service.dto.UserCCInfoDTO;
+import com.thirdcc.webapp.service.dto.UserDTO;
 import com.thirdcc.webapp.service.mapper.UserCCInfoMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,9 +31,12 @@ public class UserCCInfoServiceImpl implements UserCCInfoService {
 
     private final UserCCInfoMapper userCCInfoMapper;
 
-    public UserCCInfoServiceImpl(UserCCInfoRepository userCCInfoRepository, UserCCInfoMapper userCCInfoMapper) {
+    private final ClubFamilyService clubFamilyService;
+
+    public UserCCInfoServiceImpl(UserCCInfoRepository userCCInfoRepository, UserCCInfoMapper userCCInfoMapper, ClubFamilyService clubFamilyService) {
         this.userCCInfoRepository = userCCInfoRepository;
         this.userCCInfoMapper = userCCInfoMapper;
+        this.clubFamilyService = clubFamilyService;
     }
 
     /**
@@ -77,6 +82,15 @@ public class UserCCInfoServiceImpl implements UserCCInfoService {
             .map(userCCInfoMapper::toDto);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<UserCCInfoDTO> findOneByUserId(Long userId) {
+        log.debug("Request to get UserCCInfo by userId : {}", userId);
+        return userCCInfoRepository.findByUserId(userId)
+            .map(userCCInfoMapper::toDto)
+            .map(this::clubFamilyDetails);
+    }
+
     /**
      * Delete the userCCInfo by id.
      *
@@ -86,5 +100,14 @@ public class UserCCInfoServiceImpl implements UserCCInfoService {
     public void delete(Long id) {
         log.debug("Request to delete UserCCInfo : {}", id);
         userCCInfoRepository.deleteById(id);
+    }
+
+    private UserCCInfoDTO clubFamilyDetails(UserCCInfoDTO userCCInfoDTO) {
+        clubFamilyService.findOne(userCCInfoDTO.getClubFamilyId())
+            .ifPresent(clubFamilyDTO -> {
+                userCCInfoDTO.setClubFamilyName(clubFamilyDTO.getName());
+                userCCInfoDTO.setClubFamilySlogan(clubFamilyDTO.getSlogan());
+            });
+        return userCCInfoDTO;
     }
 }
