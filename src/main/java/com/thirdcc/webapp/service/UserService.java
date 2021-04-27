@@ -389,6 +389,7 @@ public class UserService {
     public UserDTO mapUserWithUserCCInfo(UserDTO userDTO, UserCCInfoDTO userCCInfoDTO) {
         log.debug("Request to map UserDTO with UserCCInfoDTO");
         userDTO.setClubFamilyName(userCCInfoDTO.getClubFamilyName());
+        userDTO.setClubFamilySlogan(userCCInfoDTO.getClubFamilySlogan());
         return userDTO;
     }
 

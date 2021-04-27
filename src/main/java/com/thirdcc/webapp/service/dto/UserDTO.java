@@ -4,12 +4,14 @@ import com.thirdcc.webapp.config.Constants;
 
 import com.thirdcc.webapp.domain.Authority;
 import com.thirdcc.webapp.domain.User;
+import com.thirdcc.webapp.domain.enumeration.Gender;
 
 import javax.validation.constraints.Email;
 import javax.validation.constraints.NotBlank;
 
 import javax.validation.constraints.*;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -34,6 +36,13 @@ public class UserDTO {
     @Email
     @Size(min = 5, max = 254)
     private String email;
+
+    private Gender gender;
+
+    private LocalDate dateOfBirth;
+
+    @Size(max = 50)
+    private String phoneNumber;
 
     @Size(max = 256)
     private String imageUrl;
@@ -215,5 +224,29 @@ public class UserDTO {
 
     public void setClubFamilyName(String clubFamilyName) {
         this.clubFamilyName = clubFamilyName;
+    }
+
+    public Gender getGender() {
+        return gender;
+    }
+
+    public void setGender(Gender gender) {
+        this.gender = gender;
+    }
+
+    public LocalDate getDateOfBirth() {
+        return dateOfBirth;
+    }
+
+    public void setDateOfBirth(LocalDate dateOfBirth) {
+        this.dateOfBirth = dateOfBirth;
+    }
+
+    public String getPhoneNumber() {
+        return phoneNumber;
+    }
+
+    public void setPhoneNumber(String phoneNumber) {
+        this.phoneNumber = phoneNumber;
     }
 }
