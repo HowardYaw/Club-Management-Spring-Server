@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.6.xsd
+                        http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd">
+
+    <changeSet id="20210416_load_test_faker_CourseProgram-1" author="KaChun" context="testFaker">
+        <loadData
+                  file="config/liquibase/data/course_program.csv"
+                  separator=";"
+                  tableName="course_program">
+            <column name="id" type="numeric"/>
+            <column name="faculty_id" type="numeric"/>
+            <column name="name" type="string"/>
+            <column name="num_of_sem" type="numeric"/>
+        </loadData>
+    </changeSet>
+
+</databaseChangeLog>

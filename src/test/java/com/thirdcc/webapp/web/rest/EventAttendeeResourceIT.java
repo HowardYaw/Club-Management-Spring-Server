@@ -1,13 +1,22 @@
 package com.thirdcc.webapp.web.rest;
 
 import com.thirdcc.webapp.ClubmanagementApp;
+import com.thirdcc.webapp.annotations.authorization.WithCurrentCCAdministrator;
+import com.thirdcc.webapp.annotations.authorization.WithEventHead;
+import com.thirdcc.webapp.annotations.authorization.WithUnauthenticatedMockUser;
+import com.thirdcc.webapp.annotations.init.InitYearSession;
 import com.thirdcc.webapp.domain.Event;
+import com.thirdcc.webapp.domain.EventActivity;
 import com.thirdcc.webapp.domain.EventAttendee;
 import com.thirdcc.webapp.domain.User;
+import com.thirdcc.webapp.domain.UserUniInfo;
 import com.thirdcc.webapp.domain.enumeration.EventStatus;
+import com.thirdcc.webapp.domain.enumeration.UserUniStatus;
+import com.thirdcc.webapp.exception.BadRequestException;
 import com.thirdcc.webapp.repository.EventAttendeeRepository;
 import com.thirdcc.webapp.repository.EventRepository;
 import com.thirdcc.webapp.repository.UserRepository;
+import com.thirdcc.webapp.repository.UserUniInfoRepository;
 import com.thirdcc.webapp.service.EventAttendeeService;
 import com.thirdcc.webapp.service.UserService;
 import com.thirdcc.webapp.service.dto.EventAttendeeDTO;
@@ -43,6 +52,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  */
 @SpringBootTest(classes = ClubmanagementApp.class)
 @AutoConfigureMockMvc
+@InitYearSession
 @WithMockUser(username = "admin", roles = "ADMIN")
 public class EventAttendeeResourceIT {
     private final Logger log = LoggerFactory.getLogger(EventAttendeeServiceImpl.class);
@@ -66,7 +76,17 @@ public class EventAttendeeResourceIT {
     private static final Boolean DEFAULT_EVENT_REQUIRED_TRANSPORT = Boolean.TRUE;
     private static final EventStatus DEFAULT_EVENT_STATUS = EventStatus.OPEN;
 
+    // User Uni Info Default Value
+    private static final Long DEFAULT_COURSE_PROGRAM_ID = 1L;
+    private static final String DEFAULT_YEAR_SESSION = "AAAAAAAAAA";
+    private static final Integer DEFAULT_INTAKE_SEMESTER = 1;
+    private static final String DEFAULT_STAY_IN = "AAAAAAAAAA";
+    private static final UserUniStatus DEFAULT_USER_UNI_STATUS = UserUniStatus.STUDYING;
+
     private static User user;
+
+    @Autowired
+    private UserUniInfoRepository userUniInfoRepository;
 
     @Autowired
     private EventRepository eventRepository;
@@ -92,6 +112,8 @@ public class EventAttendeeResourceIT {
     private EventAttendee eventAttendee;
 
     private Event event;
+
+    private UserUniInfo userUniInfo;
 
     @Autowired
     private UserService userService;
@@ -148,11 +170,20 @@ public class EventAttendeeResourceIT {
         return eventAttendee;
     }
 
+    public static UserUniInfo createUserUniInfoEntity() {
+        UserUniInfo userUniInfo = new UserUniInfo();
+        userUniInfo.setUserId(DEFAULT_USER_ID);
+        userUniInfo.setCourseProgramId(DEFAULT_COURSE_PROGRAM_ID);
+        userUniInfo.setYearSession(DEFAULT_YEAR_SESSION);
+        userUniInfo.setIntakeSemester(DEFAULT_INTAKE_SEMESTER);
+        userUniInfo.setStayIn(DEFAULT_STAY_IN);
+        userUniInfo.setStatus(DEFAULT_USER_UNI_STATUS);
+        return userUniInfo;
+    }
+
     @BeforeEach
     public void initTest() {
         event = createEventEntity(em);
-        user = userService.getUserWithAuthorities()
-            .orElseThrow(()-> new RuntimeException("Could not get user when initiate testing"));
         eventAttendee = createEventAttendeeEntity(em);
     }
 
@@ -160,9 +191,11 @@ public class EventAttendeeResourceIT {
     public void cleanUp() {
         eventAttendeeRepository.deleteAll();
         eventRepository.deleteAll();
+        userUniInfoRepository.deleteAll();
     }
 
     @Test
+    @WithCurrentCCAdministrator
     public void createEventAttendee() throws Exception {
         Event savedEvent = initEventDB();
         int databaseSizeBeforeCreate = eventAttendeeRepository.findAll().size();
@@ -187,6 +220,7 @@ public class EventAttendeeResourceIT {
     }
 
     @Test
+    @WithCurrentCCAdministrator
     public void createEventAttendee_WithNonExistingUserId_ShouldThrow400() throws Exception {
         Event savedEvent = initEventDB();
         int databaseSizeBeforeCreate = eventAttendeeRepository.findAll().size();
@@ -206,6 +240,7 @@ public class EventAttendeeResourceIT {
     }
 
     @Test
+    @WithCurrentCCAdministrator
     public void createEventAttendee_WithExistedAttendee_ShouldThrow400() throws Exception {
         EventAttendee eventAttendee = initEventAttendeeDB();
         int databaseSizeBeforeCreate = eventAttendeeRepository.findAll().size();
@@ -225,6 +260,7 @@ public class EventAttendeeResourceIT {
     }
 
     @Test
+    @WithCurrentCCAdministrator
     public void createEventAttendee_WithNonExistingEvent_ShouldThrow400() throws Exception {
         int databaseSizeBeforeCreate = eventAttendeeRepository.findAll().size();
 
@@ -241,8 +277,8 @@ public class EventAttendeeResourceIT {
         assertThat(eventAttendeeList).hasSize(databaseSizeBeforeCreate);
     }
 
-
     @Test
+    @WithCurrentCCAdministrator
     public void createEventAttendee_WithEventEnded_ShouldThrow400() throws Exception {
         event.setEndDate(Instant.now().minus(1, ChronoUnit.DAYS));
         Event savedEvent = initEventDB();
@@ -265,6 +301,7 @@ public class EventAttendeeResourceIT {
     }
 
     @Test
+    @WithCurrentCCAdministrator
     public void createEventAttendee_WithEventClosed_ShouldThrow400() throws Exception {
         event.setStatus(EventStatus.CLOSED);
         Event savedEvent = initEventDB();
@@ -287,6 +324,7 @@ public class EventAttendeeResourceIT {
     }
 
     @Test
+    @WithCurrentCCAdministrator
     public void createEventAttendee_WithEventCancelled_ShouldThrow400() throws Exception {
         event.setStatus(EventStatus.CANCELLED);
         Event savedEvent = initEventDB();
@@ -309,6 +347,7 @@ public class EventAttendeeResourceIT {
     }
 
     @Test
+    @WithCurrentCCAdministrator
     public void createEventAttendeeWithExistingId() throws Exception {
         int databaseSizeBeforeCreate = eventAttendeeRepository.findAll().size();
 
@@ -328,6 +367,7 @@ public class EventAttendeeResourceIT {
     }
 
     @Test
+    @WithCurrentCCAdministrator
     public void getAllEventAttendees() throws Exception {
         // Initialize the database
         eventAttendeeRepository.saveAndFlush(eventAttendee);
@@ -343,6 +383,7 @@ public class EventAttendeeResourceIT {
     }
 
     @Test
+    @WithCurrentCCAdministrator
     public void getEventAttendee() throws Exception {
         // Initialize the database
         eventAttendeeRepository.saveAndFlush(eventAttendee);
@@ -358,7 +399,28 @@ public class EventAttendeeResourceIT {
     }
 
     @Test
+    @WithCurrentCCAdministrator
     public void getAllEventAttendees_WithEventId() throws Exception {
+        // Initialize the database
+        Event savedEvent = initEventDB();
+        EventAttendee savedEventAttendee = initEventAttendeeDB();
+        userUniInfo = createUserUniInfoEntity();
+        initUserUniInfoDB();
+
+        // Get the eventAttendee
+        restEventAttendeeMockMvc.perform(get("/api/event-attendees/event/{eventId}?sort=id,desc", savedEvent.getId()))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
+            .andExpect(jsonPath("$.[*].id").value(savedEventAttendee.getId().intValue()))
+            .andExpect(jsonPath("$.[*].userId").value(user.getId().intValue()))
+            .andExpect(jsonPath("$.[*].eventId").value(savedEvent.getId().intValue()))
+            .andExpect(jsonPath("$.[*].provideTransport").value(DEFAULT_PROVIDE_TRANSPORT.booleanValue()))
+            .andExpect(jsonPath("$.[*].yearSession").value(DEFAULT_YEAR_SESSION));
+    }
+
+    @Test
+    @WithCurrentCCAdministrator
+    public void getAllEventAttendees_WithEventId_WithEmptyUserUniInfoDB() throws Exception {
         // Initialize the database
         Event savedEvent = initEventDB();
         EventAttendee savedEventAttendee = initEventAttendeeDB();
@@ -370,18 +432,21 @@ public class EventAttendeeResourceIT {
             .andExpect(jsonPath("$.[*].id").value(savedEventAttendee.getId().intValue()))
             .andExpect(jsonPath("$.[*].userId").value(user.getId().intValue()))
             .andExpect(jsonPath("$.[*].eventId").value(savedEvent.getId().intValue()))
-            .andExpect(jsonPath("$.[*].provideTransport").value(DEFAULT_PROVIDE_TRANSPORT.booleanValue()));
+            .andExpect(jsonPath("$.[*].provideTransport").value(DEFAULT_PROVIDE_TRANSPORT.booleanValue()))
+            .andExpect(jsonPath("$.[*].yearSession").value(""));
     }
 
     @Test
+    @WithCurrentCCAdministrator
     public void getAllEventAttendees_WithNonExistingEventId_ShouldThrow400() throws Exception {
         restEventAttendeeMockMvc.perform(get("/api/event-attendees/event/{eventId}?sort=id,desc", Long.MAX_VALUE))
             .andExpect(status().isBadRequest());
     }
 
     @Test
-    @WithMockUser(username = "user", roles = "USER")
+    @WithMockUser
     public void getAllEventAttendees_WithEventId_NonAdmin_ShouldThrow403() throws Exception {
+        user = getLoggedInUser();
         // Initialize the database
         Event savedEvent = initEventDB();
         EventAttendee savedEventAttendee = initEventAttendeeDB();
@@ -392,44 +457,15 @@ public class EventAttendeeResourceIT {
     }
 
     @Test
+    @WithCurrentCCAdministrator
     public void getNonExistingEventAttendee() throws Exception {
         // Get the eventAttendee
         restEventAttendeeMockMvc.perform(get("/api/event-attendees/{id}", Long.MAX_VALUE))
             .andExpect(status().isNotFound());
     }
 
-//    @Test
-//    public void updateEventAttendee() throws Exception {
-//        // Initialize the database
-//        eventAttendeeRepository.saveAndFlush(eventAttendee);
-//
-//        int databaseSizeBeforeUpdate = eventAttendeeRepository.findAll().size();
-//
-//        // Update the eventAttendee
-//        EventAttendee updatedEventAttendee = eventAttendeeRepository.findById(eventAttendee.getId()).get();
-//        // Disconnect from session so that the updates on updatedEventAttendee are not directly saved in db
-//        em.detach(updatedEventAttendee);
-//        updatedEventAttendee
-//            .userId(UPDATED_USER_ID)
-//            .eventId(UPDATED_EVENT_ID)
-//            .provideTransport(UPDATED_PROVIDE_TRANSPORT);
-//        EventAttendeeDTO eventAttendeeDTO = eventAttendeeMapper.toDto(updatedEventAttendee);
-//
-//        restEventAttendeeMockMvc.perform(put("/api/event-attendees")
-//            .contentType(TestUtil.APPLICATION_JSON_UTF8)
-//            .content(TestUtil.convertObjectToJsonBytes(eventAttendeeDTO)))
-//            .andExpect(status().isOk());
-//
-//        // Validate the EventAttendee in the database
-//        List<EventAttendee> eventAttendeeList = eventAttendeeRepository.findAll();
-//        assertThat(eventAttendeeList).hasSize(databaseSizeBeforeUpdate);
-//        EventAttendee testEventAttendee = eventAttendeeList.get(eventAttendeeList.size() - 1);
-//        assertThat(testEventAttendee.getUserId()).isEqualTo(UPDATED_USER_ID);
-//        assertThat(testEventAttendee.getEventId()).isEqualTo(UPDATED_EVENT_ID);
-//        assertThat(testEventAttendee.isProvideTransport()).isEqualTo(UPDATED_PROVIDE_TRANSPORT);
-//    }
-
     @Test
+    @WithCurrentCCAdministrator
     public void updateNonExistingEventAttendee() throws Exception {
         int databaseSizeBeforeUpdate = eventAttendeeRepository.findAll().size();
 
@@ -448,6 +484,7 @@ public class EventAttendeeResourceIT {
     }
 
     @Test
+    @WithCurrentCCAdministrator
     public void deleteEventAttendee() throws Exception {
         // Initialize the database
         eventAttendeeRepository.saveAndFlush(eventAttendee);
@@ -462,6 +499,47 @@ public class EventAttendeeResourceIT {
         // Validate the database contains one less item
         List<EventAttendee> eventAttendeeList = eventAttendeeRepository.findAll();
         assertThat(eventAttendeeList).hasSize(databaseSizeBeforeDelete - 1);
+    }
+
+
+    @Test
+    public void getEventAttendeeByEventIdAndUserId() throws Exception {
+        //Initialize the event and eventAttendee
+        Event savedEvent = initEventDB();
+        initEventAttendeeDB();
+
+        //Save events and attendee
+        restEventAttendeeMockMvc.perform(get("/api/event-attendees/event/{eventId}/user/{userId}", savedEvent.getId(), user.getId() ))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
+            .andExpect(jsonPath("$.id").value(eventAttendee.getId().intValue()))
+            .andExpect(jsonPath("$.userId").value(user.getId()))
+            .andExpect(jsonPath("$.eventId").value(savedEvent.getId()))
+            .andExpect(jsonPath("$.provideTransport").value(DEFAULT_PROVIDE_TRANSPORT.booleanValue()));
+
+    }
+
+    @Test
+    public void getEventAttendeeByEventIdAndUserId_withNonExistingUser_ShouldThrow404() throws Exception {
+        //Initialize the event and eventAttendee
+        Event savedEvent = initEventDB();
+        initEventAttendeeDB();
+
+        //Save events and attendee
+        restEventAttendeeMockMvc.perform(get("/api/event-attendees/event/{eventId}/user/{userId}", savedEvent.getId(), Long.MAX_VALUE ))
+            .andExpect(status().isNotFound());
+
+    }
+
+    @Test
+    public void getEventAttendeeByEventIdAndUserId_withNonExistingEvent_ShouldThrow404() throws Exception {
+        //Initialize the event and eventAttendee
+        Event savedEvent = initEventDB();
+        initEventAttendeeDB();
+
+        //Save events and attendee
+        restEventAttendeeMockMvc.perform(get("/api/event-attendees/event/{eventId}/user/{userId}", Long.MAX_VALUE, user.getId() ))
+            .andExpect(status().isNotFound());
     }
 
     @Test
@@ -504,10 +582,20 @@ public class EventAttendeeResourceIT {
     }
 
     private EventAttendee initEventAttendeeDB() {
+        user = getLoggedInUser();
         eventAttendee.setEventId(event.getId());
         eventAttendee.setUserId(user.getId());
         return eventAttendeeRepository.saveAndFlush(eventAttendee);
     }
 
+    private UserUniInfo initUserUniInfoDB() {
+        user = getLoggedInUser();
+        userUniInfo.setUserId(user.getId());
+        return userUniInfoRepository.saveAndFlush(userUniInfo);
+    }
 
+    private User getLoggedInUser() {
+        return userService.getUserWithAuthorities()
+            .orElseThrow(() -> new BadRequestException("User not login"));
+    }
 }

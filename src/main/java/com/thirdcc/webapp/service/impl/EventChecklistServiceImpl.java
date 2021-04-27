@@ -78,11 +78,13 @@ public class EventChecklistServiceImpl implements EventChecklistService {
         if (eventChecklist.getStatus().equals(EventChecklistStatus.FINISHED)) {
             throw new BadRequestException("Event Checklist is completed, not allow to update");
         }
-        eventChecklist.setName(eventChecklistDTO.getName());
-        eventChecklist.setDescription(eventChecklistDTO.getDescription());
-        eventChecklist.setType(eventChecklistDTO.getType());
+        EventChecklist updatedEventChecklist = checklistMapper.toEntity(eventChecklistDTO);
+
+        // Cannot update eventId
+        updatedEventChecklist.setEventId(eventChecklist.getEventId());
+
         return checklistMapper.toDto(
-            checklistRepository.save(eventChecklist)
+            checklistRepository.save(updatedEventChecklist)
         );
     }
 

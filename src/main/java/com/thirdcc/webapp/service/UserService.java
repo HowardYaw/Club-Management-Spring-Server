@@ -4,6 +4,7 @@ import com.thirdcc.webapp.config.Constants;
 import com.thirdcc.webapp.domain.Authority;
 import com.thirdcc.webapp.domain.EventCrew;
 import com.thirdcc.webapp.domain.User;
+import com.thirdcc.webapp.exception.BadRequestException;
 import com.thirdcc.webapp.repository.AuthorityRepository;
 import com.thirdcc.webapp.repository.EventCrewRepository;
 import com.thirdcc.webapp.repository.UserRepository;
@@ -11,6 +12,7 @@ import com.thirdcc.webapp.security.AuthoritiesConstants;
 import com.thirdcc.webapp.security.SecurityUtils;
 import com.thirdcc.webapp.service.dto.EventCrewDTO;
 import com.thirdcc.webapp.service.dto.UserDTO;
+import com.thirdcc.webapp.service.dto.UserUniInfoDTO;
 import com.thirdcc.webapp.service.util.RandomUtil;
 import com.thirdcc.webapp.web.rest.errors.*;
 
@@ -85,7 +87,7 @@ public class UserService {
 
     public Optional<User> requestPasswordReset(String mail) {
         return userRepository.findOneByEmailIgnoreCase(mail)
-            .filter(User::getActivated)
+            .filter(User::isActivated)
             .map(user -> {
                 user.setResetKey(RandomUtil.generateResetKey());
                 user.setResetDate(Instant.now());
@@ -130,9 +132,9 @@ public class UserService {
         return newUser;
     }
 
-    private boolean removeNonActivatedUser(User existingUser){
-        if (existingUser.getActivated()) {
-             return false;
+    private boolean removeNonActivatedUser(User existingUser) {
+        if (existingUser.isActivated()) {
+            return false;
         }
         userRepository.delete(existingUser);
         userRepository.flush();
@@ -228,6 +230,21 @@ public class UserService {
             .map(UserDTO::new);
     }
 
+    public User updateUser(UserUniInfoDTO userUniInfoDTO) {
+        User currentUser = SecurityUtils
+            .getCurrentUserLogin()
+            .flatMap(userRepository::findOneWithAuthoritiesByLogin)
+            .orElseThrow(() -> new BadRequestException("Cannot find user"));
+
+        currentUser.setFirstName(userUniInfoDTO.getFirstName());
+        currentUser.setLastName(userUniInfoDTO.getLastName());
+        currentUser.setGender(userUniInfoDTO.getGender());
+        currentUser.setPhoneNumber(userUniInfoDTO.getPhoneNumber());
+        currentUser.setDateOfBirth(userUniInfoDTO.getDateOfBirth());
+
+        return userRepository.save(currentUser);
+    }
+
     public void deleteUser(String login) {
         userRepository.findOneByLogin(login).ifPresent(user -> {
             userRepository.delete(user);
@@ -254,6 +271,11 @@ public class UserService {
     @Transactional(readOnly = true)
     public Page<UserDTO> getAllManagedUsers(Pageable pageable) {
         return userRepository.findAllByLoginNot(pageable, Constants.ANONYMOUS_USER).map(UserDTO::new);
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<User> getUserByLogin(String login) {
+        return userRepository.findOneByLogin(login);
     }
 
     @Transactional(readOnly = true)
@@ -289,6 +311,7 @@ public class UserService {
 
     /**
      * Gets a list of all the authorities.
+     *
      * @return a list of all the authorities.
      */
     public List<String> getAuthorities() {
@@ -337,14 +360,28 @@ public class UserService {
 
     /**
      * Gets a list of users that are not event crews of event with "eventId".
+     *
      * @return a list of all the non event crew users.
      */
-    public List<UserDTO> getNotEventCrewUsers (Pageable pageable, Long eventId){
+    public List<UserDTO> getNotEventCrewUsers(Pageable pageable, Long eventId) {
         List<UserDTO> userDTOList = userRepository.findAllByLoginNot(pageable, Constants.ANONYMOUS_USER).map(UserDTO::new).getContent();
         return userDTOList
             .stream()
             .filter(user -> !eventCrewRepository.findByUserIdAndAndEventId(user.getId(), eventId).isPresent())
             .collect(Collectors.toList());
+    }
+
+    public boolean isBasicProfileCompleted(Long userId) {
+        User user = userRepository
+            .findById(userId)
+            .orElseThrow(() -> new BadRequestException("user not found"));
+        boolean hasFirstName = StringUtils.isNotBlank(user.getFirstName());
+        boolean hasLastName = StringUtils.isNotBlank(user.getLastName());
+        boolean hasGender = user.getGender() != null;
+        boolean hasPhoneNumber = StringUtils.isNotBlank(user.getPhoneNumber());
+        boolean hasDateOfBirth = user.getDateOfBirth() != null;
+
+        return hasFirstName && hasLastName && hasGender && hasPhoneNumber && hasDateOfBirth;
     }
 
 }

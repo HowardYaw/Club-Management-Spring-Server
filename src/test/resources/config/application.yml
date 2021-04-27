@@ -21,6 +21,9 @@ eureka:
     instanceId: clubmanagement:${spring.application.instance-id:${random.value}}
 
 spring:
+  test:
+    mockmvc:
+      print: none
   application:
     name: clubmanagement
   datasource:
@@ -50,7 +53,7 @@ spring:
       hibernate.hbm2ddl.auto: validate
       hibernate.jdbc.time_zone: UTC
   liquibase:
-    contexts: test
+    contexts: test, testFaker
   mail:
     host: localhost
   main:

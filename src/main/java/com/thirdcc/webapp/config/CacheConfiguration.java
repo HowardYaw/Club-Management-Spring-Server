@@ -61,6 +61,7 @@ public class CacheConfiguration {
             createCache(cm, com.thirdcc.webapp.domain.UserUniInfo.class.getName());
             createCache(cm, com.thirdcc.webapp.domain.YearSession.class.getName());
             createCache(cm, com.thirdcc.webapp.domain.Faculty.class.getName());
+            createCache(cm, com.thirdcc.webapp.domain.EventRegistrationClosingCriteria.class.getName());
             // jhipster-needle-ehcache-add-entry
         };
     }

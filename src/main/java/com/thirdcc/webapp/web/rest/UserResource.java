@@ -211,7 +211,7 @@ public class UserResource {
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the list of users in body.
      */
     @GetMapping("/users/event-crews/{eventId}")
-    public List<UserDTO> getNotEventCrewUsers (Pageable pageable, @PathVariable Long eventId){
+    public List<UserDTO> getNotEventCrewUsers (Pageable pageable, @PathVariable Long eventId) {
         log.debug("REST request to get not event crew user of event: {}", eventId);
         return userService.getNotEventCrewUsers(pageable, eventId);
     }

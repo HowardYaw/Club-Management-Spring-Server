@@ -6,14 +6,17 @@ import com.thirdcc.webapp.domain.Authority;
 import com.thirdcc.webapp.domain.EventCrew;
 import com.thirdcc.webapp.domain.User;
 import com.thirdcc.webapp.domain.enumeration.EventCrewRole;
+import com.thirdcc.webapp.exception.BadRequestException;
 import com.thirdcc.webapp.repository.EventCrewRepository;
 import com.thirdcc.webapp.repository.UserRepository;
 import com.thirdcc.webapp.security.SecurityUtils;
 import com.thirdcc.webapp.service.MailService;
 import com.thirdcc.webapp.service.UserService;
+import com.thirdcc.webapp.service.UserUniInfoService;
 import com.thirdcc.webapp.service.dto.AccountDetailsDTO;
 import com.thirdcc.webapp.service.dto.PasswordChangeDTO;
 import com.thirdcc.webapp.service.dto.UserDTO;
+import com.thirdcc.webapp.service.dto.UserUniInfoDTO;
 import com.thirdcc.webapp.web.rest.errors.*;
 import com.thirdcc.webapp.web.rest.vm.KeyAndPasswordVM;
 import com.thirdcc.webapp.web.rest.vm.ManagedUserVM;
@@ -22,6 +25,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
@@ -48,6 +52,8 @@ public class AccountResource {
 
     private final UserService userService;
 
+    private final UserUniInfoService userUniInfoService;
+
     private final MailService mailService;
 
     private final ManagementTeamSecurityExpression managementTeamSecurityExpression;
@@ -57,12 +63,13 @@ public class AccountResource {
     public AccountResource(
         UserRepository userRepository,
         UserService userService,
-        MailService mailService,
+        UserUniInfoService userUniInfoService, MailService mailService,
         ManagementTeamSecurityExpression managementTeamSecurityExpression,
         EventCrewRepository eventCrewRepository
     ) {
         this.userRepository = userRepository;
         this.userService = userService;
+        this.userUniInfoService = userUniInfoService;
         this.mailService = mailService;
         this.managementTeamSecurityExpression = managementTeamSecurityExpression;
         this.eventCrewRepository = eventCrewRepository;
@@ -216,6 +223,27 @@ public class AccountResource {
         if (!user.isPresent()) {
             throw new AccountResourceException("No user was found for this reset key");
         }
+    }
+
+    @GetMapping("/account/is-profile-completed")
+    public ResponseEntity<Map<String, Boolean>> isProfileCompleted() {
+        User currentUser = SecurityUtils
+            .getCurrentUserLogin()
+            .flatMap(userRepository::findOneWithAuthoritiesByLogin)
+            .orElseThrow(() -> new BadRequestException("Cannot find user"));
+        boolean isBasicProfileCompleted = userService.isBasicProfileCompleted(currentUser.getId());
+        boolean isUserUniInfoCompleted = userUniInfoService.isUserUniInfoCompleted(currentUser.getId());
+        boolean isProfileCompleted = isBasicProfileCompleted && isUserUniInfoCompleted;
+        Map<String, Boolean> result = new HashMap<>();
+        result.put("isProfileCompleted", isProfileCompleted);
+        return ResponseEntity.ok().headers(null).body(result);
+    }
+
+    @PostMapping("/account/profile")
+    public ResponseEntity<UserUniInfoDTO> completeProfile(@RequestBody UserUniInfoDTO userUniInfoDTO) {
+        userService.updateUser(userUniInfoDTO);
+        UserUniInfoDTO result = userUniInfoService.save(userUniInfoDTO);
+        return ResponseEntity.ok().headers(null).body(result);
     }
 
     private static boolean checkPasswordLength(String password) {

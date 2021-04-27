@@ -1,5 +1,6 @@
 package com.thirdcc.webapp.web.rest;
 
+import com.thirdcc.webapp.domain.EventAttendee;
 import com.thirdcc.webapp.service.EventAttendeeService;
 import com.thirdcc.webapp.web.rest.errors.BadRequestAlertException;
 import com.thirdcc.webapp.service.dto.EventAttendeeDTO;
@@ -13,7 +14,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -122,7 +122,7 @@ public class EventAttendeeResource {
      * @return the {@link ResponseEntity} with status {@code 200 (OK) or 400 (BadRequest)}.
      */
     @GetMapping("/event-attendees/event/{eventId}")
-    @PreAuthorize("@managementTeamSecurityExpression.hasRoleAdminOrIsEventCrew(#eventId)")
+    @PreAuthorize("@managementTeamSecurityExpression.isEventCrew(#eventId) || @managementTeamSecurityExpression.isCurrentAdministrator()")
     public ResponseEntity<List<EventAttendeeDTO>> getAllEventAttendeeByEventId(Pageable pageable, @PathVariable Long eventId, @RequestParam MultiValueMap<String, String> queryParams, UriComponentsBuilder uriBuilder) {
         log.debug("REST request to get a page of EventAttendees");
         Page<EventAttendeeDTO> page = eventAttendeeService.findAllByEventId(pageable, eventId);
@@ -141,5 +141,19 @@ public class EventAttendeeResource {
         log.debug("REST request to delete EventAttendee : {}", id);
         eventAttendeeService.delete(id);
         return ResponseEntity.noContent().headers(HeaderUtil.createEntityDeletionAlert(applicationName, true, ENTITY_NAME, id.toString())).build();
+    }
+
+    /**
+     * {@code GET  /event-attendees/event/{eventId}} : GET the eventAttendee in "eventId" event.
+     *
+     * @param eventId the id of the event to retrieve list of eventAttendeeDTO.
+     * @param userId theid of the user to retrieve list of eventAttendeeDTO.
+     * @return the {@link ResponseEntity} with status {@code 200 (OK) or 400 (BadRequest)}.
+     */
+    @GetMapping("/event-attendees/event/{eventId}/user/{userId}")
+    public ResponseEntity<EventAttendeeDTO> getEventAttendeeByEventIdAndUserId(@PathVariable Long eventId, @PathVariable Long userId) {
+        log.debug("REST request to get a EventAttendee with event Id and user Id");
+        Optional<EventAttendeeDTO> eventAttendeeDTO = eventAttendeeService.findOneByEventIdAndUserId(eventId, userId);
+        return ResponseUtil.wrapOrNotFound(eventAttendeeDTO);
     }
 }

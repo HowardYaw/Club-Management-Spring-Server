@@ -1,0 +1,31 @@
+{
+    "name": "EventRegistrationClosingCriteria",
+    "fields": [
+        {
+            "fieldName": "eventId",
+            "fieldType": "Long"
+        },
+        {
+            "fieldName": "maxAttendees",
+            "fieldType": "Integer"
+        },
+        {
+            "fieldName": "closingDate",
+            "fieldType": "Instant"
+        },
+        {
+            "fieldName": "forceClose",
+            "fieldType": "Boolean"
+        }
+    ],
+    "relationships": [],
+    "changelogDate": "20201206135020",
+    "entityTableName": "event_registration_closing_criteria",
+    "dto": "mapstruct",
+    "pagination": "no",
+    "service": "serviceImpl",
+    "jpaMetamodelFiltering": false,
+    "fluentMethods": true,
+    "clientRootFolder": "",
+    "applications": "*"
+}

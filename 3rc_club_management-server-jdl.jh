@@ -224,6 +224,14 @@ entity Faculty {
     shortName String
 }
 
+entity EventRegistrationClosingCriteria {
+	id Long
+	eventId Long
+	maxAttendees Integer
+	closingDate Instant
+	forceClose Boolean
+}
+
 
 dto * with mapstruct except Faculty, YearSession
 service * with serviceImpl

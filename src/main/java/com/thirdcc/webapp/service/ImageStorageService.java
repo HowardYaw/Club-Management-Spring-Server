@@ -1,7 +1,9 @@
 package com.thirdcc.webapp.service;
 
 import com.thirdcc.webapp.service.dto.ImageStorageDTO;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 
@@ -13,10 +15,10 @@ public interface ImageStorageService {
     /**
      * Save a imageStorage.
      *
-     * @param imageStorageDTO the entity to save.
+     * @param multipartFile the file to save.
      * @return the persisted entity.
      */
-    ImageStorageDTO save(ImageStorageDTO imageStorageDTO);
+    ImageStorageDTO save(ImageStorageDTO imageStorageDTO, MultipartFile multipartFile) throws IOException;
 
     /**
      * Get all the imageStorages.
