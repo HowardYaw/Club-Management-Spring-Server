@@ -271,6 +271,7 @@ public class UserUniInfoResourceIT {
 
     @Test
     @Transactional
+    @WithNormalUser
     public void updateUserUniInfo() throws Exception {
         User currentUser = getCurrentUser();
         // Initialize the database
