@@ -136,4 +136,23 @@ public class UserUniInfoServiceImpl implements UserUniInfoService {
 
         return hasCourseProgramId && hasYearSession && hasIntakeSemester && hasStayIn;
     }
+
+    @Override
+    public Optional<UserUniInfoDTO> getUserUniInfoByUserId(Long userId) {
+        return userUniInfoRepository
+            .findOneByUserId(userId)
+            .map(userUniInfoMapper::toDto);
+    }
+
+    @Override
+    public UserUniInfoDTO mapUserUniInfoWithUser(UserUniInfoDTO userUniInfoDTO, User user) {
+        userUniInfoDTO.setUserId(user.getId());
+        userUniInfoDTO.setFirstName(user.getFirstName());
+        userUniInfoDTO.setLastName(user.getLastName());
+        userUniInfoDTO.setGender(user.getGender());
+        userUniInfoDTO.setPhoneNumber(user.getPhoneNumber());
+        userUniInfoDTO.setDateOfBirth(user.getDateOfBirth());
+        userUniInfoDTO.setImageUrl(user.getImageUrl());
+        return userUniInfoDTO;
+    }
 }
