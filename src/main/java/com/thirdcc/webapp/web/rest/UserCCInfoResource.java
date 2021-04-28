@@ -1,6 +1,10 @@
 package com.thirdcc.webapp.web.rest;
 
+import com.thirdcc.webapp.domain.User;
+import com.thirdcc.webapp.exception.BadRequestException;
+import com.thirdcc.webapp.security.SecurityUtils;
 import com.thirdcc.webapp.service.UserCCInfoService;
+import com.thirdcc.webapp.service.UserService;
 import com.thirdcc.webapp.web.rest.errors.BadRequestAlertException;
 import com.thirdcc.webapp.service.dto.UserCCInfoDTO;
 
@@ -34,8 +38,11 @@ public class UserCCInfoResource {
 
     private final UserCCInfoService userCCInfoService;
 
-    public UserCCInfoResource(UserCCInfoService userCCInfoService) {
+    private final UserService userService;
+
+    public UserCCInfoResource(UserCCInfoService userCCInfoService, UserService userService) {
         this.userCCInfoService = userCCInfoService;
+        this.userService = userService;
     }
 
     /**
@@ -100,6 +107,23 @@ public class UserCCInfoResource {
         log.debug("REST request to get UserCCInfo : {}", id);
         Optional<UserCCInfoDTO> userCCInfoDTO = userCCInfoService.findOne(id);
         return ResponseUtil.wrapOrNotFound(userCCInfoDTO);
+    }
+
+    /**
+     * {@code GET  /user-cc-infos/current} : get the current User userCCInfo.
+     *
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the List of userCCInfoDTO, or with status {@code 404 (Not Found)}.
+     */
+    @GetMapping("/user-cc-infos/current")
+    public ResponseEntity<List<UserCCInfoDTO>> getCurrentUserCCInfo() {
+        log.debug("REST request to get Current User UserCCInfo");
+        String userLogin = SecurityUtils
+            .getCurrentUserLogin()
+            .orElseThrow(() -> new BadRequestException("User not Login"));
+        User user = userService.getUserByLogin(userLogin)
+            .orElseThrow(() -> new BadRequestException("User not found"));
+        List<UserCCInfoDTO> result = userCCInfoService.getUserCCInfoByUserId(user.getId());
+        return ResponseEntity.ok().body(result);
     }
 
     /**

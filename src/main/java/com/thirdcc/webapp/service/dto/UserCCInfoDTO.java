@@ -18,6 +18,8 @@ public class UserCCInfoDTO implements Serializable {
 
     private String yearSession;
 
+    private String fishLevel;
+
 
     public Long getId() {
         return id;
@@ -89,5 +91,13 @@ public class UserCCInfoDTO implements Serializable {
             ", familyRole='" + getFamilyRole() + "'" +
             ", yearSession='" + getYearSession() + "'" +
             "}";
+    }
+
+    public String getFishLevel() {
+        return fishLevel;
+    }
+
+    public void setFishLevel(String fishLevel) {
+        this.fishLevel = fishLevel;
     }
 }

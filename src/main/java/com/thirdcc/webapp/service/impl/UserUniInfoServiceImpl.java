@@ -1,7 +1,9 @@
 package com.thirdcc.webapp.service.impl;
 
+import com.thirdcc.webapp.domain.CourseProgram;
 import com.thirdcc.webapp.domain.User;
 import com.thirdcc.webapp.exception.BadRequestException;
+import com.thirdcc.webapp.exception.InternalServerErrorException;
 import com.thirdcc.webapp.repository.CourseProgramRepository;
 import com.thirdcc.webapp.repository.UserRepository;
 import com.thirdcc.webapp.security.SecurityUtils;
@@ -10,6 +12,7 @@ import com.thirdcc.webapp.domain.UserUniInfo;
 import com.thirdcc.webapp.repository.UserUniInfoRepository;
 import com.thirdcc.webapp.service.dto.UserUniInfoDTO;
 import com.thirdcc.webapp.service.mapper.UserUniInfoMapper;
+import com.thirdcc.webapp.utils.YearSessionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -127,7 +130,18 @@ public class UserUniInfoServiceImpl implements UserUniInfoService {
     public Optional<UserUniInfoDTO> getUserUniInfoByUserId(Long userId) {
         return userUniInfoRepository
             .findOneByUserId(userId)
-            .map(userUniInfoMapper::toDto);
+            .map(userUniInfoMapper::toDto)
+            .map(this::mapUserUniInfoDetails);
+    }
+
+    private UserUniInfoDTO mapUserUniInfoDetails(UserUniInfoDTO userUniInfoDTO) {
+        CourseProgram courseProgram = courseProgramRepository.findById(userUniInfoDTO.getCourseProgramId())
+            .orElseThrow(() -> new InternalServerErrorException("Course Program not available for Id: " + userUniInfoDTO.getCourseProgramId()));
+        userUniInfoDTO.setGraduateYearSession(
+            YearSessionUtils.addYearSessionWithSemester(userUniInfoDTO.getYearSession(), courseProgram.getNumOfSem())
+        );
+        userUniInfoDTO.setTotalSemester(courseProgram.getNumOfSem());
+        return userUniInfoDTO;
     }
 
     @Override

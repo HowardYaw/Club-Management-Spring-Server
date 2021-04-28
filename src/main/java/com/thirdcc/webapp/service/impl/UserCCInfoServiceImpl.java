@@ -3,14 +3,19 @@ package com.thirdcc.webapp.service.impl;
 import com.thirdcc.webapp.service.UserCCInfoService;
 import com.thirdcc.webapp.domain.UserCCInfo;
 import com.thirdcc.webapp.repository.UserCCInfoRepository;
+import com.thirdcc.webapp.service.UserUniInfoService;
 import com.thirdcc.webapp.service.dto.UserCCInfoDTO;
+import com.thirdcc.webapp.service.dto.UserUniInfoDTO;
 import com.thirdcc.webapp.service.mapper.UserCCInfoMapper;
+import com.thirdcc.webapp.utils.YearSessionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
@@ -29,9 +34,12 @@ public class UserCCInfoServiceImpl implements UserCCInfoService {
 
     private final UserCCInfoMapper userCCInfoMapper;
 
-    public UserCCInfoServiceImpl(UserCCInfoRepository userCCInfoRepository, UserCCInfoMapper userCCInfoMapper) {
+    private final UserUniInfoService userUniInfoService;
+
+    public UserCCInfoServiceImpl(UserCCInfoRepository userCCInfoRepository, UserCCInfoMapper userCCInfoMapper, UserUniInfoService userUniInfoService) {
         this.userCCInfoRepository = userCCInfoRepository;
         this.userCCInfoMapper = userCCInfoMapper;
+        this.userUniInfoService = userUniInfoService;
     }
 
     /**
@@ -75,6 +83,31 @@ public class UserCCInfoServiceImpl implements UserCCInfoService {
         log.debug("Request to get UserCCInfo : {}", id);
         return userCCInfoRepository.findById(id)
             .map(userCCInfoMapper::toDto);
+    }
+
+    @Override
+    public List<UserCCInfoDTO> getUserCCInfoByUserId(Long userId) {
+        log.debug("Request to get UserCCInfo of User : {}", userId);
+        List<UserCCInfoDTO> userCCInfoDTOList = userCCInfoRepository
+            .findAllByUserId(userId, Pageable.unpaged())
+            .map(userCCInfoMapper::toDto)
+            .getContent();
+        return getFullUserCCInfoList(userCCInfoDTOList, userId);
+//        userCCInfoDTOList.sort(Comparator.comparing(UserCCInfoDTO::getYearSession));
+//        return userCCInfoDTOList;
+    }
+
+    private List<UserCCInfoDTO> getFullUserCCInfoList(List<UserCCInfoDTO> userCCInfoDTOList, Long userId) {
+        List<String> yearSessionWithCCFamilyRole = userCCInfoDTOList.stream()
+            .map(UserCCInfoDTO::getYearSession)
+            .collect(Collectors.toList());
+        userUniInfoService.getUserUniInfoByUserId(userId)
+            .ifPresent(userUniInfoDTO -> {
+                String currentYearSession = YearSessionUtils.getCurrentYearSession();
+                // TODO: Construct Full List
+            });
+        userCCInfoDTOList.sort(Comparator.comparing(UserCCInfoDTO::getYearSession));
+        return userCCInfoDTOList;
     }
 
     /**

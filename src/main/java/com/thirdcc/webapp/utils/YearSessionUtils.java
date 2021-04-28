@@ -72,4 +72,13 @@ public class YearSessionUtils {
         return firstLocalDateOfYearSession.atStartOfDay(zoneId).toInstant();
     }
 
+    public static String addYearSessionWithSemester(String yearSession, Integer numOfSem) {
+        Integer numOfYear = Math.round(numOfSem / 2.0f);
+        Integer firstYear = Integer.parseInt(yearSession.substring(0, 4));
+        Integer secondYear = Integer.parseInt(yearSession.substring(yearSession.length() - 4));
+        firstYear += numOfYear;
+        secondYear += numOfYear;
+        return String.format("%d/%d", firstYear, secondYear);
+    }
+
 }
