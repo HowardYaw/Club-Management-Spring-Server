@@ -185,13 +185,14 @@ public class UserResource {
     }
 
     /**
-     * {@code GET /user/current} : get the current user.
+     * {@code GET /user/current} : get the current user Profile Details.
+     * Main Use Case is for User Profile Page
      *
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the userId user, or with status {@code 404 (Not Found)}.
      */
     @GetMapping("/users/current")
-    public ResponseEntity<UserDTO> getCurrentLoginUser() {
-        log.debug("REST request to get Current Login User");
+    public ResponseEntity<UserDTO> getCurrentLoginUserProfile() {
+        log.debug("REST request to get Current Login User Profile");
         String userLogin = SecurityUtils
             .getCurrentUserLogin()
             .orElseThrow(() -> new BadRequestException("User not Login"));
