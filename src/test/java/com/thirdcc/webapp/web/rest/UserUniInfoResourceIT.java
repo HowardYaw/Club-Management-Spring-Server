@@ -2,6 +2,7 @@ package com.thirdcc.webapp.web.rest;
 
 import com.thirdcc.webapp.ClubmanagementApp;
 import com.thirdcc.webapp.annotations.authorization.WithNormalUser;
+import com.thirdcc.webapp.annotations.init.InitYearSession;
 import com.thirdcc.webapp.domain.User;
 import com.thirdcc.webapp.domain.UserUniInfo;
 import com.thirdcc.webapp.exception.BadRequestException;
@@ -38,6 +39,7 @@ import com.thirdcc.webapp.domain.enumeration.UserUniStatus;
  */
 @SpringBootTest(classes = ClubmanagementApp.class)
 @AutoConfigureMockMvc
+@InitYearSession
 public class UserUniInfoResourceIT {
 
     private static final Long DEFAULT_USER_ID = 1L;
@@ -49,8 +51,8 @@ public class UserUniInfoResourceIT {
     private static final String DEFAULT_PROGRAM = "DEFAULT_PROGRAM";
     private static final String UPDATED_PROGRAM = "UPDATED_PROGRAM";
 
-    private static final String DEFAULT_YEAR_SESSION = "DEFAULT_YEAR_SESSION";
-    private static final String UPDATED_YEAR_SESSION = "UPDATED_YEAR_SESSION";
+    private static final String DEFAULT_YEAR_SESSION = "2020/2021";
+    private static final String UPDATED_YEAR_SESSION = "2018/2019";
 
     private static final Integer DEFAULT_INTAKE_SEMESTER = 1;
     private static final Integer UPDATED_INTAKE_SEMESTER = 2;
@@ -131,11 +133,7 @@ public class UserUniInfoResourceIT {
     @Transactional
     @WithNormalUser
     public void createUserUniInfo() throws Exception {
-        User currentUser = SecurityUtils
-            .getCurrentUserLogin()
-            .flatMap(userRepository::findOneWithAuthoritiesByLogin)
-            .orElseThrow(() -> new BadRequestException("Cannot find user"));
-
+        User currentUser = getCurrentUser();
         int databaseSizeBeforeCreate = userUniInfoRepository.findAll().size();
 
         // Create the UserUniInfo
@@ -184,14 +182,14 @@ public class UserUniInfoResourceIT {
     @WithNormalUser
     public void getAllUserUniInfos() throws Exception {
         // Initialize the database
-        userUniInfoRepository.saveAndFlush(userUniInfo);
-
+        UserUniInfo savedUserUniInfo = initUserUniInfoDB();
+        User currentUser = getCurrentUser();
         // Get all the userUniInfoList
         restUserUniInfoMockMvc.perform(get("/api/user-uni-infos?sort=id,desc"))
             .andExpect(status().isOk())
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
-            .andExpect(jsonPath("$.[*].id").value(hasItem(userUniInfo.getId().intValue())))
-            .andExpect(jsonPath("$.[*].userId").value(hasItem(DEFAULT_USER_ID.intValue())))
+            .andExpect(jsonPath("$.[*].id").value(hasItem(savedUserUniInfo.getId().intValue())))
+            .andExpect(jsonPath("$.[*].userId").value(hasItem(currentUser.getId().intValue())))
             .andExpect(jsonPath("$.[*].courseProgramId").value(hasItem(DEFAULT_COURSE_PROGRAM_ID.intValue())))
             .andExpect(jsonPath("$.[*].yearSession").value(hasItem(DEFAULT_YEAR_SESSION.toString())))
             .andExpect(jsonPath("$.[*].intakeSemester").value(hasItem(DEFAULT_INTAKE_SEMESTER)))
@@ -204,14 +202,14 @@ public class UserUniInfoResourceIT {
     @WithNormalUser
     public void getUserUniInfo() throws Exception {
         // Initialize the database
-        userUniInfoRepository.saveAndFlush(userUniInfo);
-
+        User currentUser = getCurrentUser();
+        UserUniInfo savedUserUniInfo = initUserUniInfoDB();
         // Get the userUniInfo
-        restUserUniInfoMockMvc.perform(get("/api/user-uni-infos/{id}", userUniInfo.getId()))
+        restUserUniInfoMockMvc.perform(get("/api/user-uni-infos/{id}", savedUserUniInfo.getId()))
             .andExpect(status().isOk())
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
-            .andExpect(jsonPath("$.id").value(userUniInfo.getId().intValue()))
-            .andExpect(jsonPath("$.userId").value(DEFAULT_USER_ID.intValue()))
+            .andExpect(jsonPath("$.id").value(savedUserUniInfo.getId().intValue()))
+            .andExpect(jsonPath("$.userId").value(currentUser.getId().intValue()))
             .andExpect(jsonPath("$.courseProgramId").value(DEFAULT_COURSE_PROGRAM_ID.intValue()))
             .andExpect(jsonPath("$.yearSession").value(DEFAULT_YEAR_SESSION.toString()))
             .andExpect(jsonPath("$.intakeSemester").value(DEFAULT_INTAKE_SEMESTER))
@@ -277,21 +275,15 @@ public class UserUniInfoResourceIT {
     @Transactional
     @WithNormalUser
     public void updateUserUniInfo() throws Exception {
-
-        User currentUser = SecurityUtils
-            .getCurrentUserLogin()
-            .flatMap(userRepository::findOneWithAuthoritiesByLogin)
-            .orElseThrow(() -> new BadRequestException("Cannot find user"));
-
+        User currentUser = getCurrentUser();
         // Initialize the database
-        userUniInfoRepository.saveAndFlush(userUniInfo);
+        UserUniInfo savedUserUniInfo = initUserUniInfoDB();
 
         int databaseSizeBeforeUpdate = userUniInfoRepository.findAll().size();
 
         // Update the userUniInfo
-        UserUniInfo updatedUserUniInfo = userUniInfoRepository.findById(userUniInfo.getId()).get();
-        // Disconnect from session so that the updates on updatedUserUniInfo are not directly saved in db
-        em.detach(updatedUserUniInfo);
+        UserUniInfo updatedUserUniInfo = new UserUniInfo();
+        updatedUserUniInfo.setId(savedUserUniInfo.getId());
         updatedUserUniInfo.setUserId(UPDATED_USER_ID);
         updatedUserUniInfo.setCourseProgramId(UPDATED_COURSE_PROGRAM_ID);
         updatedUserUniInfo.setYearSession(UPDATED_YEAR_SESSION);
@@ -342,12 +334,12 @@ public class UserUniInfoResourceIT {
     @WithNormalUser
     public void deleteUserUniInfo() throws Exception {
         // Initialize the database
-        userUniInfoRepository.saveAndFlush(userUniInfo);
+        UserUniInfo savedUserUniInfo = initUserUniInfoDB();
 
         int databaseSizeBeforeDelete = userUniInfoRepository.findAll().size();
 
         // Delete the userUniInfo
-        restUserUniInfoMockMvc.perform(delete("/api/user-uni-infos/{id}", userUniInfo.getId())
+        restUserUniInfoMockMvc.perform(delete("/api/user-uni-infos/{id}", savedUserUniInfo.getId())
             .accept(TestUtil.APPLICATION_JSON_UTF8))
             .andExpect(status().isNoContent());
 
@@ -399,5 +391,13 @@ public class UserUniInfoResourceIT {
             .getCurrentUserLogin()
             .flatMap(userRepository::findOneWithAuthoritiesByLogin)
             .orElseThrow(() -> new BadRequestException("Cannot find user"));
+    }
+
+
+    private UserUniInfo initUserUniInfoDB() {
+        User currentUser = getCurrentUser();
+        UserUniInfo userUniInfo = createEntity(em);
+        userUniInfo.setUserId(currentUser.getId());
+        return userUniInfoRepository.saveAndFlush(userUniInfo);
     }
 }

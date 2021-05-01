@@ -1,16 +1,15 @@
 package com.thirdcc.webapp.web.rest;
 
 import com.thirdcc.webapp.ClubmanagementApp;
-import com.thirdcc.webapp.domain.Authority;
-import com.thirdcc.webapp.domain.Event;
-import com.thirdcc.webapp.domain.EventCrew;
-import com.thirdcc.webapp.domain.User;
+import com.thirdcc.webapp.annotations.authorization.WithNormalUser;
+import com.thirdcc.webapp.domain.*;
+import com.thirdcc.webapp.domain.enumeration.ClubFamilyRole;
 import com.thirdcc.webapp.domain.enumeration.EventCrewRole;
 import com.thirdcc.webapp.domain.enumeration.EventStatus;
-import com.thirdcc.webapp.repository.EventCrewRepository;
-import com.thirdcc.webapp.repository.EventRepository;
-import com.thirdcc.webapp.repository.UserRepository;
+import com.thirdcc.webapp.exception.BadRequestException;
+import com.thirdcc.webapp.repository.*;
 import com.thirdcc.webapp.security.AuthoritiesConstants;
+import com.thirdcc.webapp.security.SecurityUtils;
 import com.thirdcc.webapp.service.MailService;
 import com.thirdcc.webapp.service.UserService;
 import com.thirdcc.webapp.service.dto.UserDTO;
@@ -29,7 +28,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.EntityManager;
@@ -93,6 +91,11 @@ public class UserResourceIT {
     private static final EventCrewRole DEFAULT_ROLE = EventCrewRole.HEAD;
     private static final EventCrewRole UPDATED_ROLE = EventCrewRole.HEAD;
 
+    private static final ClubFamilyRole DEFAULT_CLUB_FAMILY_ROLE = ClubFamilyRole.FATHER;
+    private static final String DEFAULT_USER_CC_INFO_YEAR_SESSION = "2020/2021";
+    private static final Long DEFAULT_USER_CC_INFO_USER_ID = 1L;
+    private static final Long DEFAULT_USER_CC_INFO_CLUB_FAMILY_ID = 1L;
+
     @Autowired
     private UserRepository userRepository;
 
@@ -110,6 +113,12 @@ public class UserResourceIT {
 
     @Autowired
     private UserMapper userMapper;
+
+    @Autowired
+    private UserCCInfoRepository userCCInfoRepository;
+
+    @Autowired
+    private ClubFamilyRepository clubFamilyRepository;
 
     @Autowired
     private MappingJackson2HttpMessageConverter jacksonMessageConverter;
@@ -135,13 +144,6 @@ public class UserResourceIT {
     public void setup() {
         cacheManager.getCache(UserRepository.USERS_BY_LOGIN_CACHE).clear();
         cacheManager.getCache(UserRepository.USERS_BY_EMAIL_CACHE).clear();
-        UserResource userResource = new UserResource(userService, userRepository, mailService);
-
-//        this.restUserMockMvc = MockMvcBuilders.standaloneSetup(userResource)
-//            .setCustomArgumentResolvers(pageableArgumentResolver)
-//            .setControllerAdvice(exceptionTranslator)
-//            .setMessageConverters(jacksonMessageConverter)
-//            .build();
     }
 
     /**
@@ -183,6 +185,15 @@ public class UserResourceIT {
             .eventId(DEFAULT_EVENT_ID)
             .role(DEFAULT_ROLE);
         return eventCrew;
+    }
+
+    public static UserCCInfo createUserCCInfoEntity() {
+        UserCCInfo userCCInfo = new UserCCInfo();
+        userCCInfo.setFamilyRole(DEFAULT_CLUB_FAMILY_ROLE);
+        userCCInfo.setClubFamilyId(DEFAULT_USER_CC_INFO_CLUB_FAMILY_ID);
+        userCCInfo.setUserId(DEFAULT_USER_ID);
+        userCCInfo.setYearSession(DEFAULT_USER_CC_INFO_YEAR_SESSION);
+        return userCCInfo;
     }
 
     @BeforeEach
@@ -703,6 +714,62 @@ public class UserResourceIT {
             .andExpect(jsonPath("$.[*].lastName").value(not(hasItem(DEFAULT_LASTNAME))))
             .andExpect(jsonPath("$.[*].email").value(not(hasItem(DEFAULT_EMAIL))))
             .andExpect(jsonPath("$.[*].imageUrl").value(not(hasItem(DEFAULT_IMAGEURL))));
+    }
+
+    @Test
+    @Transactional
+    @WithNormalUser
+    public void getCurrentLoginUser() throws Exception {
+        User currentUser = getCurrentUser();
+        UserCCInfo userCCInfo = createUserCCInfoEntity();
+        userCCInfo.setUserId(currentUser.getId());
+        UserCCInfo savedUserCCInfo = userCCInfoRepository.save(userCCInfo);
+
+        ClubFamily savedClubFamily = getClubFamilyById(DEFAULT_USER_CC_INFO_CLUB_FAMILY_ID);
+
+        restUserMockMvc.perform(get("/api/users/current"))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
+            .andExpect(jsonPath("$.login").value(currentUser.getLogin()))
+            .andExpect(jsonPath("$.firstName").value(currentUser.getFirstName()))
+            .andExpect(jsonPath("$.lastName").value(currentUser.getLastName()))
+            .andExpect(jsonPath("$.email").value(currentUser.getEmail()))
+            .andExpect(jsonPath("$.gender").value(currentUser.getGender()))
+            .andExpect(jsonPath("$.phoneNumber").value(currentUser.getPhoneNumber()))
+            .andExpect(jsonPath("$.dateOfBirth").value(currentUser.getDateOfBirth()))
+            .andExpect(jsonPath("$.clubFamilyName").value(savedClubFamily.getName()))
+            .andExpect(jsonPath("$.clubFamilySlogan").value(savedClubFamily.getSlogan()));
+    }
+
+    @Test
+    @Transactional
+    @WithNormalUser
+    public void getCurrentLoginUser_WithUserCCInfoNotExist() throws Exception {
+        User currentUser = getCurrentUser();
+
+        restUserMockMvc.perform(get("/api/users/current"))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
+            .andExpect(jsonPath("$.login").value(currentUser.getLogin()))
+            .andExpect(jsonPath("$.firstName").value(currentUser.getFirstName()))
+            .andExpect(jsonPath("$.lastName").value(currentUser.getLastName()))
+            .andExpect(jsonPath("$.email").value(currentUser.getEmail()))
+            .andExpect(jsonPath("$.gender").value(currentUser.getGender()))
+            .andExpect(jsonPath("$.phoneNumber").value(currentUser.getPhoneNumber()))
+            .andExpect(jsonPath("$.dateOfBirth").value(currentUser.getDateOfBirth()))
+            .andExpect(jsonPath("$.clubFamilyName").value(nullValue()))
+            .andExpect(jsonPath("$.clubFamilySlogan").value(nullValue()));
+    }
+
+    private User getCurrentUser() {
+        return SecurityUtils
+            .getCurrentUserLogin()
+            .flatMap(userRepository::findOneWithAuthoritiesByLogin)
+            .orElseThrow(() -> new BadRequestException("Cannot find user"));
+    }
+
+    private ClubFamily getClubFamilyById(Long id) {
+        return clubFamilyRepository.getOne(id);
     }
 
 }

@@ -21,6 +21,10 @@ public class UserCCInfoDTO implements Serializable {
 
     private FishLevel fishLevel;
 
+    private String clubFamilyName;
+
+    private String clubFamilySlogan;
+
 
     public Long getId() {
         return id;
@@ -91,6 +95,9 @@ public class UserCCInfoDTO implements Serializable {
             ", clubFamilyId=" + getClubFamilyId() +
             ", familyRole='" + getFamilyRole() + "'" +
             ", yearSession='" + getYearSession() + "'" +
+            ", clubFamilyName='" + getClubFamilyName() + "'" +
+            ", clubFamilySlogan='" + getClubFamilySlogan() + "'" +
+            ", fishLevel='" + getFishLevel() + "'" +
             "}";
     }
 
@@ -100,5 +107,21 @@ public class UserCCInfoDTO implements Serializable {
 
     public void setFishLevel(FishLevel fishLevel) {
         this.fishLevel = fishLevel;
+    }
+
+    public String getClubFamilySlogan() {
+        return clubFamilySlogan;
+    }
+
+    public void setClubFamilySlogan(String clubFamilySlogan) {
+        this.clubFamilySlogan = clubFamilySlogan;
+    }
+
+    public String getClubFamilyName() {
+        return clubFamilyName;
+    }
+
+    public void setClubFamilyName(String clubFamilyName) {
+        this.clubFamilyName = clubFamilyName;
     }
 }

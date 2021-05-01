@@ -2,10 +2,14 @@ package com.thirdcc.webapp.web.rest;
 
 import com.thirdcc.webapp.config.Constants;
 import com.thirdcc.webapp.domain.User;
+import com.thirdcc.webapp.exception.BadRequestException;
 import com.thirdcc.webapp.repository.UserRepository;
 import com.thirdcc.webapp.security.AuthoritiesConstants;
+import com.thirdcc.webapp.security.SecurityUtils;
 import com.thirdcc.webapp.service.MailService;
+import com.thirdcc.webapp.service.UserCCInfoService;
 import com.thirdcc.webapp.service.UserService;
+import com.thirdcc.webapp.service.dto.UserCCInfoDTO;
 import com.thirdcc.webapp.service.dto.UserDTO;
 import com.thirdcc.webapp.web.rest.errors.BadRequestAlertException;
 import com.thirdcc.webapp.web.rest.errors.EmailAlreadyUsedException;
@@ -72,11 +76,14 @@ public class UserResource {
 
     private final MailService mailService;
 
-    public UserResource(UserService userService, UserRepository userRepository, MailService mailService) {
+    private final UserCCInfoService userCCInfoService;
+
+    public UserResource(UserService userService, UserRepository userRepository, MailService mailService, UserCCInfoService userCCInfoService) {
 
         this.userService = userService;
         this.userRepository = userRepository;
         this.mailService = mailService;
+        this.userCCInfoService = userCCInfoService;
     }
 
     /**
@@ -175,6 +182,27 @@ public class UserResource {
         return ResponseUtil.wrapOrNotFound(
             userService.getUserWithAuthoritiesByLogin(login)
                 .map(UserDTO::new));
+    }
+
+    /**
+     * {@code GET /user/current} : get the current user Profile Details.
+     * Main Use Case is for User Profile Page
+     *
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the userId user, or with status {@code 404 (Not Found)}.
+     */
+    @GetMapping("/users/current")
+    public ResponseEntity<UserDTO> getCurrentLoginUserProfile() {
+        log.debug("REST request to get Current Login User Profile");
+        String userLogin = SecurityUtils
+            .getCurrentUserLogin()
+            .orElseThrow(() -> new BadRequestException("User not Login"));
+        UserDTO userDTO = userService.getUserByLogin(userLogin)
+            .map(UserDTO::new)
+            .orElseThrow(() -> new BadRequestException("User not found"));
+        userCCInfoService.findOneByUserId(userDTO.getId())
+            .ifPresent(userCCInfoDTO -> userService.mapUserWithUserCCInfo(userDTO, userCCInfoDTO));
+        log.debug("User DTO after map: {}", userDTO);
+        return ResponseEntity.ok().body(userDTO);
     }
 
     /**

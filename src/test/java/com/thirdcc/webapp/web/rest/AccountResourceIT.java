@@ -75,15 +75,25 @@ public class AccountResourceIT {
 
     private static final Long DEFAULT_USER_ID = 1L;
     private static final Long DEFAULT_COURSE_PROGRAM_ID = 1L;
+    private static final Long UPDATED_COURSE_PROGRAM_ID = 1L;
     private static final String DEFAULT_FIRST_NAME = "DEFAULT_FIRST_NAME";
+    private static final String UPDATED_FIRST_NAME = "UPDATED_FIRST_NAME";
     private static final String DEFAULT_LAST_NAME = "DEFAULT_FIRST_NAME";
+    private static final String UPDATED_LAST_NAME = "UPDATED_LAST_NAME";
     private static final Gender DEFAULT_GENDER = Gender.MALE;
+    private static final Gender UPDATED_GENDER = Gender.FEMALE;
     private static final String DEFAULT_PHONE_NUMBER = "DEFAULT_PHONE_NUMBER";
+    private static final String UPDATED_PHONE_NUMBER = "UPDATED_PHONE_NUMBER";
     private static final LocalDate DEFAULT_DATE_OF_BIRTH = LocalDate.ofEpochDay(1232L);
+    private static final LocalDate UPDATED_DATE_OF_BIRTH = LocalDate.ofEpochDay(4132L);
     private static final String DEFAULT_YEAR_SESSION = "DEFAULT_YEAR_SESSION";
+    private static final String UPDATED_YEAR_SESSION = "UPDATED_YEAR_SESSION";
     private static final Integer DEFAULT_INTAKE_SEMESTER = 1;
+    private static final Integer UPDATED_INTAKE_SEMESTER = 1;
     private static final String DEFAULT_STAY_IN = "DEFAULT_STAY_IN";
-    private static final UserUniStatus DEFAULT_USER_UNI_STATUS = UserUniStatus.STUDYING;
+    private static final String UPDATED_STAY_IN = "UPDATED_STAY_IN";
+    private static final UserUniStatus DEFAULT_USER_UNI_STATUS = UserUniStatus.EXTENDED;
+    private static final UserUniStatus UPDATED_USER_UNI_STATUS = UserUniStatus.GRADUATED;
 
     @Autowired
     private UserRepository userRepository;
@@ -126,7 +136,7 @@ public class AccountResourceIT {
         userUniInfoRepository.deleteAll();
     }
 
-    private UserUniInfoDTO createUserUniInfoDTO() {
+    private UserUniInfoDTO createDefaultUserUniInfoDTO() {
         UserUniInfoDTO dto = new UserUniInfoDTO();
         dto.setFirstName(DEFAULT_FIRST_NAME);
         dto.setLastName(DEFAULT_LAST_NAME);
@@ -139,6 +149,22 @@ public class AccountResourceIT {
         dto.setIntakeSemester(DEFAULT_INTAKE_SEMESTER);
         dto.setStayIn(DEFAULT_STAY_IN);
         dto.setStatus(DEFAULT_USER_UNI_STATUS);
+        return dto;
+    }
+
+    private UserUniInfoDTO createUpdateUserUniInfoDTO() {
+        UserUniInfoDTO dto = new UserUniInfoDTO();
+        dto.setFirstName(UPDATED_FIRST_NAME);
+        dto.setLastName(UPDATED_LAST_NAME);
+        dto.setGender(UPDATED_GENDER);
+        dto.setPhoneNumber(UPDATED_PHONE_NUMBER);
+        dto.setDateOfBirth(UPDATED_DATE_OF_BIRTH);
+        dto.setUserId(Long.MAX_VALUE); // should not be able to update userId
+        dto.setCourseProgramId(UPDATED_COURSE_PROGRAM_ID);
+        dto.setYearSession(UPDATED_YEAR_SESSION);
+        dto.setIntakeSemester(UPDATED_INTAKE_SEMESTER);
+        dto.setStayIn(UPDATED_STAY_IN);
+        dto.setStatus(UPDATED_USER_UNI_STATUS);
         return dto;
     }
 
@@ -1060,7 +1086,7 @@ public class AccountResourceIT {
         int userUniInfoDBSizeB4Create = userUniInfoRepository.findAll().size();
         int userDBSizeB4Create = userRepository.findAll().size();
 
-        UserUniInfoDTO userUniInfoDTO = createUserUniInfoDTO();
+        UserUniInfoDTO userUniInfoDTO = createDefaultUserUniInfoDTO();
 
         restMvc.perform(post("/api/account/profile")
             .contentType(TestUtil.APPLICATION_JSON_UTF8)
@@ -1092,10 +1118,106 @@ public class AccountResourceIT {
 
     @Test
     @WithNormalUser
+    public void completeProfile_WithUserUniStatusIsNull_ShouldDefaultItAsStudying()  throws Exception {
+
+        CourseProgram courseProgram = courseProgramRepository
+            .findById(1L)
+            .orElseThrow(() -> new RuntimeException("CourseProgram not loaded via liquibase testFaker context"));
+
+        User currentUser = SecurityUtils
+            .getCurrentUserLogin()
+            .flatMap(userRepository::findOneWithAuthoritiesByLogin)
+            .orElseThrow(() -> new BadRequestException("Cannot find user"));
+
+        int userUniInfoDBSizeB4Create = userUniInfoRepository.findAll().size();
+        int userDBSizeB4Create = userRepository.findAll().size();
+
+        UserUniInfoDTO userUniInfoDTO = createDefaultUserUniInfoDTO();
+        userUniInfoDTO.setStatus(null);
+
+        assertThat(userUniInfoDTO.getStatus()).isNull();
+
+        restMvc.perform(post("/api/account/profile")
+            .contentType(TestUtil.APPLICATION_JSON_UTF8)
+            .content(TestUtil.convertObjectToJsonBytes(userUniInfoDTO)))
+            .andExpect(status().isOk());
+
+        List<User> userList = userRepository.findAll();
+        assertThat(userList).hasSize(userDBSizeB4Create);
+        User user = userRepository
+            .findById(currentUser.getId())
+            .orElseThrow(() -> new RuntimeException("Cannot find user"));
+        assertThat(user.getId()).isEqualTo(currentUser.getId());
+        assertThat(user.getFirstName()).isEqualTo(DEFAULT_FIRST_NAME);
+        assertThat(user.getLastName()).isEqualTo(DEFAULT_LAST_NAME);
+        assertThat(user.getGender()).isEqualTo(DEFAULT_GENDER);
+        assertThat(user.getPhoneNumber()).isEqualTo(DEFAULT_PHONE_NUMBER);
+        assertThat(user.getDateOfBirth()).isEqualTo(DEFAULT_DATE_OF_BIRTH);
+
+        List<UserUniInfo> userUniInfoList = userUniInfoRepository.findAll();
+        assertThat(userUniInfoList).hasSize(userUniInfoDBSizeB4Create + 1);
+        UserUniInfo testUserUniInfo = userUniInfoList.get(userUniInfoList.size() - 1);
+        assertThat(testUserUniInfo.getUserId()).isEqualTo(currentUser.getId());
+        assertThat(testUserUniInfo.getCourseProgramId()).isEqualTo(courseProgram.getId());
+        assertThat(testUserUniInfo.getYearSession()).isEqualTo(DEFAULT_YEAR_SESSION);
+        assertThat(testUserUniInfo.getIntakeSemester()).isEqualTo(DEFAULT_INTAKE_SEMESTER);
+        assertThat(testUserUniInfo.getStayIn()).isEqualTo(DEFAULT_STAY_IN);
+        assertThat(testUserUniInfo.getStatus()).isEqualTo(UserUniStatus.STUDYING);
+    }
+
+    @Test
+    @WithNormalUser
+    public void completeProfile_WithUserUniInfoExistInDB()  throws Exception {
+
+        CourseProgram courseProgram = courseProgramRepository
+            .findById(1L)
+            .orElseThrow(() -> new RuntimeException("CourseProgram not loaded via liquibase testFaker context"));
+
+        User currentUser = SecurityUtils
+            .getCurrentUserLogin()
+            .flatMap(userRepository::findOneWithAuthoritiesByLogin)
+            .orElseThrow(() -> new BadRequestException("Cannot find user"));
+
+        UserUniInfo savedUserUniInfo = initUserUniInfoDB(currentUser);
+        int userUniInfoDBSizeB4Create = userUniInfoRepository.findAll().size();
+        int userDBSizeB4Create = userRepository.findAll().size();
+
+        UserUniInfoDTO userUniInfoDTO = createUpdateUserUniInfoDTO();
+
+        restMvc.perform(post("/api/account/profile")
+            .contentType(TestUtil.APPLICATION_JSON_UTF8)
+            .content(TestUtil.convertObjectToJsonBytes(userUniInfoDTO)))
+            .andExpect(status().isOk());
+
+        List<User> userList = userRepository.findAll();
+        assertThat(userList).hasSize(userDBSizeB4Create);
+        User user = userRepository
+            .findById(currentUser.getId())
+            .orElseThrow(() -> new RuntimeException("Cannot find user"));
+        assertThat(user.getId()).isEqualTo(currentUser.getId());
+        assertThat(user.getFirstName()).isEqualTo(UPDATED_FIRST_NAME);
+        assertThat(user.getLastName()).isEqualTo(UPDATED_LAST_NAME);
+        assertThat(user.getGender()).isEqualTo(UPDATED_GENDER);
+        assertThat(user.getPhoneNumber()).isEqualTo(UPDATED_PHONE_NUMBER);
+        assertThat(user.getDateOfBirth()).isEqualTo(UPDATED_DATE_OF_BIRTH);
+
+        List<UserUniInfo> userUniInfoList = userUniInfoRepository.findAll();
+        assertThat(userUniInfoList).hasSize(userUniInfoDBSizeB4Create);
+        UserUniInfo testUserUniInfo = userUniInfoList.get(userUniInfoList.size() - 1);
+        assertThat(testUserUniInfo.getUserId()).isEqualTo(currentUser.getId());
+        assertThat(testUserUniInfo.getCourseProgramId()).isEqualTo(courseProgram.getId());
+        assertThat(testUserUniInfo.getYearSession()).isEqualTo(UPDATED_YEAR_SESSION);
+        assertThat(testUserUniInfo.getIntakeSemester()).isEqualTo(UPDATED_INTAKE_SEMESTER);
+        assertThat(testUserUniInfo.getStayIn()).isEqualTo(UPDATED_STAY_IN);
+        assertThat(testUserUniInfo.getStatus()).isEqualTo(UPDATED_USER_UNI_STATUS);
+    }
+
+    @Test
+    @WithNormalUser
     public void completeProfile_WithInvalidCourseProgram()  throws Exception {
         int userUniInfoDBSizeB4Create = userUniInfoRepository.findAll().size();
 
-        UserUniInfoDTO userUniInfoDTO = createUserUniInfoDTO();
+        UserUniInfoDTO userUniInfoDTO = createDefaultUserUniInfoDTO();
         userUniInfoDTO.setCourseProgramId(Long.MAX_VALUE);
 
         restMvc.perform(post("/api/account/profile")
@@ -1116,5 +1238,11 @@ public class AccountResourceIT {
             .findAllByUserId(currentUser.getId());
         assertThat(eventCrewList).hasSize(1);
         return eventCrewList.get(0);
+    }
+
+    private UserUniInfo initUserUniInfoDB(User user) {
+        UserUniInfo userUniInfo = new UserUniInfo();
+        userUniInfo.setUserId(user.getId());
+        return userUniInfoRepository.saveAndFlush(userUniInfo);
     }
 }

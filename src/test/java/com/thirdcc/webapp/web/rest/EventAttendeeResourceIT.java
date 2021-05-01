@@ -44,6 +44,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.nullValue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -520,26 +521,36 @@ public class EventAttendeeResourceIT {
     }
 
     @Test
-    public void getEventAttendeeByEventIdAndUserId_withNonExistingUser_ShouldThrow404() throws Exception {
+    public void getEventAttendeeByEventIdAndUserId_withNonExistingUser_ShouldReturnOk() throws Exception {
         //Initialize the event and eventAttendee
         Event savedEvent = initEventDB();
         initEventAttendeeDB();
 
         //Save events and attendee
         restEventAttendeeMockMvc.perform(get("/api/event-attendees/event/{eventId}/user/{userId}", savedEvent.getId(), Long.MAX_VALUE ))
-            .andExpect(status().isNotFound());
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
+            .andExpect(jsonPath("$.id").value(nullValue()))
+            .andExpect(jsonPath("$.userId").value(nullValue()))
+            .andExpect(jsonPath("$.eventId").value(nullValue()))
+            .andExpect(jsonPath("$.provideTransport").value(nullValue()));;
 
     }
 
     @Test
-    public void getEventAttendeeByEventIdAndUserId_withNonExistingEvent_ShouldThrow404() throws Exception {
+    public void getEventAttendeeByEventIdAndUserId_withNonExistingEvent_ShouldReturnOk() throws Exception {
         //Initialize the event and eventAttendee
         Event savedEvent = initEventDB();
         initEventAttendeeDB();
 
         //Save events and attendee
         restEventAttendeeMockMvc.perform(get("/api/event-attendees/event/{eventId}/user/{userId}", Long.MAX_VALUE, user.getId() ))
-            .andExpect(status().isNotFound());
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
+            .andExpect(jsonPath("$.id").value(nullValue()))
+            .andExpect(jsonPath("$.userId").value(nullValue()))
+            .andExpect(jsonPath("$.eventId").value(nullValue()))
+            .andExpect(jsonPath("$.provideTransport").value(nullValue()));;
     }
 
     @Test

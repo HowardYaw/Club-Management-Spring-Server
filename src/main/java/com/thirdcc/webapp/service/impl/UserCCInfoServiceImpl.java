@@ -1,12 +1,12 @@
 package com.thirdcc.webapp.service.impl;
 
 import com.thirdcc.webapp.domain.enumeration.FishLevel;
+import com.thirdcc.webapp.service.ClubFamilyService;
 import com.thirdcc.webapp.service.UserCCInfoService;
 import com.thirdcc.webapp.domain.UserCCInfo;
 import com.thirdcc.webapp.repository.UserCCInfoRepository;
 import com.thirdcc.webapp.service.UserUniInfoService;
 import com.thirdcc.webapp.service.dto.UserCCInfoDTO;
-import com.thirdcc.webapp.service.dto.UserUniInfoDTO;
 import com.thirdcc.webapp.service.mapper.UserCCInfoMapper;
 import com.thirdcc.webapp.utils.YearSessionUtils;
 import org.slf4j.Logger;
@@ -32,11 +32,18 @@ public class UserCCInfoServiceImpl implements UserCCInfoService {
 
     private final UserCCInfoMapper userCCInfoMapper;
 
+    private final ClubFamilyService clubFamilyService;
+
     private final UserUniInfoService userUniInfoService;
 
-    public UserCCInfoServiceImpl(UserCCInfoRepository userCCInfoRepository, UserCCInfoMapper userCCInfoMapper, UserUniInfoService userUniInfoService) {
+    public UserCCInfoServiceImpl(UserCCInfoRepository userCCInfoRepository,
+                                 UserCCInfoMapper userCCInfoMapper,
+                                 ClubFamilyService clubFamilyService,
+                                 UserUniInfoService userUniInfoService
+    ) {
         this.userCCInfoRepository = userCCInfoRepository;
         this.userCCInfoMapper = userCCInfoMapper;
+        this.clubFamilyService = clubFamilyService;
         this.userUniInfoService = userUniInfoService;
     }
 
@@ -81,6 +88,15 @@ public class UserCCInfoServiceImpl implements UserCCInfoService {
         log.debug("Request to get UserCCInfo : {}", id);
         return userCCInfoRepository.findById(id)
             .map(userCCInfoMapper::toDto);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<UserCCInfoDTO> findOneByUserId(Long userId) {
+        log.debug("Request to get UserCCInfo by userId : {}", userId);
+        return userCCInfoRepository.findByUserId(userId)
+            .map(userCCInfoMapper::toDto)
+            .map(this::clubFamilyDetails);
     }
 
     @Override
@@ -169,5 +185,14 @@ public class UserCCInfoServiceImpl implements UserCCInfoService {
     public void delete(Long id) {
         log.debug("Request to delete UserCCInfo : {}", id);
         userCCInfoRepository.deleteById(id);
+    }
+
+    private UserCCInfoDTO clubFamilyDetails(UserCCInfoDTO userCCInfoDTO) {
+        clubFamilyService.findOne(userCCInfoDTO.getClubFamilyId())
+            .ifPresent(clubFamilyDTO -> {
+                userCCInfoDTO.setClubFamilyName(clubFamilyDTO.getName());
+                userCCInfoDTO.setClubFamilySlogan(clubFamilyDTO.getSlogan());
+            });
+        return userCCInfoDTO;
     }
 }

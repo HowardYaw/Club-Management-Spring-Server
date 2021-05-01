@@ -2,6 +2,7 @@ package com.thirdcc.webapp.service.impl;
 
 import com.thirdcc.webapp.domain.CourseProgram;
 import com.thirdcc.webapp.domain.User;
+import com.thirdcc.webapp.domain.enumeration.UserUniStatus;
 import com.thirdcc.webapp.exception.BadRequestException;
 import com.thirdcc.webapp.exception.InternalServerErrorException;
 import com.thirdcc.webapp.repository.CourseProgramRepository;
@@ -42,6 +43,8 @@ public class UserUniInfoServiceImpl implements UserUniInfoService {
 
     private final CourseProgramRepository courseProgramRepository;
 
+    private static final UserUniStatus DEFAULT_USER_UNI_STATUS = UserUniStatus.STUDYING;
+
     public UserUniInfoServiceImpl(UserUniInfoRepository userUniInfoRepository, UserUniInfoMapper userUniInfoMapper, UserRepository userRepository, CourseProgramRepository courseProgramRepository) {
         this.userUniInfoRepository = userUniInfoRepository;
         this.userUniInfoMapper = userUniInfoMapper;
@@ -58,16 +61,27 @@ public class UserUniInfoServiceImpl implements UserUniInfoService {
     @Override
     public UserUniInfoDTO save(UserUniInfoDTO userUniInfoDTO) {
         log.debug("Request to save UserUniInfo : {}", userUniInfoDTO);
-        UserUniInfo userUniInfo = userUniInfoMapper.toEntity(userUniInfoDTO);
         User currentUser = SecurityUtils
             .getCurrentUserLogin()
             .flatMap(userRepository::findOneWithAuthoritiesByLogin)
             .orElseThrow(() -> new BadRequestException("Cannot find user"));
-        userUniInfo.setUserId(currentUser.getId());
-        boolean isCourseProgramIdValid = courseProgramRepository.existsById(userUniInfo.getCourseProgramId());
+        boolean isCourseProgramIdValid = courseProgramRepository.existsById(userUniInfoDTO.getCourseProgramId());
         if (!isCourseProgramIdValid) {
             throw new BadRequestException("Invalid Course Program Id");
         }
+        UserUniInfo userUniInfo = userUniInfoRepository
+            .findOneByUserId(currentUser.getId())
+            .orElse(new UserUniInfo());
+        UserUniStatus userUniStatus = userUniInfoDTO.getStatus();
+        if (userUniStatus == null) {
+            userUniStatus = DEFAULT_USER_UNI_STATUS;
+        }
+        userUniInfo.setUserId(currentUser.getId());
+        userUniInfo.setCourseProgramId(userUniInfoDTO.getCourseProgramId());
+        userUniInfo.setYearSession(userUniInfoDTO.getYearSession());
+        userUniInfo.setIntakeSemester(userUniInfoDTO.getIntakeSemester());
+        userUniInfo.setStayIn(userUniInfoDTO.getStayIn());
+        userUniInfo.setStatus(userUniStatus);
         userUniInfo = userUniInfoRepository.save(userUniInfo);
         return userUniInfoMapper.toDto(userUniInfo);
     }
@@ -113,7 +127,7 @@ public class UserUniInfoServiceImpl implements UserUniInfoService {
     }
 
     @Override
-    public boolean  isUserUniInfoCompleted(Long userId) {
+    public boolean isUserUniInfoCompleted(Long userId) {
         UserUniInfo userUniInfo = userUniInfoRepository
             .findOneByUserId(userId)
             .orElse(new UserUniInfo());

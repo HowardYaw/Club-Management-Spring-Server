@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.6.xsd
+                        http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd">
+
+    <changeSet id="20210427_load_test_faker_ClubFamily-1" author="HowardYaw" context="testFaker">
+        <loadData
+                file="config/liquibase/data/club_family_TestFaker.csv"
+                separator=";"
+                tableName="club_family">
+            <column name="id" type="numeric"/>
+            <column name="name" type="string"/>
+            <column name="slogan" type="string"/>
+        </loadData>
+    </changeSet>
+
+</databaseChangeLog>
