@@ -16,10 +16,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Comparator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -87,6 +84,7 @@ public class UserCCInfoServiceImpl implements UserCCInfoService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<UserCCInfoDTO> getUserCCInfoByUserId(Long userId) {
         log.debug("Request to get UserCCInfo of User : {}", userId);
         List<UserCCInfoDTO> userCCInfoDTOList = userCCInfoRepository
@@ -110,28 +108,48 @@ public class UserCCInfoServiceImpl implements UserCCInfoService {
         List<String> yearSessionWithCCFamilyRole = userCCInfoDTOList.stream()
             .map(UserCCInfoDTO::getYearSession)
             .collect(Collectors.toList());
+        List<UserCCInfoDTO> fullUserCCInfoDTOList = new ArrayList<>();
         userUniInfoService.getUserUniInfoByUserId(userId)
             .ifPresent(userUniInfoDTO -> {
                 String currentYearSession = YearSessionUtils.getCurrentYearSession();
                 String intakeYearSession = userUniInfoDTO.getYearSession();
                 String secondYearSession = YearSessionUtils.addYearSessionWithSemester(intakeYearSession, 2);
-                if (currentYearSession.compareTo(intakeYearSession) > -1 &&
-                    !yearSessionWithCCFamilyRole.contains(intakeYearSession)
-                ) {
-                    userCCInfoDTOList.add(0, constructCustomUserCCInfo(intakeYearSession, FishLevel.JUNIOR_FISH, userId));
+                if (currentYearSession.compareTo(intakeYearSession) > -1) {
+                    if (!yearSessionWithCCFamilyRole.contains(intakeYearSession)) {
+                        fullUserCCInfoDTOList.add(constructCustomUserCCInfo(intakeYearSession, FishLevel.JUNIOR_FISH, userId));
+                    }
+                    else {
+                        UserCCInfoDTO userCCInfoDTO = userCCInfoDTOList.stream()
+                            .filter(userCCInfoDTO1 -> userCCInfoDTO1.getYearSession().equals(intakeYearSession))
+                            .findFirst()
+                            .get();
+                        userCCInfoDTO.setFishLevel(FishLevel.JUNIOR_FISH);
+                        fullUserCCInfoDTOList.add(userCCInfoDTO);
+                    }
                 }
-                if (currentYearSession.compareTo(secondYearSession) > -1 &&
-                    !yearSessionWithCCFamilyRole.contains(secondYearSession)
-                ) {
-                    userCCInfoDTOList.add(1, constructCustomUserCCInfo(secondYearSession, FishLevel.SENIOR_FISH, userId));
+                if (currentYearSession.compareTo(secondYearSession) > -1) {
+                    if (!yearSessionWithCCFamilyRole.contains(secondYearSession)) {
+                        fullUserCCInfoDTOList.add(constructCustomUserCCInfo(secondYearSession, FishLevel.SENIOR_FISH, userId));
+                    }
+                    else {
+                        UserCCInfoDTO userCCInfoDTO = userCCInfoDTOList.stream()
+                            .filter(userCCInfoDTO1 -> userCCInfoDTO1.getYearSession().equals(secondYearSession))
+                            .findFirst()
+                            .get();
+                        userCCInfoDTO.setFishLevel(FishLevel.SENIOR_FISH);
+                        fullUserCCInfoDTOList.add(userCCInfoDTO);
+                    }
                 }
                 if (currentYearSession.compareTo(secondYearSession) > 0) {
                     String thirdYearSession = YearSessionUtils.addYearSessionWithSemester(secondYearSession, 2) + " - Present";
-                    userCCInfoDTOList.add(2, constructCustomUserCCInfo(thirdYearSession, FishLevel.ELDER_FISH, userId));
+                    fullUserCCInfoDTOList.add(constructCustomUserCCInfo(thirdYearSession, FishLevel.ELDER_FISH, userId));
                 }
+                userCCInfoDTOList.stream()
+                    .filter(userCCInfoDTO1 -> userCCInfoDTO1.getYearSession().compareTo(secondYearSession) > 0)
+                    .forEach(fullUserCCInfoDTOList::add);
             });
-        userCCInfoDTOList.sort(Comparator.comparing(UserCCInfoDTO::getYearSession));
-        return userCCInfoDTOList;
+        fullUserCCInfoDTOList.sort(Comparator.comparing(UserCCInfoDTO::getYearSession));
+        return fullUserCCInfoDTOList;
     }
 
     private UserCCInfoDTO constructCustomUserCCInfo(String yearSession, FishLevel fishLevel, Long userId) {
