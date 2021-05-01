@@ -7,6 +7,7 @@ import com.thirdcc.webapp.domain.Event;
 import com.thirdcc.webapp.repository.EventRepository;
 import com.thirdcc.webapp.service.dto.EventDTO;
 import com.thirdcc.webapp.service.mapper.EventMapper;
+import com.thirdcc.webapp.web.rest.errors.BadRequestAlertException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,6 +27,8 @@ import java.util.Set;
 @Service
 @Transactional
 public class EventServiceImpl implements EventService {
+
+    private static final String ENTITY_NAME = "event";
 
     private final Logger log = LoggerFactory.getLogger(EventServiceImpl.class);
 
@@ -47,6 +50,9 @@ public class EventServiceImpl implements EventService {
     @Override
     public EventDTO save(EventDTO eventDTO) {
         log.debug("Request to save Event : {}", eventDTO);
+        if (eventDTO.getName().isEmpty()){
+            throw new BadRequestAlertException("Invalid Parameters", ENTITY_NAME, "noname");
+        }
         Event event = eventMapper.toEntity(eventDTO);
         event = eventRepository.save(event);
         return eventMapper.toDto(event);
@@ -73,6 +79,46 @@ public class EventServiceImpl implements EventService {
         Instant from = Instant.parse(fromDate);
         Instant to = Instant.parse(toDate);
         return eventRepository.findEventsByStartDateBetween(from, to, pageable)
+            .map(eventMapper::toDto);
+    }
+
+    /**
+     * Get all the upcoming events.
+     *
+     * @return the list of entity.
+     */
+    @Override
+    public Page<EventDTO> findAllUpcomingEvents(Pageable pageable) {
+        log.debug("Request to get all Upcoming Events");
+
+        Set<EventStatus> eventStatuses = new HashSet<EventStatus>() {{
+            add(EventStatus.OPEN);
+            add(EventStatus.POSTPONED);
+        }};
+
+        Instant from = Instant.now();
+
+        return eventRepository.findEventsByStartDateAfterAndStatusIn(from, eventStatuses, pageable)
+            .map(eventMapper::toDto);
+    }
+
+    /**
+     * Get all the past events.
+     *
+     * @return the list of entity.
+     */
+    @Override
+    public Page<EventDTO> findAllPastEvents(Pageable pageable) {
+        log.debug("Request to get all Past Events");
+
+        Set<EventStatus> eventStatuses = new HashSet<EventStatus>() {{
+            add(EventStatus.OPEN);
+            add(EventStatus.POSTPONED);
+        }};
+
+        Instant from = Instant.now();
+
+        return eventRepository.findEventsByStartDateBeforeAndStatusIn(from, eventStatuses, pageable)
             .map(eventMapper::toDto);
     }
 
