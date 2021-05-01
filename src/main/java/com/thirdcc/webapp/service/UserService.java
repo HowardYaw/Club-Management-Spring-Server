@@ -11,6 +11,7 @@ import com.thirdcc.webapp.repository.UserRepository;
 import com.thirdcc.webapp.security.AuthoritiesConstants;
 import com.thirdcc.webapp.security.SecurityUtils;
 import com.thirdcc.webapp.service.dto.EventCrewDTO;
+import com.thirdcc.webapp.service.dto.UserCCInfoDTO;
 import com.thirdcc.webapp.service.dto.UserDTO;
 import com.thirdcc.webapp.service.dto.UserUniInfoDTO;
 import com.thirdcc.webapp.service.util.RandomUtil;
@@ -382,6 +383,14 @@ public class UserService {
         boolean hasDateOfBirth = user.getDateOfBirth() != null;
 
         return hasFirstName && hasLastName && hasGender && hasPhoneNumber && hasDateOfBirth;
+    }
+
+    @Transactional(readOnly = true)
+    public UserDTO mapUserWithUserCCInfo(UserDTO userDTO, UserCCInfoDTO userCCInfoDTO) {
+        log.debug("Request to map UserDTO with UserCCInfoDTO");
+        userDTO.setClubFamilyName(userCCInfoDTO.getClubFamilyName());
+        userDTO.setClubFamilySlogan(userCCInfoDTO.getClubFamilySlogan());
+        return userDTO;
     }
 
 }
