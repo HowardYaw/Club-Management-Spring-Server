@@ -110,13 +110,13 @@ public class UserCCInfoResource {
     }
 
     /**
-     * {@code GET  /user-cc-infos/current} : get the current User userCCInfo.
+     * {@code GET  /user-cc-infos/current} : get the current User userCCInfo Profile.
      *
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the List of userCCInfoDTO, or with status {@code 404 (Not Found)}.
      */
     @GetMapping("/user-cc-infos/current")
-    public ResponseEntity<List<UserCCInfoDTO>> getCurrentUserCCInfo() {
-        log.debug("REST request to get Current User UserCCInfo");
+    public ResponseEntity<List<UserCCInfoDTO>> getCurrentUserCCInfoProfile() {
+        log.debug("REST request to get Current User UserCCInfo Profile");
         String userLogin = SecurityUtils
             .getCurrentUserLogin()
             .orElseThrow(() -> new BadRequestException("User not Login"));

@@ -2,6 +2,7 @@ package com.thirdcc.webapp.service.dto;
 import java.io.Serializable;
 import java.util.Objects;
 import com.thirdcc.webapp.domain.enumeration.ClubFamilyRole;
+import com.thirdcc.webapp.domain.enumeration.FishLevel;
 
 /**
  * A DTO for the {@link com.thirdcc.webapp.domain.UserCCInfo} entity.
@@ -18,7 +19,7 @@ public class UserCCInfoDTO implements Serializable {
 
     private String yearSession;
 
-    private String fishLevel;
+    private FishLevel fishLevel;
 
 
     public Long getId() {
@@ -93,11 +94,11 @@ public class UserCCInfoDTO implements Serializable {
             "}";
     }
 
-    public String getFishLevel() {
+    public FishLevel getFishLevel() {
         return fishLevel;
     }
 
-    public void setFishLevel(String fishLevel) {
+    public void setFishLevel(FishLevel fishLevel) {
         this.fishLevel = fishLevel;
     }
 }
