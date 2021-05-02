@@ -1,12 +1,12 @@
 package com.thirdcc.webapp.repository;
 
 import com.thirdcc.webapp.domain.Administrator;
-import com.thirdcc.webapp.domain.YearSession;
 import com.thirdcc.webapp.domain.enumeration.AdministratorRole;
 import com.thirdcc.webapp.domain.enumeration.AdministratorStatus;
 import org.springframework.data.jpa.repository.*;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 
@@ -20,4 +20,6 @@ public interface AdministratorRepository extends JpaRepository<Administrator, Lo
     Optional<Administrator> findByUserIdAndYearSessionAndRoleAndStatus(Long userId, String yearSession, AdministratorRole administratorRole, AdministratorStatus status);
 
     Optional<Administrator> findByUserIdAndYearSessionAndStatus(Long id, String currentYearSession, AdministratorStatus status);
+
+    List<Administrator> findAllByUserId(Long userId);
 }

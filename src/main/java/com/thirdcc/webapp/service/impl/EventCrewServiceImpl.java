@@ -11,6 +11,7 @@ import com.thirdcc.webapp.repository.EventCrewRepository;
 import com.thirdcc.webapp.service.EventService;
 import com.thirdcc.webapp.service.dto.EventCrewDTO;
 import com.thirdcc.webapp.service.mapper.EventCrewMapper;
+import com.thirdcc.webapp.utils.YearSessionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -110,7 +111,7 @@ public class EventCrewServiceImpl implements EventCrewService {
         return eventCrewRepository.findById(id)
             .map(eventCrewMapper::toDto)
             .map(this::mapUserDetails)
-            .map(this::mapEventName);
+            .map(this::mapEventDetails);
     }
 
     /**
@@ -126,6 +127,14 @@ public class EventCrewServiceImpl implements EventCrewService {
             .orElseThrow(() -> new BadRequestException("Cannot delete non existing event crew"));
 
         eventCrewRepository.deleteById(id);
+    }
+
+    @Override
+    public Page<EventCrewDTO> findAllByUserId(Long userId, Pageable pageable) {
+        return eventCrewRepository.findAllByUserId(pageable, userId)
+            .map(eventCrewMapper::toDto)
+            .map(this::mapEventDetails)
+            .map(this::mapYearSession);
     }
 
     /**
@@ -149,11 +158,25 @@ public class EventCrewServiceImpl implements EventCrewService {
      *
      * @param eventCrewDTO to add on the eventName prop.
      * */
-    private EventCrewDTO mapEventName(EventCrewDTO eventCrewDTO) {
+    private EventCrewDTO mapEventDetails(EventCrewDTO eventCrewDTO) {
         Optional<Event> dbEvent = eventRepository.findById(eventCrewDTO.getEventId());
         if(dbEvent.isPresent()){
             Event event = dbEvent.get();
             eventCrewDTO.setEventName(event.getName());
+            eventCrewDTO.setEventStartDate(event.getStartDate());
+        }
+        return eventCrewDTO;
+    }
+
+    /**
+     * Set Year Session for Event based on StartDate
+     *
+     * @param eventCrewDTO to set Year Session
+     * @return eventCrewDTO with Year Session
+     */
+    private EventCrewDTO mapYearSession(EventCrewDTO eventCrewDTO) {
+        if (eventCrewDTO.getEventStartDate() != null) {
+            eventCrewDTO.setYearSession(YearSessionUtils.toYearSession(eventCrewDTO.getEventStartDate()));
         }
         return eventCrewDTO;
     }

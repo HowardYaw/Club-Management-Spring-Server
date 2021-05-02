@@ -1,6 +1,7 @@
 package com.thirdcc.webapp.service;
 
 import com.thirdcc.webapp.service.dto.UserCCInfoDTO;
+import com.thirdcc.webapp.service.dto.UserCCRoleDTO;
 
 import java.util.List;
 import java.util.Optional;
@@ -48,4 +49,12 @@ public interface UserCCInfoService {
      * @param id the id of the entity.
      */
     void delete(Long id);
+
+    /**
+     * Get the "userId" CC Roles.
+     *
+     * @param userId the userId of the User.
+     * @return List of userCCRoles info.
+     */
+    List<UserCCRoleDTO> getUserCCRolesByUserId(Long userId);
 }

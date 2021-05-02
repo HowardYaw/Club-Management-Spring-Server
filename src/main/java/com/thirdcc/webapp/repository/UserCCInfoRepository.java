@@ -1,11 +1,12 @@
 package com.thirdcc.webapp.repository;
 
 import com.thirdcc.webapp.domain.UserCCInfo;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.*;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
-import java.util.stream.DoubleStream;
 
 
 /**
@@ -16,4 +17,6 @@ import java.util.stream.DoubleStream;
 public interface UserCCInfoRepository extends JpaRepository<UserCCInfo, Long> {
 
     Optional<UserCCInfo> findByUserId(Long userId);
+
+    Page<UserCCInfo> findAllByUserId(Long userId, Pageable unpaged);
 }

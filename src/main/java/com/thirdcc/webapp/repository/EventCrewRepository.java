@@ -20,6 +20,8 @@ public interface EventCrewRepository extends JpaRepository<EventCrew, Long> {
 
     List<EventCrew> findAllByUserId(Long userId);
 
+    Page<EventCrew> findAllByUserId(Pageable pageable, Long userId);
+
     Page<EventCrew> findAllByEventId(Pageable pageable, Long eventId);
   
     List<EventCrew> findAllByUserIdAndRole(Long userId, EventCrewRole role);

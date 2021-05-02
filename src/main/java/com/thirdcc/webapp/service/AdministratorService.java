@@ -1,6 +1,8 @@
 package com.thirdcc.webapp.service;
 
 import com.thirdcc.webapp.service.dto.AdministratorDTO;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 import java.util.Optional;
@@ -40,4 +42,12 @@ public interface AdministratorService {
      * @param id the id of the entity.
      */
     void delete(Long id);
+
+    /**
+     * Get the "userId" administrator list
+     *
+     * @param userId the userId of the entity
+     * @return the list of entities
+     */
+    List<AdministratorDTO> findAllByUserId(Long userId);
 }

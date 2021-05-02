@@ -1,5 +1,6 @@
 package com.thirdcc.webapp.service.dto;
 import java.io.Serializable;
+import java.time.Instant;
 import java.util.Objects;
 import com.thirdcc.webapp.domain.enumeration.EventCrewRole;
 
@@ -21,6 +22,10 @@ public class EventCrewDTO implements Serializable {
     private String eventName;
 
     private String contactNumber;
+
+    private Instant eventStartDate;
+
+    private String yearSession;
 
     public Long getId() {
         return id;
@@ -78,6 +83,22 @@ public class EventCrewDTO implements Serializable {
         this.contactNumber = contactNumber;
     }
 
+    public Instant getEventStartDate() {
+        return eventStartDate;
+    }
+
+    public void setEventStartDate(Instant eventStartDate) {
+        this.eventStartDate = eventStartDate;
+    }
+
+    public String getYearSession() {
+        return yearSession;
+    }
+
+    public void setYearSession(String yearSession) {
+        this.yearSession = yearSession;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -106,6 +127,11 @@ public class EventCrewDTO implements Serializable {
             ", userId=" + getUserId() +
             ", eventId=" + getEventId() +
             ", role='" + getRole() + "'" +
+            ", userName='" + getUserName() + "'" +
+            ", eventName='" + getEventName() + "'" +
+            ", contactNumber='" + getContactNumber() + "'" +
+            ", eventStartDate='" + getEventStartDate() + "'" +
+            ", yearSession='" + getYearSession() + "'" +
             "}";
     }
 }

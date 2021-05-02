@@ -87,4 +87,12 @@ public class AdministratorServiceImpl implements AdministratorService {
         log.debug("Request to delete Administrator : {}", id);
         administratorRepository.deleteById(id);
     }
+
+    @Override
+    public List<AdministratorDTO> findAllByUserId(Long userId) {
+        log.debug("Request to get all Administrators by userId: {}", userId);
+        return administratorRepository.findAllByUserId(userId).stream()
+            .map(administratorMapper::toDto)
+            .collect(Collectors.toList());
+    }
 }
