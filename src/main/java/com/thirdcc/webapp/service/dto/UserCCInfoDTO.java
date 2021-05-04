@@ -1,13 +1,27 @@
 package com.thirdcc.webapp.service.dto;
+
 import java.io.Serializable;
 import java.util.Objects;
+
 import com.thirdcc.webapp.domain.enumeration.ClubFamilyRole;
-import com.thirdcc.webapp.domain.enumeration.FishLevel;
 
 /**
  * A DTO for the {@link com.thirdcc.webapp.domain.UserCCInfo} entity.
  */
 public class UserCCInfoDTO implements Serializable {
+
+    public UserCCInfoDTO() { }
+
+    public UserCCInfoDTO(Long id, Long userId, Long clubFamilyId, ClubFamilyRole familyRole, String yearSession, String fishLevel, String clubFamilyName, String clubFamilySlogan) {
+        this.id = id;
+        this.userId = userId;
+        this.clubFamilyId = clubFamilyId;
+        this.familyRole = familyRole;
+        this.yearSession = yearSession;
+        this.fishLevel = fishLevel;
+        this.clubFamilyName = clubFamilyName;
+        this.clubFamilySlogan = clubFamilySlogan;
+    }
 
     private Long id;
 
@@ -19,7 +33,7 @@ public class UserCCInfoDTO implements Serializable {
 
     private String yearSession;
 
-    private FishLevel fishLevel;
+    private String fishLevel;
 
     private String clubFamilyName;
 
@@ -101,11 +115,11 @@ public class UserCCInfoDTO implements Serializable {
             "}";
     }
 
-    public FishLevel getFishLevel() {
+    public String getFishLevel() {
         return fishLevel;
     }
 
-    public void setFishLevel(FishLevel fishLevel) {
+    public void setFishLevel(String fishLevel) {
         this.fishLevel = fishLevel;
     }
 
@@ -123,5 +137,66 @@ public class UserCCInfoDTO implements Serializable {
 
     public void setClubFamilyName(String clubFamilyName) {
         this.clubFamilyName = clubFamilyName;
+    }
+
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public static class Builder {
+
+        private Long id;
+        private Long userId;
+        private Long clubFamilyId;
+        private ClubFamilyRole familyRole;
+        private String yearSession;
+        private String fishLevel;
+        private String clubFamilyName;
+        private String clubFamilySlogan;
+
+        public Builder id(Long id) {
+            this.id = id;
+            return this;
+        }
+
+        public Builder userId(Long userId) {
+            this.userId = userId;
+            return this;
+        }
+
+        public Builder clubFamilyId(Long clubFamilyId) {
+            this.clubFamilyId = clubFamilyId;
+            return this;
+        }
+
+        public Builder familyRole(ClubFamilyRole familyRole) {
+            this.familyRole = familyRole;
+            return this;
+        }
+
+        public Builder yearSession(String yearSession) {
+            this.yearSession = yearSession;
+            return this;
+        }
+
+        public Builder fishLevel(String fishLevel) {
+            this.fishLevel = fishLevel;
+            return this;
+        }
+
+        public Builder clubFamilyName(String clubFamilyName) {
+            this.clubFamilyName = clubFamilyName;
+            return this;
+        }
+
+        public Builder clubFamilySlogan(String clubFamilySlogan) {
+            this.clubFamilySlogan = clubFamilySlogan;
+            return this;
+        }
+
+        public UserCCInfoDTO build() {
+            return new UserCCInfoDTO(id, userId, clubFamilyId, familyRole, yearSession, fishLevel, clubFamilyName, clubFamilySlogan);
+        }
     }
 }

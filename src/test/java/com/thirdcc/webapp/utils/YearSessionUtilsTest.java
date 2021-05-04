@@ -12,6 +12,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class YearSessionUtilsTest {
@@ -101,14 +102,42 @@ class YearSessionUtilsTest {
     @Test
     public void getFirstInstantOfYearSession_WithInvalidYearSession() {
         String invalidYearSession = "aaaa/bbbb";
-
-        Exception exception = assertThrows(RuntimeException.class, () -> {
+        Throwable thrown = catchThrowable(() -> {
             YearSessionUtils.getFirstInstantOfYearSession(invalidYearSession);
         });
-
-        String expectedMessage = "invalid yearSession of aaaa/bbbb";
-        String actualMessage = exception.getMessage();
-
-        assertThat(actualMessage).isEqualTo(expectedMessage);
+        assertThat(thrown).isInstanceOf(IllegalArgumentException.class);
     }
+
+    @Test
+    public void isBefore_WithInvalidYearSession() {
+        String invalidYearSession = "aaaa/bbbb";
+        String validYearSession = "2019/2020";
+
+        Throwable thrown1 = catchThrowable(() -> {
+            YearSessionUtils.isBefore(invalidYearSession, validYearSession);
+        });
+        assertThat(thrown1).isInstanceOf(IllegalArgumentException.class);
+
+        Throwable thrown2 = catchThrowable(() -> {
+            YearSessionUtils.isBefore(validYearSession, invalidYearSession);
+        });
+        assertThat(thrown2).isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    public void isBefore_WithTrue() {
+        String earlierYearSession = "2019/2020";
+        String laterYearSession = "2020/2021";
+        boolean actual = YearSessionUtils.isBefore(earlierYearSession, laterYearSession);
+        assertThat(actual).isTrue();
+    }
+
+    @Test
+    public void isBefore_WithFalse() {
+        String earlierYearSession = "2020/2021";
+        String laterYearSession = "2019/2020";
+        boolean actual = YearSessionUtils.isBefore(earlierYearSession, laterYearSession);
+        assertThat(actual).isFalse();
+    }
+
 }

@@ -65,7 +65,7 @@ public class YearSessionUtils {
 
     public static Instant getFirstInstantOfYearSession(String yearSession) {
         if (!isValidYearSession(yearSession)) {
-            throw new RuntimeException("invalid yearSession of " + yearSession);
+            throw new IllegalArgumentException("invalid yearSession of " + yearSession);
         }
         int year = Integer.parseInt(yearSession.substring(0, 4));
         LocalDate firstLocalDateOfYearSession = LocalDate.of(year, getFirstMonthOfYearSession(), 1);
@@ -79,6 +79,13 @@ public class YearSessionUtils {
         firstYear += numOfYear;
         secondYear += numOfYear;
         return String.format("%d/%d", firstYear, secondYear);
+    }
+
+    public static boolean isBefore(String earlierYS, String laterYs) {
+        if (!isValidYearSession(earlierYS) || !isValidYearSession(laterYs)) {
+            throw new IllegalArgumentException("invalid yearSession of " + earlierYS + " or " + laterYs);
+        }
+        return earlierYS.compareTo(laterYs) < 1;
     }
 
 }
