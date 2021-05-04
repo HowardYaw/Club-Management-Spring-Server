@@ -1,6 +1,5 @@
 package com.thirdcc.webapp.service.impl;
 
-import com.thirdcc.webapp.domain.enumeration.FishLevel;
 import com.thirdcc.webapp.service.ClubFamilyService;
 import com.thirdcc.webapp.service.UserCCInfoService;
 import com.thirdcc.webapp.domain.UserCCInfo;
@@ -9,6 +8,7 @@ import com.thirdcc.webapp.service.UserUniInfoService;
 import com.thirdcc.webapp.service.dto.UserCCInfoDTO;
 import com.thirdcc.webapp.service.dto.UserUniInfoDTO;
 import com.thirdcc.webapp.service.mapper.UserCCInfoMapper;
+import com.thirdcc.webapp.utils.FishLevelUtils;
 import com.thirdcc.webapp.utils.YearSessionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -112,56 +112,38 @@ public class UserCCInfoServiceImpl implements UserCCInfoService {
     }
 
     /**
-     * User CC Fish Level:
-     * First Year Session is "Junior Fish"
-     * Second Year Session is "Senior Fish"
-     * Later Year Session until Present is "Elder Fish"
      *
      * @param userCCInfoDTOList
      * @param userId
      * @return List of user CC Info Sorted by Year Session
      */
     private List<UserCCInfoDTO> getFullUserCCInfoList(List<UserCCInfoDTO> userCCInfoDTOList, Long userId) {
-        List<String> yearSessionWithCCFamilyRole = userCCInfoDTOList.stream()
-            .map(UserCCInfoDTO::getYearSession)
-            .collect(Collectors.toList());
         List<UserCCInfoDTO> fullUserCCInfoDTOList = new ArrayList<>();
         Optional<UserUniInfoDTO> userUniInfoDTOOptional = userUniInfoService.getUserUniInfoByUserId(userId);
-        if (userUniInfoDTOOptional.isPresent()) {
-            String currentYearSession = YearSessionUtils.getCurrentYearSession();
-            String intakeYearSession = userUniInfoDTOOptional.get().getYearSession();
-            Integer studySemester = userUniInfoDTOOptional.get().getTotalSemester();
-            String yearSessionCounter = intakeYearSession;
-            for (int i = 1; i < studySemester; i = i + 2) {
-                UserCCInfoDTO userCCInfoDTO = new UserCCInfoDTO();
-                if (!yearSessionWithCCFamilyRole.contains(yearSessionCounter)) {
-                    userCCInfoDTO.setYearSession(yearSessionCounter);
-                    userCCInfoDTO.setUserId(userId);
-                }
-                else {
-                    String currentYearSessionCounter = yearSessionCounter;
-                    userCCInfoDTO = userCCInfoDTOList.stream()
-                        .filter(userCCInfoDTO1 -> userCCInfoDTO1.getYearSession().equals(currentYearSessionCounter))
-                        .findFirst()
-                        .get();
-                }
-                if (i == 1) {
-                    userCCInfoDTO.setFishLevel(FishLevel.JUNIOR_FISH);
-                } else if (i == 3) {
-                    userCCInfoDTO.setFishLevel(FishLevel.SENIOR_FISH);
-                } else if (i == 5) {
-                    userCCInfoDTO.setFishLevel(FishLevel.ELDER_FISH);
-                }
-                fullUserCCInfoDTOList.add(userCCInfoDTO);
-                if (currentYearSession.compareTo(yearSessionCounter) < 1) {
-                    break;
-                }
-                yearSessionCounter = YearSessionUtils.addYearSessionWithSemester(yearSessionCounter, 2);
+        if (!userUniInfoDTOOptional.isPresent()) {
+            return fullUserCCInfoDTOList;
+        }
+        String currentYearSession = YearSessionUtils.getCurrentYearSession();
+        String intakeYearSession = userUniInfoDTOOptional.get().getYearSession();
+        Integer totalSemester = userUniInfoDTOOptional.get().getTotalSemester();
+        String yearSessionCounter = intakeYearSession;
+        for (int i = 1; i <= totalSemester; i = i + 2) {
+            String currentYearSessionCounter = yearSessionCounter;
+            UserCCInfoDTO userCCInfoDTO = userCCInfoDTOList.stream()
+                .filter(userCCInfoDTO1 -> userCCInfoDTO1.getYearSession().equals(currentYearSessionCounter))
+                .findFirst()
+                .orElse(
+                    UserCCInfoDTO.builder()
+                        .yearSession(yearSessionCounter)
+                        .userId(userId)
+                        .build()
+                );
+            userCCInfoDTO.setFishLevel(FishLevelUtils.getFishLevelBySemesterStudied(i));
+            fullUserCCInfoDTOList.add(userCCInfoDTO);
+            if (YearSessionUtils.isBefore(currentYearSession, yearSessionCounter)) {
+                break; // yearSession is in future, don't include
             }
-            String finalYearSessionCounter = yearSessionCounter;
-            userCCInfoDTOList.stream()
-                .filter(userCCInfoDTO1 -> userCCInfoDTO1.getYearSession().compareTo(finalYearSessionCounter) > 0)
-                .forEach(fullUserCCInfoDTOList::add);
+            yearSessionCounter = YearSessionUtils.addYearSessionWithSemester(yearSessionCounter, 2);
         }
         return fullUserCCInfoDTOList;
     }
