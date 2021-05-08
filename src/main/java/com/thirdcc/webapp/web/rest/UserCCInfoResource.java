@@ -5,6 +5,7 @@ import com.thirdcc.webapp.exception.BadRequestException;
 import com.thirdcc.webapp.security.SecurityUtils;
 import com.thirdcc.webapp.service.UserCCInfoService;
 import com.thirdcc.webapp.service.UserService;
+import com.thirdcc.webapp.service.dto.UserCCRoleDTO;
 import com.thirdcc.webapp.web.rest.errors.BadRequestAlertException;
 import com.thirdcc.webapp.service.dto.UserCCInfoDTO;
 
@@ -123,6 +124,23 @@ public class UserCCInfoResource {
         User user = userService.getUserByLogin(userLogin)
             .orElseThrow(() -> new BadRequestException("User not found"));
         List<UserCCInfoDTO> result = userCCInfoService.getUserCCInfoByUserId(user.getId());
+        return ResponseEntity.ok().body(result);
+    }
+
+    /**
+     * {@code GET  /user-cc-infos/roles/current} : get the current User CC Roles Profile.
+     *
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the List of UserCCRoleDTO.
+     */
+    @GetMapping("/user-cc-infos/roles/current")
+    public ResponseEntity<List<UserCCRoleDTO>> getCurrentUserCCRolesProfile() {
+        log.debug("REST request to get Current User CC Roles Profile List");
+        String userLogin = SecurityUtils
+            .getCurrentUserLogin()
+            .orElseThrow(() -> new BadRequestException("User not Login"));
+        User user = userService.getUserByLogin(userLogin)
+            .orElseThrow(() -> new BadRequestException("User not found"));
+        List<UserCCRoleDTO> result = userCCInfoService.getUserCCRolesByUserId(user.getId());
         return ResponseEntity.ok().body(result);
     }
 

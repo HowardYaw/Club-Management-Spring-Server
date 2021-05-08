@@ -1,12 +1,16 @@
 package com.thirdcc.webapp.service.impl;
 
+import com.thirdcc.webapp.domain.enumeration.CCRoleType;
+import com.thirdcc.webapp.service.AdministratorService;
 import com.thirdcc.webapp.service.ClubFamilyService;
+import com.thirdcc.webapp.service.EventCrewService;
 import com.thirdcc.webapp.service.UserCCInfoService;
 import com.thirdcc.webapp.domain.UserCCInfo;
 import com.thirdcc.webapp.repository.UserCCInfoRepository;
 import com.thirdcc.webapp.service.UserUniInfoService;
 import com.thirdcc.webapp.service.dto.UserCCInfoDTO;
 import com.thirdcc.webapp.service.dto.UserUniInfoDTO;
+import com.thirdcc.webapp.service.dto.UserCCRoleDTO;
 import com.thirdcc.webapp.service.mapper.UserCCInfoMapper;
 import com.thirdcc.webapp.utils.FishLevelUtils;
 import com.thirdcc.webapp.utils.YearSessionUtils;
@@ -17,8 +21,14 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Optional;
+import java.util.Collection;
+import java.util.Comparator;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Service Implementation for managing {@link UserCCInfo}.
@@ -37,15 +47,23 @@ public class UserCCInfoServiceImpl implements UserCCInfoService {
 
     private final UserUniInfoService userUniInfoService;
 
+    private final EventCrewService eventCrewService;
+
+    private final AdministratorService administratorService;
+
     public UserCCInfoServiceImpl(UserCCInfoRepository userCCInfoRepository,
                                  UserCCInfoMapper userCCInfoMapper,
                                  ClubFamilyService clubFamilyService,
-                                 UserUniInfoService userUniInfoService
+                                 UserUniInfoService userUniInfoService,
+                                 EventCrewService eventCrewService,
+                                 AdministratorService administratorService
     ) {
         this.userCCInfoRepository = userCCInfoRepository;
         this.userCCInfoMapper = userCCInfoMapper;
         this.clubFamilyService = clubFamilyService;
         this.userUniInfoService = userUniInfoService;
+        this.eventCrewService = eventCrewService;
+        this.administratorService = administratorService;
     }
 
     /**
@@ -146,6 +164,61 @@ public class UserCCInfoServiceImpl implements UserCCInfoService {
             yearSessionCounter = YearSessionUtils.addYearSessionWithSemester(yearSessionCounter, 2);
         }
         return fullUserCCInfoDTOList;
+    }
+
+    @Override
+    public List<UserCCRoleDTO> getUserCCRolesByUserId(Long userId) {
+        log.debug("Request to get UserCC Roles of User : {}", userId);
+        List<UserCCRoleDTO> userCCFamilyRoleDTOList = getUserCCFamilyRole(userId);
+        List<UserCCRoleDTO> userCCEventRolesList = getUserCCEventRole(userId);
+        List<UserCCRoleDTO> userCCAdministratorRolesList = getUserCCAdministratorRole(userId);
+        return Stream.of(userCCFamilyRoleDTOList, userCCEventRolesList, userCCAdministratorRolesList)
+            .flatMap(Collection::stream)
+            .sorted(Comparator.comparing(UserCCRoleDTO::getYearSession))
+            .collect(Collectors.toList());
+    }
+
+    private List<UserCCRoleDTO> getUserCCFamilyRole(Long userId) {
+        return userCCInfoRepository
+            .findAllByUserId(userId, Pageable.unpaged())
+            .map(userCCInfo -> {
+                UserCCRoleDTO userCCFamilyRoleDTO = new UserCCRoleDTO();
+                userCCFamilyRoleDTO.setUserId(userCCInfo.getUserId());
+                userCCFamilyRoleDTO.setType(CCRoleType.FAMILY_ROLE);
+                userCCFamilyRoleDTO.setRole(userCCInfo.getFamilyRole().name());
+                userCCFamilyRoleDTO.setYearSession(userCCInfo.getYearSession());
+                return userCCFamilyRoleDTO;
+            })
+            .getContent();
+    }
+
+    private List<UserCCRoleDTO> getUserCCEventRole(Long userId) {
+        return eventCrewService.findAllByUserId(userId, Pageable.unpaged())
+            .map(eventCrewDTO -> {
+                UserCCRoleDTO userCCEventRoleDTO = new UserCCRoleDTO();
+                userCCEventRoleDTO.setUserId(eventCrewDTO.getUserId());
+                userCCEventRoleDTO.setType(CCRoleType.EVENT_CREW);
+                userCCEventRoleDTO.setRole(eventCrewDTO.getRole().name());
+                userCCEventRoleDTO.setYearSession(eventCrewDTO.getYearSession());
+                userCCEventRoleDTO.setEventId(eventCrewDTO.getEventId());
+                userCCEventRoleDTO.setEventName(eventCrewDTO.getEventName());
+                return userCCEventRoleDTO;
+            })
+            .getContent();
+    }
+
+    private List<UserCCRoleDTO> getUserCCAdministratorRole(Long userId) {
+        return administratorService.findAllByUserId(userId)
+            .stream()
+            .map(administratorDTO -> {
+                UserCCRoleDTO userCCAdministratorRoleDTO = new UserCCRoleDTO();
+                userCCAdministratorRoleDTO.setUserId(administratorDTO.getUserId());
+                userCCAdministratorRoleDTO.setType(CCRoleType.CC_ADMINISTRATOR);
+                userCCAdministratorRoleDTO.setRole(administratorDTO.getRole().name());
+                userCCAdministratorRoleDTO.setYearSession(administratorDTO.getYearSession());
+                return userCCAdministratorRoleDTO;
+            })
+            .collect(Collectors.toList());
     }
 
     /**

@@ -5,13 +5,15 @@ import com.thirdcc.webapp.annotations.init.InitYearSession;
 import com.thirdcc.webapp.domain.User;
 import com.thirdcc.webapp.domain.UserCCInfo;
 import com.thirdcc.webapp.domain.UserUniInfo;
-import com.thirdcc.webapp.domain.YearSession;
 import com.thirdcc.webapp.domain.enumeration.UserUniStatus;
 import com.thirdcc.webapp.exception.BadRequestException;
 import com.thirdcc.webapp.repository.UserCCInfoRepository;
 import com.thirdcc.webapp.repository.UserRepository;
 import com.thirdcc.webapp.repository.UserUniInfoRepository;
 import com.thirdcc.webapp.security.SecurityUtils;
+import com.thirdcc.webapp.domain.*;
+import com.thirdcc.webapp.domain.enumeration.*;
+import com.thirdcc.webapp.repository.*;
 import com.thirdcc.webapp.service.UserCCInfoService;
 import com.thirdcc.webapp.service.dto.UserCCInfoDTO;
 import com.thirdcc.webapp.service.mapper.UserCCInfoMapper;
@@ -29,15 +31,18 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.EntityManager;
+import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.List;
 
 import static com.thirdcc.webapp.utils.FishLevelUtils.*;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-import com.thirdcc.webapp.domain.enumeration.ClubFamilyRole;
 /**
  * Integration tests for the {@Link UserCCInfoResource} REST controller.
  */
@@ -65,6 +70,28 @@ public class UserCCInfoResourceIT {
     private static final String DEFAULT_STAY_IN = "KK3 UM";
     private static final UserUniStatus DEFAULT_UNI_INFO_STATUS = UserUniStatus.STUDYING;
 
+    // Event DEFAULT value
+    private static final String DEFAULT_EVENT_NAME = "CC_NIGHT";
+    private static final String DEFAULT_EVENT_DESCRIPTION = "CC Party Night";
+    private static final String DEFAULT_EVENT_REMARKS = "Annual Gathering for CC Member";
+    private static final String DEFAULT_EVENT_VENUE = "KLCC";
+    private static final Instant DEFAULT_EVENT_START_DATE = Instant.parse("2020-05-01T20:00:00Z");
+    private static final Instant DEFAULT_EVENT_END_DATE = Instant.parse("2020-05-01T23:00:00Z");
+    private static final BigDecimal DEFAULT_EVENT_FEE = new BigDecimal(1);
+    private static final Boolean DEFAULT_EVENT_REQUIRED_TRANSPORT = false;
+    private static final EventStatus DEFAULT_EVENT_STATUS = EventStatus.OPEN;
+
+    // Event Crew DEFAULT value
+    private static final Long DEFAULT_EVENT_CREW_EVENT_ID = 1L;
+    private static final Long DEFAULT_EVENT_CREW_USER_ID = 1L;
+    private static final EventCrewRole DEFAULT_EVENT_CREW_ROLE = EventCrewRole.HEAD;
+
+    // Administrator DEFAULT value
+    private static final Long DEFAULT_ADMINISTRATOR_USER_ID = 1L;
+    private static final String DEFAULT_ADMINISTRATOR_YEAR_SESSION = "2020/2021";
+    private static final AdministratorStatus DEFAULT_ADMINISTRATOR_STATUS = AdministratorStatus.ACTIVE;
+    private static final AdministratorRole DEFAULT_ADMINISTRATOR_ROLE = AdministratorRole.CC_HEAD;
+
     @Autowired
     private UserCCInfoRepository userCCInfoRepository;
 
@@ -79,6 +106,15 @@ public class UserCCInfoResourceIT {
 
     @Autowired
     private UserUniInfoRepository userUniInfoRepository;
+
+    @Autowired
+    private EventRepository eventRepository;
+
+    @Autowired
+    private EventCrewRepository eventCrewRepository;
+
+    @Autowired
+    private AdministratorRepository administratorRepository;
 
     @Autowired
     private EntityManager em;
@@ -129,6 +165,37 @@ public class UserCCInfoResourceIT {
         userUniInfo.setStayIn(DEFAULT_STAY_IN);
         userUniInfo.setStatus(DEFAULT_UNI_INFO_STATUS);
         return userUniInfo;
+    }
+
+    public static Event createEventEntity() {
+        Event event = new Event();
+        event.setName(DEFAULT_EVENT_NAME);
+        event.setVenue(DEFAULT_EVENT_VENUE);
+        event.setFee(DEFAULT_EVENT_FEE);
+        event.setStatus(DEFAULT_EVENT_STATUS);
+        event.setStartDate(DEFAULT_EVENT_START_DATE);
+        event.setEndDate(DEFAULT_EVENT_END_DATE);
+        event.setRequiredTransport(DEFAULT_EVENT_REQUIRED_TRANSPORT);
+        event.setDescription(DEFAULT_EVENT_DESCRIPTION);
+        event.setRemarks(DEFAULT_EVENT_REMARKS);
+        return event;
+    }
+
+    public static EventCrew createEventCrewEntity() {
+        EventCrew eventCrew = new EventCrew();
+        eventCrew.setEventId(DEFAULT_EVENT_CREW_EVENT_ID);
+        eventCrew.setRole(DEFAULT_EVENT_CREW_ROLE);
+        eventCrew.setUserId(DEFAULT_EVENT_CREW_USER_ID);
+        return eventCrew;
+    }
+
+    public static Administrator createAdministratorEntity() {
+        Administrator administrator = new Administrator();
+        administrator.setYearSession(DEFAULT_ADMINISTRATOR_YEAR_SESSION);
+        administrator.setStatus(DEFAULT_ADMINISTRATOR_STATUS);
+        administrator.setRole(DEFAULT_ADMINISTRATOR_ROLE);
+        administrator.setUserId(DEFAULT_ADMINISTRATOR_USER_ID);
+        return administrator;
     }
 
     @BeforeEach
@@ -440,6 +507,120 @@ public class UserCCInfoResourceIT {
             .andExpect(status().isOk())
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
             .andExpect(jsonPath("$", hasSize(0)));
+    }
+
+    @Test
+    @Transactional
+    public void getCurrentUserCCRolesProfile_WithCCFamilyRole() throws Exception {
+        User currentUser = getCurrentUser();
+
+        UserCCInfo userCCInfo = createEntity();
+        userCCInfo.setUserId(currentUser.getId());
+        UserCCInfo savedUserCCInfo = userCCInfoRepository.saveAndFlush(userCCInfo);
+
+        restUserCCInfoMockMvc.perform(get("/api/user-cc-infos/roles/current"))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
+            .andExpect(jsonPath("$").value(hasSize(1)))
+            .andExpect(jsonPath("$.[*].userId").value(hasItem(currentUser.getId().intValue())))
+            .andExpect(jsonPath("$.[*].type").value(hasItem(CCRoleType.FAMILY_ROLE.name())))
+            .andExpect(jsonPath("$.[*].role").value(hasItem(DEFAULT_FAMILY_ROLE.name())))
+            .andExpect(jsonPath("$.[*].yearSession").value(hasItem(DEFAULT_YEAR_SESSION)));
+    }
+
+    @Test
+    @Transactional
+    public void getCurrentUserCCRolesProfile_WithCCEventRole() throws Exception {
+        User currentUser = getCurrentUser();
+
+        Event event = createEventEntity();
+        Event savedEvent = eventRepository.saveAndFlush(event);
+        EventCrew eventCrew = createEventCrewEntity();
+        eventCrew.setEventId(savedEvent.getId());
+        eventCrew.setUserId(currentUser.getId());
+        EventCrew savedEventCrew = eventCrewRepository.saveAndFlush(eventCrew);
+        String eventCrewYearSession = YearSessionUtils.toYearSession(savedEvent.getStartDate());
+
+        restUserCCInfoMockMvc.perform(get("/api/user-cc-infos/roles/current"))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
+            .andExpect(jsonPath("$").value(hasSize(1)))
+            .andExpect(jsonPath("$.[*].userId").value(hasItem(currentUser.getId().intValue())))
+            .andExpect(jsonPath("$.[*].type").value(hasItem(CCRoleType.EVENT_CREW.name())))
+            .andExpect(jsonPath("$.[*].eventId").value(hasItem(savedEvent.getId().intValue())))
+            .andExpect(jsonPath("$.[*].role").value(hasItem(DEFAULT_EVENT_CREW_ROLE.name())))
+            .andExpect(jsonPath("$.[*].yearSession").value(hasItem(eventCrewYearSession)));
+    }
+
+    @Test
+    @Transactional
+    public void getCurrentUserCCRolesProfile_WithCCAdministratorRole() throws Exception {
+        User currentUser = getCurrentUser();
+
+        Administrator administrator = createAdministratorEntity();
+        administrator.setUserId(currentUser.getId());
+        Administrator savedAdministrator = administratorRepository.saveAndFlush(administrator);
+
+        restUserCCInfoMockMvc.perform(get("/api/user-cc-infos/roles/current"))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
+            .andExpect(jsonPath("$").value(hasSize(1)))
+            .andExpect(jsonPath("$.[*].userId").value(hasItem(currentUser.getId().intValue())))
+            .andExpect(jsonPath("$.[*].type").value(hasItem(CCRoleType.CC_ADMINISTRATOR.name())))
+            .andExpect(jsonPath("$.[*].role").value(hasItem(DEFAULT_ADMINISTRATOR_ROLE.name())))
+            .andExpect(jsonPath("$.[*].yearSession").value(hasItem(DEFAULT_ADMINISTRATOR_YEAR_SESSION)));
+    }
+
+    @Test
+    @Transactional
+    public void getCurrentUserCCRolesProfile_WithAllCCRole() throws Exception {
+        User currentUser = getCurrentUser();
+
+        Event event = createEventEntity();
+        Event savedEvent = eventRepository.saveAndFlush(event);
+        EventCrew eventCrew = createEventCrewEntity();
+        eventCrew.setEventId(savedEvent.getId());
+        eventCrew.setUserId(currentUser.getId());
+        EventCrew savedEventCrew = eventCrewRepository.saveAndFlush(eventCrew);
+        String eventCrewYearSession = YearSessionUtils.toYearSession(savedEvent.getStartDate());
+
+        UserCCInfo userCCInfo = createEntity();
+        userCCInfo.setUserId(currentUser.getId());
+        UserCCInfo savedUserCCInfo = userCCInfoRepository.saveAndFlush(userCCInfo);
+
+        Administrator administrator = createAdministratorEntity();
+        administrator.setUserId(currentUser.getId());
+        Administrator savedAdministrator = administratorRepository.saveAndFlush(administrator);
+
+        restUserCCInfoMockMvc.perform(get("/api/user-cc-infos/roles/current"))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
+            .andExpect(jsonPath("$").value(hasSize(3)))
+            .andExpect(jsonPath("$.[*].userId").value(hasItem(currentUser.getId().intValue())))
+
+            .andExpect(jsonPath("$.[*].type").value(hasItem(CCRoleType.FAMILY_ROLE.name())))
+            .andExpect(jsonPath("$.[*].role").value(hasItem(DEFAULT_FAMILY_ROLE.name())))
+            .andExpect(jsonPath("$.[*].yearSession").value(hasItem(DEFAULT_YEAR_SESSION)))
+
+            .andExpect(jsonPath("$.[*].type").value(hasItem(CCRoleType.EVENT_CREW.name())))
+            .andExpect(jsonPath("$.[*].eventId").value(hasItem(savedEvent.getId().intValue())))
+            .andExpect(jsonPath("$.[*].role").value(hasItem(DEFAULT_EVENT_CREW_ROLE.name())))
+            .andExpect(jsonPath("$.[*].yearSession").value(hasItem(eventCrewYearSession)))
+
+            .andExpect(jsonPath("$.[*].type").value(hasItem(CCRoleType.CC_ADMINISTRATOR.name())))
+            .andExpect(jsonPath("$.[*].role").value(hasItem(DEFAULT_ADMINISTRATOR_ROLE.name())))
+            .andExpect(jsonPath("$.[*].yearSession").value(hasItem(DEFAULT_ADMINISTRATOR_YEAR_SESSION)));
+    }
+
+    @Test
+    @Transactional
+    public void getCurrentUserCCRolesProfile_WithoutCCRole_ShouldReturnEmptyList() throws Exception {
+        User currentUser = getCurrentUser();
+
+        restUserCCInfoMockMvc.perform(get("/api/user-cc-infos/roles/current"))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
+            .andExpect(jsonPath("$").value(hasSize(0)));
     }
 
     @Test
