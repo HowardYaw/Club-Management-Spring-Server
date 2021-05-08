@@ -1,7 +1,6 @@
 package com.thirdcc.webapp.utils;
 
 
-import com.thirdcc.webapp.domain.YearSession;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
@@ -13,21 +12,25 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowable;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class YearSessionUtilsTest {
 
+    private static final String DEFAULT_VALID_YEAR_SESSION = "2019/2020";
+    private static final String DEFAULT_INVALID_YEAR_SESSION = "aaaa/aaaa";
+
+    private static final String YEAR_SESSION_BEFORE_DEFAULT = "2018/2019";
+
+    private static final int DEFAULT_FIRST_YEAR = 2019;
+
     @Test
     public void isValidYearSession() {
-        String yearSession = "2019/2020";
-        boolean isValid = YearSessionUtils.isValidYearSession(yearSession);
+        boolean isValid = YearSessionUtils.isValidYearSession(DEFAULT_VALID_YEAR_SESSION);
         assertThat(isValid).isTrue();
     }
 
     @Test
     public void isValidYearSession_WithInvalidYearSession() {
-        String yearSession = "aaaa/aaaa";
-        boolean isValid = YearSessionUtils.isValidYearSession(yearSession);
+        boolean isValid = YearSessionUtils.isValidYearSession(DEFAULT_INVALID_YEAR_SESSION);
         assertThat(isValid).isFalse();
     }
 
@@ -43,21 +46,21 @@ class YearSessionUtilsTest {
     public void toYearSession_WithIsLastMonthOfYearSession() {
         Month firstMonthOfYearSession = YearSessionUtils.getFirstMonthOfYearSession();
         Month lastMonthOfYearSession = Month.of(firstMonthOfYearSession.getValue() - 1);
-        LocalDate localDate = LocalDate.of(2019, lastMonthOfYearSession, 20);
+        LocalDate localDate = LocalDate.of(DEFAULT_FIRST_YEAR, lastMonthOfYearSession, 20);
         Instant instant = localDate.atStartOfDay().atZone(ZoneId.systemDefault()).toInstant();
         String yearSession = YearSessionUtils.toYearSession(instant);
 
-        assertThat(yearSession).isEqualTo("2018/2019");
+        assertThat(yearSession).isEqualTo(YEAR_SESSION_BEFORE_DEFAULT);
     }
 
     @Test
     public void toYearSession_WithIsFirstMonthOfYearSession() {
         Month firstMonthOfYearSession = YearSessionUtils.getFirstMonthOfYearSession();
-        LocalDate localDate = LocalDate.of(2019, firstMonthOfYearSession, 20);
+        LocalDate localDate = LocalDate.of(DEFAULT_FIRST_YEAR, firstMonthOfYearSession, 20);
         Instant instant = localDate.atStartOfDay().atZone(ZoneId.systemDefault()).toInstant();
         String yearSession = YearSessionUtils.toYearSession(instant);
 
-        assertThat(yearSession).isEqualTo("2019/2020");
+        assertThat(yearSession).isEqualTo(DEFAULT_VALID_YEAR_SESSION);
     }
 
     @Test
@@ -90,10 +93,10 @@ class YearSessionUtilsTest {
 
     @Test
     public void getFirstInstantOfYearSession() {
-        Instant actualInstant = YearSessionUtils.getFirstInstantOfYearSession("2019/2020");
+        Instant actualInstant = YearSessionUtils.getFirstInstantOfYearSession(DEFAULT_VALID_YEAR_SESSION);
 
         Month firstMonthOfYearSession = YearSessionUtils.getFirstMonthOfYearSession();
-        LocalDate firstDayOfYearSession = LocalDate.of(2019, firstMonthOfYearSession, 1);
+        LocalDate firstDayOfYearSession = LocalDate.of(DEFAULT_FIRST_YEAR, firstMonthOfYearSession, 1);
         Instant expectedInstant = firstDayOfYearSession.atStartOfDay().atZone(ZoneId.systemDefault()).toInstant();
 
         assertThat(actualInstant).isEqualTo(expectedInstant);
@@ -101,42 +104,35 @@ class YearSessionUtilsTest {
 
     @Test
     public void getFirstInstantOfYearSession_WithInvalidYearSession() {
-        String invalidYearSession = "aaaa/bbbb";
         Throwable thrown = catchThrowable(() -> {
-            YearSessionUtils.getFirstInstantOfYearSession(invalidYearSession);
+            YearSessionUtils.getFirstInstantOfYearSession(DEFAULT_INVALID_YEAR_SESSION);
         });
         assertThat(thrown).isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     public void isBefore_WithInvalidYearSession() {
-        String invalidYearSession = "aaaa/bbbb";
-        String validYearSession = "2019/2020";
 
         Throwable thrown1 = catchThrowable(() -> {
-            YearSessionUtils.isBefore(invalidYearSession, validYearSession);
+            YearSessionUtils.isBefore(DEFAULT_INVALID_YEAR_SESSION, DEFAULT_VALID_YEAR_SESSION);
         });
         assertThat(thrown1).isInstanceOf(IllegalArgumentException.class);
 
         Throwable thrown2 = catchThrowable(() -> {
-            YearSessionUtils.isBefore(validYearSession, invalidYearSession);
+            YearSessionUtils.isBefore(DEFAULT_VALID_YEAR_SESSION, DEFAULT_INVALID_YEAR_SESSION);
         });
         assertThat(thrown2).isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     public void isBefore_WithTrue() {
-        String earlierYearSession = "2019/2020";
-        String laterYearSession = "2020/2021";
-        boolean actual = YearSessionUtils.isBefore(earlierYearSession, laterYearSession);
+        boolean actual = YearSessionUtils.isBefore(YEAR_SESSION_BEFORE_DEFAULT, DEFAULT_VALID_YEAR_SESSION);
         assertThat(actual).isTrue();
     }
 
     @Test
     public void isBefore_WithFalse() {
-        String earlierYearSession = "2020/2021";
-        String laterYearSession = "2019/2020";
-        boolean actual = YearSessionUtils.isBefore(earlierYearSession, laterYearSession);
+        boolean actual = YearSessionUtils.isBefore(DEFAULT_VALID_YEAR_SESSION, YEAR_SESSION_BEFORE_DEFAULT);
         assertThat(actual).isFalse();
     }
 
