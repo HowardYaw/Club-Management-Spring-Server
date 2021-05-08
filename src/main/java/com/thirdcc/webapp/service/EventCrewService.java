@@ -48,4 +48,12 @@ public interface EventCrewService {
      * @param id the id of the entity.
      */
     void delete(Long id);
+
+    /**
+     * Get the "userId" eventCrew List.
+     *
+     * @param userId the userId of the entity.
+     * @return list of entities.
+     */
+    Page<EventCrewDTO> findAllByUserId(Long userId, Pageable pageable);
 }
