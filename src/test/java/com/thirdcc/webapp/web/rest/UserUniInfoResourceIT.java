@@ -2,6 +2,7 @@ package com.thirdcc.webapp.web.rest;
 
 import com.thirdcc.webapp.ClubmanagementApp;
 import com.thirdcc.webapp.annotations.authorization.WithNormalUser;
+import com.thirdcc.webapp.annotations.init.InitYearSession;
 import com.thirdcc.webapp.domain.User;
 import com.thirdcc.webapp.domain.UserUniInfo;
 import com.thirdcc.webapp.exception.BadRequestException;
@@ -38,6 +39,7 @@ import com.thirdcc.webapp.domain.enumeration.UserUniStatus;
  */
 @SpringBootTest(classes = ClubmanagementApp.class)
 @AutoConfigureMockMvc
+@InitYearSession
 public class UserUniInfoResourceIT {
 
     private static final Long DEFAULT_USER_ID = 1L;
@@ -49,8 +51,8 @@ public class UserUniInfoResourceIT {
     private static final String DEFAULT_PROGRAM = "DEFAULT_PROGRAM";
     private static final String UPDATED_PROGRAM = "UPDATED_PROGRAM";
 
-    private static final String DEFAULT_YEAR_SESSION = "DEFAULT_YEAR_SESSION";
-    private static final String UPDATED_YEAR_SESSION = "UPDATED_YEAR_SESSION";
+    private static final String DEFAULT_YEAR_SESSION = "2020/2021";
+    private static final String UPDATED_YEAR_SESSION = "2018/2019";
 
     private static final Integer DEFAULT_INTAKE_SEMESTER = 1;
     private static final Integer UPDATED_INTAKE_SEMESTER = 2;

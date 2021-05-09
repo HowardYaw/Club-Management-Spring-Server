@@ -16,7 +16,7 @@ import java.util.Optional;
 @Repository
 public interface UserCCInfoRepository extends JpaRepository<UserCCInfo, Long> {
 
-    Optional<UserCCInfo> findByUserId(Long userId);
+    Page<UserCCInfo> findAllByUserId(Long userId, Pageable pageable);
 
-    Page<UserCCInfo> findAllByUserId(Long userId, Pageable unpaged);
+    Optional<UserCCInfo> findByUserId(Long userId);
 }

@@ -7,9 +7,13 @@ import com.thirdcc.webapp.service.EventCrewService;
 import com.thirdcc.webapp.service.UserCCInfoService;
 import com.thirdcc.webapp.domain.UserCCInfo;
 import com.thirdcc.webapp.repository.UserCCInfoRepository;
+import com.thirdcc.webapp.service.UserUniInfoService;
 import com.thirdcc.webapp.service.dto.UserCCInfoDTO;
+import com.thirdcc.webapp.service.dto.UserUniInfoDTO;
 import com.thirdcc.webapp.service.dto.UserCCRoleDTO;
 import com.thirdcc.webapp.service.mapper.UserCCInfoMapper;
+import com.thirdcc.webapp.utils.FishLevelUtils;
+import com.thirdcc.webapp.utils.YearSessionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,7 +21,12 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Optional;
+import java.util.Collection;
+import java.util.Comparator;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -36,6 +45,8 @@ public class UserCCInfoServiceImpl implements UserCCInfoService {
 
     private final ClubFamilyService clubFamilyService;
 
+    private final UserUniInfoService userUniInfoService;
+
     private final EventCrewService eventCrewService;
 
     private final AdministratorService administratorService;
@@ -43,11 +54,14 @@ public class UserCCInfoServiceImpl implements UserCCInfoService {
     public UserCCInfoServiceImpl(UserCCInfoRepository userCCInfoRepository,
                                  UserCCInfoMapper userCCInfoMapper,
                                  ClubFamilyService clubFamilyService,
+                                 UserUniInfoService userUniInfoService,
                                  EventCrewService eventCrewService,
-                                 AdministratorService administratorService) {
+                                 AdministratorService administratorService
+    ) {
         this.userCCInfoRepository = userCCInfoRepository;
         this.userCCInfoMapper = userCCInfoMapper;
         this.clubFamilyService = clubFamilyService;
+        this.userUniInfoService = userUniInfoService;
         this.eventCrewService = eventCrewService;
         this.administratorService = administratorService;
     }
@@ -102,6 +116,54 @@ public class UserCCInfoServiceImpl implements UserCCInfoService {
         return userCCInfoRepository.findByUserId(userId)
             .map(userCCInfoMapper::toDto)
             .map(this::clubFamilyDetails);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<UserCCInfoDTO> getUserCCInfoByUserId(Long userId) {
+        log.debug("Request to get UserCCInfo of User : {}", userId);
+        List<UserCCInfoDTO> userCCInfoDTOList = userCCInfoRepository
+            .findAllByUserId(userId, Pageable.unpaged())
+            .map(userCCInfoMapper::toDto)
+            .getContent();
+        return getFullUserCCInfoList(userCCInfoDTOList, userId);
+    }
+
+    /**
+     *
+     * @param userCCInfoDTOList
+     * @param userId
+     * @return List of user CC Info Sorted by Year Session
+     */
+    private List<UserCCInfoDTO> getFullUserCCInfoList(List<UserCCInfoDTO> userCCInfoDTOList, Long userId) {
+        List<UserCCInfoDTO> fullUserCCInfoDTOList = new ArrayList<>();
+        Optional<UserUniInfoDTO> userUniInfoDTOOptional = userUniInfoService.getUserUniInfoByUserId(userId);
+        if (!userUniInfoDTOOptional.isPresent()) {
+            return fullUserCCInfoDTOList;
+        }
+        String currentYearSession = YearSessionUtils.getCurrentYearSession();
+        String intakeYearSession = userUniInfoDTOOptional.get().getYearSession();
+        Integer totalSemester = userUniInfoDTOOptional.get().getTotalSemester();
+        String yearSessionCounter = intakeYearSession;
+        for (int i = 1; i <= totalSemester; i = i + 2) {
+            String currentYearSessionCounter = yearSessionCounter;
+            UserCCInfoDTO userCCInfoDTO = userCCInfoDTOList.stream()
+                .filter(userCCInfoDTO1 -> userCCInfoDTO1.getYearSession().equals(currentYearSessionCounter))
+                .findFirst()
+                .orElse(
+                    UserCCInfoDTO.builder()
+                        .yearSession(yearSessionCounter)
+                        .userId(userId)
+                        .build()
+                );
+            userCCInfoDTO.setFishLevel(FishLevelUtils.getFishLevelBySemesterStudied(i));
+            fullUserCCInfoDTOList.add(userCCInfoDTO);
+            if (YearSessionUtils.isBefore(currentYearSession, yearSessionCounter)) {
+                break; // yearSession is in future, don't include
+            }
+            yearSessionCounter = YearSessionUtils.addYearSessionWithSemester(yearSessionCounter, 2);
+        }
+        return fullUserCCInfoDTOList;
     }
 
     @Override

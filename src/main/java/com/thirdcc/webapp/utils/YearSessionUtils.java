@@ -65,11 +65,27 @@ public class YearSessionUtils {
 
     public static Instant getFirstInstantOfYearSession(String yearSession) {
         if (!isValidYearSession(yearSession)) {
-            throw new RuntimeException("invalid yearSession of " + yearSession);
+            throw new IllegalArgumentException("invalid yearSession of " + yearSession);
         }
         int year = Integer.parseInt(yearSession.substring(0, 4));
         LocalDate firstLocalDateOfYearSession = LocalDate.of(year, getFirstMonthOfYearSession(), 1);
         return firstLocalDateOfYearSession.atStartOfDay(zoneId).toInstant();
+    }
+
+    public static String addYearSessionWithSemester(String yearSession, Integer numOfSem) {
+        Integer numOfYear = Math.round(numOfSem / 2.0f);
+        Integer firstYear = Integer.parseInt(yearSession.substring(0, 4));
+        Integer secondYear = Integer.parseInt(yearSession.substring(yearSession.length() - 4));
+        firstYear += numOfYear;
+        secondYear += numOfYear;
+        return String.format("%d/%d", firstYear, secondYear);
+    }
+
+    public static boolean isBefore(String earlierYS, String laterYs) {
+        if (!isValidYearSession(earlierYS) || !isValidYearSession(laterYs)) {
+            throw new IllegalArgumentException("invalid yearSession of " + earlierYS + " or " + laterYs);
+        }
+        return earlierYS.compareTo(laterYs) < 1;
     }
 
 }

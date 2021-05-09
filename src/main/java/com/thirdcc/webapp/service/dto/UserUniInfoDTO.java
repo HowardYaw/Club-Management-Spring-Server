@@ -39,6 +39,10 @@ public class UserUniInfoDTO implements Serializable {
 
     private UserUniStatus status;
 
+    private String graduateYearSession;
+
+    private Integer totalSemester;
+
     public Long getId() {
         return id;
     }
@@ -176,5 +180,21 @@ public class UserUniInfoDTO implements Serializable {
             ", status=" + status +
             ", imageUrl=" + imageUrl +
             '}';
+    }
+
+    public String getGraduateYearSession() {
+        return graduateYearSession;
+    }
+
+    public void setGraduateYearSession(String graduateYearSession) {
+        this.graduateYearSession = graduateYearSession;
+    }
+
+    public Integer getTotalSemester() {
+        return totalSemester;
+    }
+
+    public void setTotalSemester(Integer totalSemester) {
+        this.totalSemester = totalSemester;
     }
 }

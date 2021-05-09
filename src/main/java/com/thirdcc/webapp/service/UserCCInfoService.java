@@ -51,6 +51,14 @@ public interface UserCCInfoService {
     void delete(Long id);
 
     /**
+     * Get the List of UserCCInfo for User
+     *
+     * @param userId the id of User
+     * @return List of UserCCInfo of User
+     */
+    List<UserCCInfoDTO> getUserCCInfoByUserId(Long userId);
+
+    /**
      * Get the "userId" CC Roles.
      *
      * @param userId the userId of the User.

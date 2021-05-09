@@ -2,11 +2,18 @@ package com.thirdcc.webapp.web.rest;
 
 import com.thirdcc.webapp.ClubmanagementApp;
 import com.thirdcc.webapp.annotations.init.InitYearSession;
+import com.thirdcc.webapp.domain.User;
+import com.thirdcc.webapp.domain.UserCCInfo;
+import com.thirdcc.webapp.domain.UserUniInfo;
+import com.thirdcc.webapp.domain.enumeration.UserUniStatus;
+import com.thirdcc.webapp.exception.BadRequestException;
+import com.thirdcc.webapp.repository.UserCCInfoRepository;
+import com.thirdcc.webapp.repository.UserRepository;
+import com.thirdcc.webapp.repository.UserUniInfoRepository;
+import com.thirdcc.webapp.security.SecurityUtils;
 import com.thirdcc.webapp.domain.*;
 import com.thirdcc.webapp.domain.enumeration.*;
-import com.thirdcc.webapp.exception.BadRequestException;
 import com.thirdcc.webapp.repository.*;
-import com.thirdcc.webapp.security.SecurityUtils;
 import com.thirdcc.webapp.service.UserCCInfoService;
 import com.thirdcc.webapp.service.dto.UserCCInfoDTO;
 import com.thirdcc.webapp.service.mapper.UserCCInfoMapper;
@@ -28,7 +35,9 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 
+import static com.thirdcc.webapp.utils.FishLevelUtils.*;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -53,7 +62,13 @@ public class UserCCInfoResourceIT {
     private static final ClubFamilyRole UPDATED_FAMILY_ROLE = ClubFamilyRole.MOTHER;
 
     private static final String DEFAULT_YEAR_SESSION = "2020/2021";
-    private static final String UPDATED_YEAR_SESSION = "BBBBBBBBBB";
+    private static final String UPDATED_YEAR_SESSION = "2019/2020";
+
+    private static final String DEFAULT_UNI_INTAKE_YEAR_SESSION = "2020/2021";
+    private static final Long DEFAULT_COURSE_PROGRAM_ID = 1L;
+    private static final int DEFAULT_INTAKE_SEMESTER = 1;
+    private static final String DEFAULT_STAY_IN = "KK3 UM";
+    private static final UserUniStatus DEFAULT_UNI_INFO_STATUS = UserUniStatus.STUDYING;
 
     // Event DEFAULT value
     private static final String DEFAULT_EVENT_NAME = "CC_NIGHT";
@@ -90,6 +105,9 @@ public class UserCCInfoResourceIT {
     private UserRepository userRepository;
 
     @Autowired
+    private UserUniInfoRepository userUniInfoRepository;
+
+    @Autowired
     private EventRepository eventRepository;
 
     @Autowired
@@ -118,12 +136,11 @@ public class UserCCInfoResourceIT {
      * if they test an entity which requires the current entity.
      */
     public static UserCCInfo createEntity() {
-        UserCCInfo userCCInfo = new UserCCInfo()
+        return new UserCCInfo()
             .userId(DEFAULT_USER_ID)
             .clubFamilyId(DEFAULT_CLUB_FAMILY_ID)
             .familyRole(DEFAULT_FAMILY_ROLE)
             .yearSession(DEFAULT_YEAR_SESSION);
-        return userCCInfo;
     }
     /**
      * Create an updated entity for this test.
@@ -131,13 +148,23 @@ public class UserCCInfoResourceIT {
      * This is a static method, as tests for other entities might also need it,
      * if they test an entity which requires the current entity.
      */
-    public static UserCCInfo createUpdatedEntity(EntityManager em) {
-        UserCCInfo userCCInfo = new UserCCInfo()
+    public static UserCCInfo createUpdatedEntity() {
+        return new UserCCInfo()
             .userId(UPDATED_USER_ID)
             .clubFamilyId(UPDATED_CLUB_FAMILY_ID)
             .familyRole(UPDATED_FAMILY_ROLE)
             .yearSession(UPDATED_YEAR_SESSION);
-        return userCCInfo;
+    }
+
+    public static UserUniInfo createUserUniInfoEntity() {
+        UserUniInfo userUniInfo = new UserUniInfo();
+        userUniInfo.setUserId(DEFAULT_USER_ID);
+        userUniInfo.setYearSession(DEFAULT_UNI_INTAKE_YEAR_SESSION);
+        userUniInfo.setCourseProgramId(DEFAULT_COURSE_PROGRAM_ID);
+        userUniInfo.setIntakeSemester(DEFAULT_INTAKE_SEMESTER);
+        userUniInfo.setStayIn(DEFAULT_STAY_IN);
+        userUniInfo.setStatus(DEFAULT_UNI_INFO_STATUS);
+        return userUniInfo;
     }
 
     public static Event createEventEntity() {
@@ -330,6 +357,156 @@ public class UserCCInfoResourceIT {
         // Validate the database contains one less item
         List<UserCCInfo> userCCInfoList = userCCInfoRepository.findAll();
         assertThat(userCCInfoList).hasSize(databaseSizeBeforeDelete - 1);
+    }
+
+    @Test
+    @Transactional
+    public void getCurrentUserCCInfoProfile_FirstYearWithoutFamilyRole() throws Exception {
+        String currentYearSession = YearSessionUtils.getCurrentYearSession();
+        User currentUser = getCurrentUser();
+
+        UserUniInfo userUniInfo = createUserUniInfoEntity();
+        userUniInfo.setUserId(currentUser.getId());
+        userUniInfo.setYearSession(currentYearSession);
+        UserUniInfo savedUserUniInfo = userUniInfoRepository.saveAndFlush(userUniInfo);
+
+        restUserCCInfoMockMvc.perform(get("/api/user-cc-infos/current"))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
+            .andExpect(jsonPath("$", hasSize(1)))
+            .andExpect(jsonPath("$.[*].userId").value(hasItem(currentUser.getId().intValue())))
+            .andExpect(jsonPath("$.[0].fishLevel").value(FIRST_YEAR_FISH_LEVEL))
+            .andExpect(jsonPath("$.[0].yearSession").value(currentYearSession))
+            .andExpect(jsonPath("$.[0].familyRole").value(nullValue()));
+    }
+
+    @Test
+    @Transactional
+    public void getCurrentUserCCInfoProfile_SecondYearWithoutFamilyRole() throws Exception {
+        String currentYearSession = YearSessionUtils.getCurrentYearSession();
+        String intakeYearSession = YearSessionUtils.addYearSessionWithSemester(currentYearSession, -2);
+        User currentUser = getCurrentUser();
+
+        UserUniInfo userUniInfo = createUserUniInfoEntity();
+        userUniInfo.setUserId(currentUser.getId());
+        userUniInfo.setYearSession(intakeYearSession);
+        UserUniInfo savedUserUniInfo = userUniInfoRepository.saveAndFlush(userUniInfo);
+
+        restUserCCInfoMockMvc.perform(get("/api/user-cc-infos/current"))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
+            .andExpect(jsonPath("$", hasSize(2)))
+            .andExpect(jsonPath("$.[*].userId").value(hasItem(currentUser.getId().intValue())))
+            .andExpect(jsonPath("$.[0].fishLevel").value(FIRST_YEAR_FISH_LEVEL))
+            .andExpect(jsonPath("$.[0].yearSession").value(intakeYearSession))
+            .andExpect(jsonPath("$.[0].familyRole").value(nullValue()))
+            .andExpect(jsonPath("$.[1].fishLevel").value(SECOND_YEAR_FISH_LEVEL))
+            .andExpect(jsonPath("$.[1].yearSession").value(currentYearSession))
+            .andExpect(jsonPath("$.[1].familyRole").value(nullValue()));
+    }
+
+    @Test
+    @Transactional
+    public void getCurrentUserCCInfoProfile_SecondYearWithFamilyRole() throws Exception {
+        String currentYearSession = YearSessionUtils.getCurrentYearSession();
+        String intakeYearSession = YearSessionUtils.addYearSessionWithSemester(currentYearSession, -2);
+        User currentUser = getCurrentUser();
+
+        UserUniInfo userUniInfo = createUserUniInfoEntity();
+        userUniInfo.setUserId(currentUser.getId());
+        userUniInfo.setYearSession(intakeYearSession);
+        UserUniInfo savedUserUniInfo = userUniInfoRepository.saveAndFlush(userUniInfo);
+
+        UserCCInfo userCCInfo = createEntity();
+        userCCInfo.setUserId(currentUser.getId());
+        userCCInfo.setYearSession(currentYearSession);
+        UserCCInfo savedUserCCInfo = userCCInfoRepository.saveAndFlush(userCCInfo);
+
+        restUserCCInfoMockMvc.perform(get("/api/user-cc-infos/current"))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
+            .andExpect(jsonPath("$", hasSize(2)))
+            .andExpect(jsonPath("$.[*].userId").value(hasItem(currentUser.getId().intValue())))
+            .andExpect(jsonPath("$.[*].clubFamilyId").value(hasItem(DEFAULT_CLUB_FAMILY_ID.intValue())))
+            .andExpect(jsonPath("$.[0].fishLevel").value(FIRST_YEAR_FISH_LEVEL))
+            .andExpect(jsonPath("$.[0].yearSession").value(intakeYearSession))
+            .andExpect(jsonPath("$.[0].familyRole").value(nullValue()))
+            .andExpect(jsonPath("$.[1].fishLevel").value(SECOND_YEAR_FISH_LEVEL))
+            .andExpect(jsonPath("$.[1].yearSession").value(currentYearSession))
+            .andExpect(jsonPath("$.[1].familyRole").value(DEFAULT_FAMILY_ROLE.name()));
+    }
+
+    @Test
+    @Transactional
+    public void getCurrentUserCCInfoProfile_ThirdYearWithoutFamilyRole() throws Exception {
+        String currentYearSession = YearSessionUtils.getCurrentYearSession();
+        String intakeYearSession = YearSessionUtils.addYearSessionWithSemester(currentYearSession, -4);
+        String secondYearSession = YearSessionUtils.addYearSessionWithSemester(currentYearSession, -2);
+        User currentUser = getCurrentUser();
+
+        UserUniInfo userUniInfo = createUserUniInfoEntity();
+        userUniInfo.setUserId(currentUser.getId());
+        userUniInfo.setYearSession(intakeYearSession);
+        UserUniInfo savedUserUniInfo = userUniInfoRepository.saveAndFlush(userUniInfo);
+
+        restUserCCInfoMockMvc.perform(get("/api/user-cc-infos/current"))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
+            .andExpect(jsonPath("$", hasSize(3)))
+            .andExpect(jsonPath("$.[*].userId").value(hasItem(currentUser.getId().intValue())))
+            .andExpect(jsonPath("$.[0].fishLevel").value(FIRST_YEAR_FISH_LEVEL))
+            .andExpect(jsonPath("$.[0].yearSession").value(intakeYearSession))
+            .andExpect(jsonPath("$.[0].familyRole").value(nullValue()))
+            .andExpect(jsonPath("$.[1].fishLevel").value(SECOND_YEAR_FISH_LEVEL))
+            .andExpect(jsonPath("$.[1].yearSession").value(secondYearSession))
+            .andExpect(jsonPath("$.[1].familyRole").value(nullValue()))
+            .andExpect(jsonPath("$.[2].fishLevel").value(OLDER_YEAR_FISH_LEVEL))
+            .andExpect(jsonPath("$.[2].familyRole").value(nullValue()));
+    }
+
+    @Test
+    @Transactional
+    public void getCurrentUserCCInfoProfile_ThirdYearWithFamilyRole() throws Exception {
+        String currentYearSession = YearSessionUtils.getCurrentYearSession();
+        String intakeYearSession = YearSessionUtils.addYearSessionWithSemester(currentYearSession, -4);
+        String secondYearSession = YearSessionUtils.addYearSessionWithSemester(currentYearSession, -2);
+        User currentUser = getCurrentUser();
+
+        UserUniInfo userUniInfo = createUserUniInfoEntity();
+        userUniInfo.setUserId(currentUser.getId());
+        userUniInfo.setYearSession(intakeYearSession);
+        UserUniInfo savedUserUniInfo = userUniInfoRepository.saveAndFlush(userUniInfo);
+
+        UserCCInfo userCCInfo = createEntity();
+        userCCInfo.setUserId(currentUser.getId());
+        userCCInfo.setYearSession(secondYearSession);
+        UserCCInfo savedUserCCInfo = userCCInfoRepository.saveAndFlush(userCCInfo);
+
+        restUserCCInfoMockMvc.perform(get("/api/user-cc-infos/current"))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
+            .andExpect(jsonPath("$", hasSize(3)))
+            .andExpect(jsonPath("$.[*].userId").value(hasItem(currentUser.getId().intValue())))
+            .andExpect(jsonPath("$.[*].clubFamilyId").value(hasItem(DEFAULT_CLUB_FAMILY_ID.intValue())))
+            .andExpect(jsonPath("$.[0].fishLevel").value(FIRST_YEAR_FISH_LEVEL))
+            .andExpect(jsonPath("$.[0].yearSession").value(intakeYearSession))
+            .andExpect(jsonPath("$.[0].familyRole").value(nullValue()))
+            .andExpect(jsonPath("$.[1].fishLevel").value(SECOND_YEAR_FISH_LEVEL))
+            .andExpect(jsonPath("$.[1].yearSession").value(secondYearSession))
+            .andExpect(jsonPath("$.[1].familyRole").value(DEFAULT_FAMILY_ROLE.name()))
+            .andExpect(jsonPath("$.[2].fishLevel").value(OLDER_YEAR_FISH_LEVEL))
+            .andExpect(jsonPath("$.[2].familyRole").value(nullValue()));
+    }
+
+    @Test
+    @Transactional
+    public void getCurrentUserCCInfoProfile_WithoutUserUniInfo_ShouldReturnEmptyList() throws Exception {
+        User currentUser = getCurrentUser();
+
+        restUserCCInfoMockMvc.perform(get("/api/user-cc-infos/current"))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
+            .andExpect(jsonPath("$", hasSize(0)));
     }
 
     @Test

@@ -111,6 +111,23 @@ public class UserCCInfoResource {
     }
 
     /**
+     * {@code GET  /user-cc-infos/current} : get the current User userCCInfo Profile.
+     *
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the List of userCCInfoDTO, or with status {@code 404 (Not Found)}.
+     */
+    @GetMapping("/user-cc-infos/current")
+    public ResponseEntity<List<UserCCInfoDTO>> getCurrentUserCCInfoProfile() {
+        log.debug("REST request to get Current User UserCCInfo Profile");
+        String userLogin = SecurityUtils
+            .getCurrentUserLogin()
+            .orElseThrow(() -> new BadRequestException("User not Login"));
+        User user = userService.getUserByLogin(userLogin)
+            .orElseThrow(() -> new BadRequestException("User not found"));
+        List<UserCCInfoDTO> result = userCCInfoService.getUserCCInfoByUserId(user.getId());
+        return ResponseEntity.ok().body(result);
+    }
+
+    /**
      * {@code GET  /user-cc-infos/roles/current} : get the current User CC Roles Profile.
      *
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the List of UserCCRoleDTO.
