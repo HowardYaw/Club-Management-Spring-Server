@@ -8,9 +8,11 @@ import com.thirdcc.webapp.exception.InternalServerErrorException;
 import com.thirdcc.webapp.repository.CourseProgramRepository;
 import com.thirdcc.webapp.repository.UserRepository;
 import com.thirdcc.webapp.security.SecurityUtils;
+import com.thirdcc.webapp.service.ClubFamilyService;
 import com.thirdcc.webapp.service.UserUniInfoService;
 import com.thirdcc.webapp.domain.UserUniInfo;
 import com.thirdcc.webapp.repository.UserUniInfoRepository;
+import com.thirdcc.webapp.service.dto.ClubFamilyDTO;
 import com.thirdcc.webapp.service.dto.UserUniInfoDTO;
 import com.thirdcc.webapp.service.mapper.UserUniInfoMapper;
 import com.thirdcc.webapp.utils.YearSessionUtils;
@@ -43,13 +45,16 @@ public class UserUniInfoServiceImpl implements UserUniInfoService {
 
     private final CourseProgramRepository courseProgramRepository;
 
+    private final ClubFamilyService clubFamilyService;
+
     private static final UserUniStatus DEFAULT_USER_UNI_STATUS = UserUniStatus.STUDYING;
 
-    public UserUniInfoServiceImpl(UserUniInfoRepository userUniInfoRepository, UserUniInfoMapper userUniInfoMapper, UserRepository userRepository, CourseProgramRepository courseProgramRepository) {
+    public UserUniInfoServiceImpl(UserUniInfoRepository userUniInfoRepository, UserUniInfoMapper userUniInfoMapper, UserRepository userRepository, CourseProgramRepository courseProgramRepository, ClubFamilyService clubFamilyService) {
         this.userUniInfoRepository = userUniInfoRepository;
         this.userUniInfoMapper = userUniInfoMapper;
         this.userRepository = userRepository;
         this.courseProgramRepository = courseProgramRepository;
+        this.clubFamilyService = clubFamilyService;
     }
 
     /**
@@ -145,7 +150,8 @@ public class UserUniInfoServiceImpl implements UserUniInfoService {
         return userUniInfoRepository
             .findOneByUserId(userId)
             .map(userUniInfoMapper::toDto)
-            .map(this::mapUserUniInfoDetails);
+            .map(this::mapUserUniInfoDetails)
+            .map(this::mapClubFamilyInfo);
     }
 
     private UserUniInfoDTO mapUserUniInfoDetails(UserUniInfoDTO userUniInfoDTO) {
@@ -158,11 +164,21 @@ public class UserUniInfoServiceImpl implements UserUniInfoService {
         return userUniInfoDTO;
     }
 
+    private UserUniInfoDTO mapClubFamilyInfo(UserUniInfoDTO userUniInfoDTO) {
+        Optional<ClubFamilyDTO> clubFamilyDTOOptional = clubFamilyService.findClubFamilyByUserId(userUniInfoDTO.getUserId());
+        clubFamilyDTOOptional.ifPresent(clubFamilyDTO -> {
+            userUniInfoDTO.setClubFamilyName(clubFamilyDTO.getName());
+            userUniInfoDTO.setClubFamilySlogan(clubFamilyDTO.getSlogan());
+        });
+        return userUniInfoDTO;
+    }
+
     @Override
     public UserUniInfoDTO mapUserUniInfoWithUser(UserUniInfoDTO userUniInfoDTO, User user) {
         userUniInfoDTO.setUserId(user.getId());
         userUniInfoDTO.setFirstName(user.getFirstName());
         userUniInfoDTO.setLastName(user.getLastName());
+        userUniInfoDTO.setEmail(user.getEmail());
         userUniInfoDTO.setGender(user.getGender());
         userUniInfoDTO.setPhoneNumber(user.getPhoneNumber());
         userUniInfoDTO.setDateOfBirth(user.getDateOfBirth());

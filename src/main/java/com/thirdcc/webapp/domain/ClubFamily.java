@@ -23,7 +23,6 @@ public class ClubFamily implements Serializable {
     @Column(name = "name")
     private String name;
 
-    @Lob
     @Column(name = "slogan")
     private String slogan;
 

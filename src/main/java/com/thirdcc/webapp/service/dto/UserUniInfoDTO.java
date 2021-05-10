@@ -21,6 +21,8 @@ public class UserUniInfoDTO implements Serializable {
 
     private String lastName;
 
+    private String email;
+
     private Gender gender;
 
     private String phoneNumber;
@@ -42,6 +44,10 @@ public class UserUniInfoDTO implements Serializable {
     private String graduateYearSession;
 
     private Integer totalSemester;
+
+    private String clubFamilyName;
+
+    private String clubFamilySlogan;
 
     public Long getId() {
         return id;
@@ -170,6 +176,7 @@ public class UserUniInfoDTO implements Serializable {
             ", userId=" + userId +
             ", firstName='" + firstName + '\'' +
             ", lastName='" + lastName + '\'' +
+            ", email='" + email + '\'' +
             ", gender=" + gender +
             ", phoneNumber='" + phoneNumber + '\'' +
             ", dateOfBirth=" + dateOfBirth +
@@ -179,6 +186,8 @@ public class UserUniInfoDTO implements Serializable {
             ", stayIn='" + stayIn + '\'' +
             ", status=" + status +
             ", imageUrl=" + imageUrl +
+            ", clubFamilyName=" + clubFamilyName +
+            ", clubFamilySlogan=" + clubFamilySlogan +
             '}';
     }
 
@@ -196,5 +205,29 @@ public class UserUniInfoDTO implements Serializable {
 
     public void setTotalSemester(Integer totalSemester) {
         this.totalSemester = totalSemester;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public String getClubFamilyName() {
+        return clubFamilyName;
+    }
+
+    public void setClubFamilyName(String clubFamilyName) {
+        this.clubFamilyName = clubFamilyName;
+    }
+
+    public String getClubFamilySlogan() {
+        return clubFamilySlogan;
+    }
+
+    public void setClubFamilySlogan(String clubFamilySlogan) {
+        this.clubFamilySlogan = clubFamilySlogan;
     }
 }

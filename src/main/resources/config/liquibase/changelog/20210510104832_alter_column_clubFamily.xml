@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.6.xsd
+                        http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd">
+
+    <changeSet author="Howard" id="20210510104832-1">
+        <modifyDataType tableName="club_family" columnName="name" newDataType="varchar(255) CHARACTER SET utf8" />
+        <modifyDataType tableName="club_family" columnName="slogan" newDataType="varchar(255) CHARACTER SET utf8" />
+    </changeSet>
+
+</databaseChangeLog>
