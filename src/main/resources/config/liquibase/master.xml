@@ -51,5 +51,7 @@
     <include file="config/liquibase/changelog/20210416_load_test_faker_CourseProgram.xml" relativeToChangelogFile="false" />
 
     <include file="config/liquibase/changelog/20210427_load_test_faker_ClubFamily.xml" relativeToChangelogFile="false" />
+    <include file="config/liquibase/changelog/20210510_transaction_table_update.xml" relativeToChangelogFile="false" />
+    <include file="config/liquibase/changelog/20210510_transaction_createdBy_column_update.xml" relativeToChangelogFile="false" />
 
 </databaseChangeLog>

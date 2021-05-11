@@ -6,13 +6,11 @@ import com.thirdcc.webapp.domain.enumeration.TransactionStatus;
 import com.thirdcc.webapp.domain.enumeration.TransactionType;
 import com.thirdcc.webapp.exception.BadRequestException;
 import com.thirdcc.webapp.repository.EventRepository;
-import com.thirdcc.webapp.service.ClaimService;
 import com.thirdcc.webapp.service.EventService;
 import com.thirdcc.webapp.service.ReceiptService;
 import com.thirdcc.webapp.service.TransactionService;
 import com.thirdcc.webapp.domain.Transaction;
 import com.thirdcc.webapp.repository.TransactionRepository;
-import com.thirdcc.webapp.service.dto.ClaimDTO;
 import com.thirdcc.webapp.service.dto.EventBudgetTotalDTO;
 import com.thirdcc.webapp.service.dto.ReceiptDTO;
 import com.thirdcc.webapp.service.dto.TransactionDTO;
@@ -46,22 +44,23 @@ public class TransactionServiceImpl implements TransactionService {
 
     private final ReceiptService receiptService;
 
-    private final ClaimService claimService;
+    // TODO: [LU] refactor transaction service
+//    private final ClaimService claimService;
 
     public TransactionServiceImpl(
         TransactionRepository transactionRepository,
         TransactionMapper transactionMapper,
         EventRepository eventRepository,
         EventService eventService,
-        ReceiptService receiptService,
-        ClaimService claimService
+        ReceiptService receiptService
+//        ClaimService claimService
     ) {
         this.transactionRepository = transactionRepository;
         this.transactionMapper = transactionMapper;
         this.eventRepository = eventRepository;
         this.eventService = eventService;
         this.receiptService = receiptService;
-        this.claimService = claimService;
+//        this.claimService = claimService;
     }
 
     /**
@@ -82,10 +81,10 @@ public class TransactionServiceImpl implements TransactionService {
             transactionDTO.setReceiptId(receiptDTO.getId());
         }
         Transaction transaction = transactionMapper.toEntity(transactionDTO);
-        transaction.setStatus(TransactionStatus.SUCCESS);
+        transaction.setTransactionStatus(TransactionStatus.SUCCESS);
         transaction = transactionRepository.save(transaction);
         if (transactionDTO.getType() == TransactionType.EXPENSE) {
-            createClaimRecord(transaction);
+//            createClaimRecord(transaction);
         }
         return transactionMapper.toDto(transaction);
     }
@@ -96,11 +95,11 @@ public class TransactionServiceImpl implements TransactionService {
         Transaction transaction = transactionRepository
             .findById(transactionDTO.getId())
             .orElseThrow(() -> new BadRequestException("Id not found when updating transaction"));
-        if (transaction.getStatus() == TransactionStatus.CANCELLED) {
+        if (transaction.getTransactionStatus() == TransactionStatus.CANCELLED) {
             throw new BadRequestException("Cannot update transaction that is cancelled");
         }
-        transaction.setDetails(transactionDTO.getDetails());
-        transaction.setStatus(transactionDTO.getStatus());
+        transaction.setDescription(transactionDTO.getDetails());
+        transaction.setTransactionStatus(transactionDTO.getStatus());
         transaction = transactionRepository.save(transaction);
         return transactionMapper.toDto(transaction);
     }
@@ -160,10 +159,10 @@ public class TransactionServiceImpl implements TransactionService {
         EventBudgetTotalDTO eventBudgetTotalDTO = new EventBudgetTotalDTO();
         transactionRepository.findAllByEventId(eventId, Pageable.unpaged())
             .forEach(transaction -> {
-                if (TransactionType.EXPENSE == transaction.getType()) {
-                    eventBudgetTotalDTO.addTotalExpense(transaction.getAmount());
-                } else if (TransactionType.INCOME == transaction.getType()) {
-                    eventBudgetTotalDTO.addTotalIncome(transaction.getAmount());
+                if (TransactionType.EXPENSE == transaction.getTransactionType()) {
+                    eventBudgetTotalDTO.addTotalExpense(transaction.getTransactionAmount());
+                } else if (TransactionType.INCOME == transaction.getTransactionType()) {
+                    eventBudgetTotalDTO.addTotalIncome(transaction.getTransactionAmount());
                 }
             });
         return eventBudgetTotalDTO;
@@ -187,13 +186,13 @@ public class TransactionServiceImpl implements TransactionService {
         return receiptDTO;
     }
 
-    private ClaimDTO createClaimRecord(Transaction transaction) {
-        ClaimDTO claimDTO = new ClaimDTO();
-        claimDTO.setAmount(transaction.getAmount());
-        claimDTO.setStatus(ClaimStatus.OPEN);
-        claimDTO.setCreatedBy(transaction.getCreatedBy());
-        claimDTO.setCreatedDate(transaction.getCreatedDate());
-        claimDTO.setTransactionId(transaction.getId());
-        return claimService.save(claimDTO);
-    }
+//    private ClaimDTO createClaimRecord(Transaction transaction) {
+//        ClaimDTO claimDTO = new ClaimDTO();
+//        claimDTO.setAmount(transaction.getTransactionAmount());
+//        claimDTO.setStatus(ClaimStatus.OPEN);
+//        claimDTO.setCreatedBy(transaction.getCreatedBy());
+//        claimDTO.setCreatedDate(transaction.getCreatedDate());
+//        claimDTO.setTransactionId(transaction.getId());
+//        return claimService.save(claimDTO);
+//    }
 }

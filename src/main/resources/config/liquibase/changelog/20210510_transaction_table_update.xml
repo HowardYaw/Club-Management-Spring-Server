@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.6.xsd
+                        http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd">
+    <changeSet author="LUXIANZE" id="20210510_1">
+        <addNotNullConstraint tableName="transaction" columnName="status" columnDataType="varchar(50)" defaultNullValue="PENDING"/>
+        <addNotNullConstraint tableName="transaction" columnName="amount" columnDataType="decimal(21,2)" defaultNullValue="0.00"/>
+    </changeSet>
+    <changeSet id="20210510_2" author="LUXIANZE">
+        <addColumn tableName="transaction">
+            <column name="title" type="varchar(50)" defaultValue="transaction title">
+                <constraints nullable="false"/>
+            </column>
+            <column name="image_link" type="varchar(255)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="transaction_date" type="datetime" defaultValue="2021-05-10, 00:00:00">
+                <constraints nullable="false"/>
+            </column>
+            <column name="closed_by" type="long">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+    <changeSet id="20210510_3" author="LUXIANZE">
+        <renameColumn tableName="transaction" oldColumnName="type" newColumnName="transaction_type" columnDataType="varchar(50)"/>
+        <renameColumn tableName="transaction" oldColumnName="status" newColumnName="transaction_status" columnDataType="varchar(50)"/>
+        <renameColumn tableName="transaction" oldColumnName="amount" newColumnName="transaction_amount" columnDataType="decimal(21,2)"/>
+        <renameColumn tableName="transaction" oldColumnName="details" newColumnName="description" columnDataType="varchar(255)"/>
+    </changeSet>
+    <changeSet id="20210510_4" author="LUXIANZE">
+        <dropTable tableName="debt"/>
+        <dropTable tableName="claim"/>
+    </changeSet>
+</databaseChangeLog>

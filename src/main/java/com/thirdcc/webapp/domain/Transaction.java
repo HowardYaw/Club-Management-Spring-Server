@@ -25,27 +25,39 @@ public class Transaction extends AbstractAuditingEntity implements Serializable 
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "title")
+    private String title;
+
+    @Column(name = "transaction_date")
+    private Instant transactionDate;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "transaction_type")
+    private TransactionType transactionType;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "transaction_status")
+    private TransactionStatus transactionStatus;
+
     @Column(name = "event_id")
     private Long eventId;
 
-    @Column(name = "receipt_id")
-    private Long receiptId;
+    @Column(name = "transaction_amount", precision = 21, scale = 2)
+    private BigDecimal transactionAmount;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "type")
-    private TransactionType type;
+    @Column(name = "image_link")
+    private String imageLink;
 
-    @Column(name = "amount", precision = 21, scale = 2)
-    private BigDecimal amount;
+    @Column(name = "closed_by")
+    private Long closedBy;
 
-    @Column(name = "details")
-    private String details;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "status")
-    private TransactionStatus status;
+    @Column(name = "description")
+    private String description;
 
     // jhipster-needle-entity-add-field - JHipster will add fields here, do not remove
+
+    // id
     public Long getId() {
         return id;
     }
@@ -53,7 +65,86 @@ public class Transaction extends AbstractAuditingEntity implements Serializable 
     public void setId(Long id) {
         this.id = id;
     }
+    // id
 
+    @Override
+    public String toString() {
+        return "Transaction{" +
+            "id=" + getId() +
+            ", title='" + getTitle() + '\'' +
+            ", transactionDate=" + getTransactionDate() +
+            ", transactionType=" + getTransactionType() +
+            ", transactionStatus=" + getTransactionStatus() +
+            ", eventId=" + getEventId() +
+            ", transactionAmount=" + getTransactionAmount() +
+            ", imageLink='" + getImageLink() + '\'' +
+            ", createdBy='" + getCreatedBy() + '\'' +
+            ", closedBy=" + getClosedBy() +
+            ", description='" + getDescription() + '\'' +
+            '}';
+    }
+
+    // title
+    public String getTitle() {
+        return title;
+    }
+
+    public Transaction title(String title) {
+        this.title = title;
+        return this;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+    // title
+
+    // transaction_date
+    public Instant getTransactionDate() {
+        return transactionDate;
+    }
+
+    public Transaction transactionDate(Instant transactionDate) {
+        this.transactionDate = transactionDate;
+        return this;
+    }
+
+    public void setTransactionDate(Instant transactionDate) {
+        this.transactionDate = transactionDate;
+    }
+    // transaction_date
+
+    // transaction_type
+    public TransactionType getTransactionType() {
+        return transactionType;
+    }
+
+    public Transaction transactionType(TransactionType transactionType) {
+        this.transactionType = transactionType;
+        return this;
+    }
+
+    public void setTransactionType(TransactionType transactionType) {
+        this.transactionType = transactionType;
+    }
+    // transaction_type
+
+    // transaction_status
+    public TransactionStatus getTransactionStatus() {
+        return transactionStatus;
+    }
+
+    public Transaction status(TransactionStatus status) {
+        this.transactionStatus = status;
+        return this;
+    }
+
+    public void setTransactionStatus(TransactionStatus status) {
+        this.transactionStatus = status;
+    }
+    // transaction_status
+
+    // event_id
     public Long getEventId() {
         return eventId;
     }
@@ -66,58 +157,68 @@ public class Transaction extends AbstractAuditingEntity implements Serializable 
     public void setEventId(Long eventId) {
         this.eventId = eventId;
     }
+    // event_id
 
-    public Long getReceiptId() {
-        return receiptId;
+    // transaction_amount
+    public BigDecimal getTransactionAmount() {
+        return transactionAmount;
     }
 
-    public Transaction receiptId(Long receiptId) {
-        this.receiptId = receiptId;
+    public Transaction transactionAmount(BigDecimal transactionAmount) {
+        this.transactionAmount = transactionAmount;
         return this;
     }
 
-    public void setReceiptId(Long receiptId) {
-        this.receiptId = receiptId;
+    public void setTransactionAmount(BigDecimal transactionAmount) {
+        this.transactionAmount = transactionAmount;
+    }
+    // transaction_amount
+
+    // image_link
+    public String getImageLink() {
+        return imageLink;
     }
 
-    public TransactionType getType() {
-        return type;
-    }
-
-    public Transaction type(TransactionType type) {
-        this.type = type;
+    public Transaction imageLink(String imageLink) {
+        this.imageLink = imageLink;
         return this;
     }
 
-    public void setType(TransactionType type) {
-        this.type = type;
+    public void setImageLink(String imageLink) {
+        this.imageLink = imageLink;
+    }
+    // image_link
+
+    // closed_by
+    public Long getClosedBy() {
+        return closedBy;
     }
 
-    public BigDecimal getAmount() {
-        return amount;
-    }
-
-    public Transaction amount(BigDecimal amount) {
-        this.amount = amount;
+    public Transaction closedBy(Long closedBy) {
+        this.closedBy = closedBy;
         return this;
     }
 
-    public void setAmount(BigDecimal amount) {
-        this.amount = amount;
+    public void setClosedBy(Long closedBy) {
+        this.closedBy = closedBy;
+    }
+    // closed_by
+
+    // description
+    public String getDescription() {
+        return description;
     }
 
-    public String getDetails() {
-        return details;
-    }
-
-    public Transaction details(String details) {
-        this.details = details;
+    public Transaction description(String description) {
+        this.description = description;
         return this;
     }
 
-    public void setDetails(String details) {
-        this.details = details;
+    public void setDescription(String description) {
+        this.description = description;
     }
+    // description
+
     // jhipster-needle-entity-add-getters-setters - JHipster will add getters and setters here, do not remove
 
     @Override
@@ -136,32 +237,4 @@ public class Transaction extends AbstractAuditingEntity implements Serializable 
         return 31;
     }
 
-    @Override
-    public String toString() {
-        return "Transaction{" +
-            "id=" + getId() +
-            ", eventId=" + getEventId() +
-            ", receiptId=" + getReceiptId() +
-            ", type='" + getType() + "'" +
-            ", amount=" + getAmount() +
-            ", details='" + getDetails() + "'" +
-            ", createdBy='" + getCreatedBy() + "'" +
-            ", createdDate='" + getCreatedDate() + "'" +
-            ", lastModifiedBy='" + getLastModifiedBy() + "'" +
-            ", lastModifiedDate='" + getLastModifiedDate() + "'" +
-            "}";
-    }
-
-    public TransactionStatus getStatus() {
-        return status;
-    }
-
-    public void setStatus(TransactionStatus status) {
-        this.status = status;
-    }
-
-    public Transaction status(TransactionStatus status) {
-        this.status = status;
-        return this;
-    }
 }
