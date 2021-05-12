@@ -167,8 +167,10 @@ public class UserUniInfoServiceImpl implements UserUniInfoService {
     private UserUniInfoDTO mapClubFamilyInfo(UserUniInfoDTO userUniInfoDTO) {
         Optional<ClubFamilyDTO> clubFamilyDTOOptional = clubFamilyService.findClubFamilyByUserId(userUniInfoDTO.getUserId());
         clubFamilyDTOOptional.ifPresent(clubFamilyDTO -> {
+            userUniInfoDTO.setClubFamilyId(clubFamilyDTO.getId());
             userUniInfoDTO.setClubFamilyName(clubFamilyDTO.getName());
             userUniInfoDTO.setClubFamilySlogan(clubFamilyDTO.getSlogan());
+            userUniInfoDTO.setClubFamilyDescription(clubFamilyDTO.getDescription());
         });
         return userUniInfoDTO;
     }

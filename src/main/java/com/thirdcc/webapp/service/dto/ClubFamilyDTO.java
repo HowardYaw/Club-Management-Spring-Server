@@ -15,6 +15,8 @@ public class ClubFamilyDTO implements Serializable {
     @Lob
     private String slogan;
 
+    private String description;
+
 
     public Long getId() {
         return id;
@@ -67,6 +69,15 @@ public class ClubFamilyDTO implements Serializable {
             "id=" + getId() +
             ", name='" + getName() + "'" +
             ", slogan='" + getSlogan() + "'" +
+            ", description='" + getDescription() + "'" +
             "}";
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 }

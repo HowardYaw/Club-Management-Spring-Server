@@ -27,6 +27,9 @@ public class ClubFamily implements Serializable {
     @Column(name = "slogan")
     private String slogan;
 
+    @Column(name = "description")
+    private String description;
+
     // jhipster-needle-entity-add-field - JHipster will add fields here, do not remove
     public Long getId() {
         return id;
@@ -85,6 +88,15 @@ public class ClubFamily implements Serializable {
             "id=" + getId() +
             ", name='" + getName() + "'" +
             ", slogan='" + getSlogan() + "'" +
+            ", description='" + getDescription() + "'" +
             "}";
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 }

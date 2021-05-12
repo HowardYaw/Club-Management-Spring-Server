@@ -45,9 +45,13 @@ public class UserUniInfoDTO implements Serializable {
 
     private Integer totalSemester;
 
+    private Long clubFamilyId;
+
     private String clubFamilyName;
 
     private String clubFamilySlogan;
+
+    private String clubFamilyDescription;
 
     public Long getId() {
         return id;
@@ -186,8 +190,10 @@ public class UserUniInfoDTO implements Serializable {
             ", stayIn='" + stayIn + '\'' +
             ", status=" + status +
             ", imageUrl=" + imageUrl +
+            ", clubFamilyId=" + clubFamilyId +
             ", clubFamilyName=" + clubFamilyName +
             ", clubFamilySlogan=" + clubFamilySlogan +
+            ", clubFamilyDescription=" + clubFamilyDescription +
             '}';
     }
 
@@ -229,5 +235,21 @@ public class UserUniInfoDTO implements Serializable {
 
     public void setClubFamilySlogan(String clubFamilySlogan) {
         this.clubFamilySlogan = clubFamilySlogan;
+    }
+
+    public String getClubFamilyDescription() {
+        return clubFamilyDescription;
+    }
+
+    public void setClubFamilyDescription(String clubFamilyDescription) {
+        this.clubFamilyDescription = clubFamilyDescription;
+    }
+
+    public Long getClubFamilyId() {
+        return clubFamilyId;
+    }
+
+    public void setClubFamilyId(Long clubFamilyId) {
+        this.clubFamilyId = clubFamilyId;
     }
 }

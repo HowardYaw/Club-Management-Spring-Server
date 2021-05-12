@@ -1,11 +1,17 @@
 package com.thirdcc.webapp.web.rest;
 
+import com.netflix.discovery.converters.Auto;
 import com.thirdcc.webapp.ClubmanagementApp;
 import com.thirdcc.webapp.annotations.authorization.WithNormalUser;
 import com.thirdcc.webapp.annotations.init.InitYearSession;
+import com.thirdcc.webapp.domain.ClubFamily;
 import com.thirdcc.webapp.domain.User;
+import com.thirdcc.webapp.domain.UserCCInfo;
 import com.thirdcc.webapp.domain.UserUniInfo;
+import com.thirdcc.webapp.domain.enumeration.ClubFamilyRole;
 import com.thirdcc.webapp.exception.BadRequestException;
+import com.thirdcc.webapp.repository.ClubFamilyRepository;
+import com.thirdcc.webapp.repository.UserCCInfoRepository;
 import com.thirdcc.webapp.repository.UserRepository;
 import com.thirdcc.webapp.repository.UserUniInfoRepository;
 import com.thirdcc.webapp.security.SecurityUtils;
@@ -66,6 +72,10 @@ public class UserUniInfoResourceIT {
     private static final UserUniStatus DEFAULT_STATUS = UserUniStatus.GRADUATED;
     private static final UserUniStatus UPDATED_STATUS = UserUniStatus.STUDYING;
 
+    private static final Long DEFAULT_USER_CC_CLUB_FAMILY_ID = 1L;
+    private static final ClubFamilyRole DEFAULT_USER_CC_FAMILY_ROLE = ClubFamilyRole.FATHER;
+    private static final String DEFAULT_USER_CC_YEAR_SESSION = "2019/2020";
+
     @Autowired
     private UserUniInfoRepository userUniInfoRepository;
 
@@ -73,10 +83,13 @@ public class UserUniInfoResourceIT {
     private UserUniInfoMapper userUniInfoMapper;
 
     @Autowired
-    private UserUniInfoService userUniInfoService;
+    private UserRepository userRepository;
 
     @Autowired
-    private UserRepository userRepository;
+    private UserCCInfoRepository userCCInfoRepository;
+
+    @Autowired
+    private ClubFamilyRepository clubFamilyRepository;
 
     @Autowired
     private EntityManager em;
@@ -122,6 +135,14 @@ public class UserUniInfoResourceIT {
         userUniInfo.setStayIn(UPDATED_STAY_IN);
         userUniInfo.setStatus(UPDATED_STATUS);
         return userUniInfo;
+    }
+
+    public static UserCCInfo createUserCCInfoEntity() {
+        return new UserCCInfo()
+            .userId(DEFAULT_USER_ID)
+            .clubFamilyId(DEFAULT_USER_CC_CLUB_FAMILY_ID)
+            .familyRole(DEFAULT_USER_CC_FAMILY_ROLE)
+            .yearSession(DEFAULT_USER_CC_YEAR_SESSION);
     }
 
     @BeforeEach
@@ -235,6 +256,12 @@ public class UserUniInfoResourceIT {
         userUniInfo.setUserId(user.getId());
         userUniInfoRepository.save(userUniInfo);
 
+        UserCCInfo userCCInfo = createUserCCInfoEntity();
+        userCCInfo.setUserId(user.getId());
+        UserCCInfo savedUserCCInfo = userCCInfoRepository.saveAndFlush(userCCInfo);
+
+        ClubFamily clubFamily = getClubFamily(savedUserCCInfo.getClubFamilyId());
+
         restUserUniInfoMockMvc.perform(get("/api/user-uni-infos/current"))
             .andExpect(status().isOk())
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
@@ -247,10 +274,15 @@ public class UserUniInfoResourceIT {
             .andExpect(jsonPath("$.status").value(DEFAULT_STATUS.toString()))
             .andExpect(jsonPath("$.firstName").value(user.getFirstName()))
             .andExpect(jsonPath("$.lastName").value(user.getLastName()))
+            .andExpect(jsonPath("$.email").value(user.getEmail()))
             .andExpect(jsonPath("$.gender").value(user.getGender()))
             .andExpect(jsonPath("$.dateOfBirth").value(user.getDateOfBirth()))
             .andExpect(jsonPath("$.phoneNumber").value(user.getPhoneNumber()))
-            .andExpect(jsonPath("$.imageUrl").value(user.getImageUrl()));
+            .andExpect(jsonPath("$.imageUrl").value(user.getImageUrl()))
+            .andExpect(jsonPath("$.clubFamilyId").value(clubFamily.getId()))
+            .andExpect(jsonPath("$.clubFamilyName").value(clubFamily.getName()))
+            .andExpect(jsonPath("$.clubFamilyDescription").value(clubFamily.getDescription()))
+            .andExpect(jsonPath("$.clubFamilySlogan").value(clubFamily.getSlogan()));
     }
 
     @Test
@@ -265,6 +297,7 @@ public class UserUniInfoResourceIT {
             .andExpect(jsonPath("$.userId").value(user.getId().intValue()))
             .andExpect(jsonPath("$.firstName").value(user.getFirstName()))
             .andExpect(jsonPath("$.lastName").value(user.getLastName()))
+            .andExpect(jsonPath("$.email").value(user.getEmail()))
             .andExpect(jsonPath("$.gender").value(user.getGender()))
             .andExpect(jsonPath("$.dateOfBirth").value(user.getDateOfBirth()))
             .andExpect(jsonPath("$.phoneNumber").value(user.getPhoneNumber()))
@@ -391,6 +424,10 @@ public class UserUniInfoResourceIT {
             .getCurrentUserLogin()
             .flatMap(userRepository::findOneWithAuthoritiesByLogin)
             .orElseThrow(() -> new BadRequestException("Cannot find user"));
+    }
+
+    private ClubFamily getClubFamily(Long clubFamilyId) {
+        return clubFamilyRepository.findById(clubFamilyId).get();
     }
 
 

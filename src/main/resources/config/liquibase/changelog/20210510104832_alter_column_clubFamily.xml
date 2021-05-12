@@ -6,9 +6,12 @@
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.6.xsd
                         http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd">
 
-    <changeSet author="Howard" id="20210510104832-1">
-        <modifyDataType tableName="club_family" columnName="name" newDataType="varchar(255) CHARACTER SET utf8" />
-        <modifyDataType tableName="club_family" columnName="slogan" newDataType="varchar(255) CHARACTER SET utf8" />
+    <changeSet author="Howard Yaw" id="20210510104832-1">
+        <addColumn tableName="club_family">
+            <column name="description" type="varchar(255)">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
     </changeSet>
 
 </databaseChangeLog>
