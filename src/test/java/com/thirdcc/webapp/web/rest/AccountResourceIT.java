@@ -57,6 +57,14 @@ public class AccountResourceIT {
 
     static final String TEST_USER_LOGIN = "test";
 
+    private static final String NORMAL_FIRST_NAME = "NORMAL_FIRST_NAME";
+    private static final String NORMAL_IMAGE_URL = "NORMAL_IMAGE_URL";
+
+    // email must be unique
+    private static final String NORMAL_EMAIL_1 = "normal1@localhost.testing";
+    private static final String NORMAL_EMAIL_2 = "normal2@localhost.testing";
+    private static final String NORMAL_EMAIL_3 = "normal3@localhost.testing";
+
     private static final String CC_HEAD_FIRST_NAME = "CC_HEAD_FIRST_NAME";
     private static final String CC_HEAD_EMAIL = "cc_head@localhost.testing";
     private static final String CC_HEAD_IMAGE_URL = "CC_HEAD_IMAGE_URL";
@@ -190,6 +198,131 @@ public class AccountResourceIT {
     }
 
     @Test
+    @WithNormalUser(firstName = NORMAL_FIRST_NAME, email = NORMAL_EMAIL_1, imageUrl = NORMAL_IMAGE_URL)
+    public void getAccountDetails_WithProfileCompleted() throws Exception {
+        CourseProgram courseProgram = courseProgramRepository
+            .findById(1L)
+            .orElseThrow(() -> new RuntimeException("CourseProgram not loaded via liquibase testFaker context"));
+
+        User currentUser = SecurityUtils
+            .getCurrentUserLogin()
+            .flatMap(userRepository::findOneWithAuthoritiesByLogin)
+            .orElseThrow(() -> new BadRequestException("Cannot find user"));
+
+        currentUser.setFirstName(NORMAL_FIRST_NAME);
+        currentUser.setLastName(DEFAULT_LAST_NAME);
+        currentUser.setGender(DEFAULT_GENDER);
+        currentUser.setPhoneNumber(DEFAULT_PHONE_NUMBER);
+        currentUser.setDateOfBirth(DEFAULT_DATE_OF_BIRTH);
+        userRepository.saveAndFlush(currentUser);
+
+        UserUniInfo userUniInfo = new UserUniInfo();
+        userUniInfo.setUserId(currentUser.getId());
+        userUniInfo.setCourseProgramId(courseProgram.getId());
+        userUniInfo.setYearSession(DEFAULT_YEAR_SESSION);
+        userUniInfo.setIntakeSemester(DEFAULT_INTAKE_SEMESTER);
+        userUniInfo.setStayIn(DEFAULT_STAY_IN);
+        userUniInfo.setStatus(DEFAULT_USER_UNI_STATUS);
+        userUniInfoRepository.saveAndFlush(userUniInfo);
+
+        restMvc.perform(get("/api/account")
+            .accept(MediaType.APPLICATION_JSON))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
+            .andExpect(jsonPath("$.id").value(currentUser.getId()))
+            .andExpect(jsonPath("$.firstName").value(NORMAL_FIRST_NAME))
+            .andExpect(jsonPath("$.email").value(NORMAL_EMAIL_1))
+            .andExpect(jsonPath("$.imageUrl").value(NORMAL_IMAGE_URL))
+            .andExpect(jsonPath("$.authorities").value(Matchers.hasItems(AuthoritiesConstants.USER)))
+            .andExpect(jsonPath("$.isProfileCompleted").value(Boolean.TRUE))
+            .andExpect(jsonPath("$.isCurrentCCHead").value(Boolean.FALSE))
+            .andExpect(jsonPath("$.isCurrentAdministrator").value(Boolean.FALSE))
+            .andExpect(jsonPath("$.eventHeadEventIds").isEmpty())
+            .andExpect(jsonPath("$.eventCrewEventIds").isEmpty());
+    }
+
+    @Test
+    @WithNormalUser(firstName = NORMAL_FIRST_NAME, email = NORMAL_EMAIL_2, imageUrl = NORMAL_IMAGE_URL)
+    public void getAccountDetails_WithBasicProfileIncomplete_ShouldReturnFalse() throws Exception {
+        CourseProgram courseProgram = courseProgramRepository
+            .findById(1L)
+            .orElseThrow(() -> new RuntimeException("CourseProgram not loaded via liquibase testFaker context"));
+
+        User currentUser = SecurityUtils
+            .getCurrentUserLogin()
+            .flatMap(userRepository::findOneWithAuthoritiesByLogin)
+            .orElseThrow(() -> new BadRequestException("Cannot find user"));
+
+        UserUniInfo userUniInfo = new UserUniInfo();
+        userUniInfo.setUserId(currentUser.getId());
+        userUniInfo.setCourseProgramId(courseProgram.getId());
+        userUniInfo.setYearSession(DEFAULT_YEAR_SESSION);
+        userUniInfo.setIntakeSemester(DEFAULT_INTAKE_SEMESTER);
+        userUniInfo.setStayIn(DEFAULT_STAY_IN);
+        userUniInfo.setStatus(DEFAULT_USER_UNI_STATUS);
+        userUniInfoRepository.saveAndFlush(userUniInfo);
+
+        restMvc.perform(get("/api/account")
+            .accept(MediaType.APPLICATION_JSON))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
+            .andExpect(jsonPath("$.id").value(currentUser.getId()))
+            .andExpect(jsonPath("$.firstName").value(NORMAL_FIRST_NAME))
+            .andExpect(jsonPath("$.email").value(NORMAL_EMAIL_2))
+            .andExpect(jsonPath("$.imageUrl").value(NORMAL_IMAGE_URL))
+            .andExpect(jsonPath("$.authorities").value(Matchers.hasItems(AuthoritiesConstants.USER)))
+            .andExpect(jsonPath("$.isProfileCompleted").value(Boolean.FALSE))
+            .andExpect(jsonPath("$.isCurrentCCHead").value(Boolean.FALSE))
+            .andExpect(jsonPath("$.isCurrentAdministrator").value(Boolean.FALSE))
+            .andExpect(jsonPath("$.eventHeadEventIds").isEmpty())
+            .andExpect(jsonPath("$.eventCrewEventIds").isEmpty());
+    }
+
+    @Test
+    @WithNormalUser(firstName = NORMAL_FIRST_NAME, email = NORMAL_EMAIL_3, imageUrl = NORMAL_IMAGE_URL)
+    public void getAccountDetails_WithBasicUserUniInfoIncomplete_ShouldReturnFalse() throws Exception {
+        CourseProgram courseProgram = courseProgramRepository
+            .findById(1L)
+            .orElseThrow(() -> new RuntimeException("CourseProgram not loaded via liquibase testFaker context"));
+
+        User currentUser = SecurityUtils
+            .getCurrentUserLogin()
+            .flatMap(userRepository::findOneWithAuthoritiesByLogin)
+            .orElseThrow(() -> new BadRequestException("Cannot find user"));
+
+        currentUser.setFirstName(NORMAL_FIRST_NAME);
+        currentUser.setLastName(DEFAULT_LAST_NAME);
+        currentUser.setGender(DEFAULT_GENDER);
+        currentUser.setPhoneNumber(DEFAULT_PHONE_NUMBER);
+        currentUser.setDateOfBirth(DEFAULT_DATE_OF_BIRTH);
+        userRepository.saveAndFlush(currentUser);
+
+        UserUniInfo userUniInfo = new UserUniInfo();
+        userUniInfo.setUserId(currentUser.getId());
+        userUniInfo.setCourseProgramId(courseProgram.getId());
+        userUniInfo.setYearSession("");
+        userUniInfo.setIntakeSemester(DEFAULT_INTAKE_SEMESTER);
+        userUniInfo.setStayIn(DEFAULT_STAY_IN);
+        userUniInfo.setStatus(DEFAULT_USER_UNI_STATUS);
+        userUniInfoRepository.saveAndFlush(userUniInfo);
+
+        restMvc.perform(get("/api/account")
+            .accept(MediaType.APPLICATION_JSON))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
+            .andExpect(jsonPath("$.id").value(currentUser.getId()))
+            .andExpect(jsonPath("$.firstName").value(NORMAL_FIRST_NAME))
+            .andExpect(jsonPath("$.email").value(NORMAL_EMAIL_3))
+            .andExpect(jsonPath("$.imageUrl").value(NORMAL_IMAGE_URL))
+            .andExpect(jsonPath("$.authorities").value(Matchers.hasItems(AuthoritiesConstants.USER)))
+            .andExpect(jsonPath("$.isProfileCompleted").value(Boolean.FALSE))
+            .andExpect(jsonPath("$.isCurrentCCHead").value(Boolean.FALSE))
+            .andExpect(jsonPath("$.isCurrentAdministrator").value(Boolean.FALSE))
+            .andExpect(jsonPath("$.eventHeadEventIds").isEmpty())
+            .andExpect(jsonPath("$.eventCrewEventIds").isEmpty());
+    }
+
+    @Test
     @WithCurrentCCHead(firstName = CC_HEAD_FIRST_NAME, email = CC_HEAD_EMAIL, imageUrl = CC_HEAD_IMAGE_URL)
     public void getAccountDetails_WithCurrentCCHead() throws Exception {
         User currentUser = userService
@@ -204,6 +337,7 @@ public class AccountResourceIT {
             .andExpect(jsonPath("$.email").value(CC_HEAD_EMAIL))
             .andExpect(jsonPath("$.imageUrl").value(CC_HEAD_IMAGE_URL))
             .andExpect(jsonPath("$.authorities").value(Matchers.hasItems(AuthoritiesConstants.ADMIN, AuthoritiesConstants.USER)))
+            .andExpect(jsonPath("$.isProfileCompleted").value(Boolean.FALSE))
             .andExpect(jsonPath("$.isCurrentCCHead").value(Boolean.TRUE))
             .andExpect(jsonPath("$.isCurrentAdministrator").value(Boolean.TRUE))
             .andExpect(jsonPath("$.eventHeadEventIds").isEmpty())
@@ -225,6 +359,7 @@ public class AccountResourceIT {
             .andExpect(jsonPath("$.email").value(CC_ADMIN_EMAIL))
             .andExpect(jsonPath("$.imageUrl").value(CC_ADMIN_IMAGE_URL))
             .andExpect(jsonPath("$.authorities").value(Matchers.hasItems(AuthoritiesConstants.ADMIN, AuthoritiesConstants.USER)))
+            .andExpect(jsonPath("$.isProfileCompleted").value(Boolean.FALSE))
             .andExpect(jsonPath("$.isCurrentCCHead").value(Boolean.FALSE))
             .andExpect(jsonPath("$.isCurrentAdministrator").value(Boolean.TRUE))
             .andExpect(jsonPath("$.eventHeadEventIds").isEmpty())
@@ -247,6 +382,7 @@ public class AccountResourceIT {
             .andExpect(jsonPath("$.email").value(EVENT_HEAD_EMAIL))
             .andExpect(jsonPath("$.imageUrl").value(EVENT_HEAD_IMAGE_URL))
             .andExpect(jsonPath("$.authorities").value(Matchers.hasItems(AuthoritiesConstants.USER)))
+            .andExpect(jsonPath("$.isProfileCompleted").value(Boolean.FALSE))
             .andExpect(jsonPath("$.isCurrentCCHead").value(Boolean.FALSE))
             .andExpect(jsonPath("$.isCurrentAdministrator").value(Boolean.FALSE))
             .andExpect(jsonPath("$.eventHeadEventIds").value(Matchers.hasItem(eventCrew.getEventId().intValue())))
@@ -271,6 +407,7 @@ public class AccountResourceIT {
             .andExpect(jsonPath("$.email").value(EVENT_CREW_EMAIL))
             .andExpect(jsonPath("$.imageUrl").value(EVENT_CREW_IMAGE_URL))
             .andExpect(jsonPath("$.authorities").value(Matchers.hasItems(AuthoritiesConstants.USER)))
+            .andExpect(jsonPath("$.isProfileCompleted").value(Boolean.FALSE))
             .andExpect(jsonPath("$.isCurrentCCHead").value(Boolean.FALSE))
             .andExpect(jsonPath("$.isCurrentAdministrator").value(Boolean.FALSE))
             .andExpect(jsonPath("$.eventHeadEventIds").isEmpty())
@@ -293,6 +430,7 @@ public class AccountResourceIT {
             .andExpect(jsonPath("$.email").value("user@localhost"))
             .andExpect(jsonPath("$.imageUrl").value(""))
             .andExpect(jsonPath("$.authorities").value(Matchers.hasItems(AuthoritiesConstants.USER)))
+            .andExpect(jsonPath("$.isProfileCompleted").value(Boolean.FALSE))
             .andExpect(jsonPath("$.isCurrentCCHead").value(Boolean.FALSE))
             .andExpect(jsonPath("$.isCurrentAdministrator").value(Boolean.FALSE))
             .andExpect(jsonPath("$.eventHeadEventIds").isEmpty())
@@ -970,6 +1108,7 @@ public class AccountResourceIT {
 
     @Test
     @WithNormalUser
+    @Deprecated
     public void isProfileCompleted_WithProfileCompleted() throws Exception {
         CourseProgram courseProgram = courseProgramRepository
             .findById(1L)
@@ -1004,6 +1143,7 @@ public class AccountResourceIT {
 
     @Test
     @WithNormalUser
+    @Deprecated
     public void isProfileCompleted_WithBasicProfileIncomplete_ShouldReturnFalse() throws Exception {
         CourseProgram courseProgram = courseProgramRepository
             .findById(1L)
@@ -1038,6 +1178,7 @@ public class AccountResourceIT {
 
     @Test
     @WithNormalUser
+    @Deprecated
     public void isProfileCompleted_WithBasicUserUniInfoIncomplete_ShouldReturnFalse() throws Exception {
         CourseProgram courseProgram = courseProgramRepository
             .findById(1L)
