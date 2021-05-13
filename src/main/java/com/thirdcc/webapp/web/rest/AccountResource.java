@@ -129,6 +129,9 @@ public class AccountResource {
             .stream()
             .map(Authority::getName)
             .collect(Collectors.toSet());
+        boolean isBasicProfileCompleted = userService.isBasicProfileCompleted(user.getId());
+        boolean isUserUniInfoCompleted = userUniInfoService.isUserUniInfoCompleted(user.getId());
+        boolean isProfileCompleted = isBasicProfileCompleted && isUserUniInfoCompleted;
         boolean isCurrentCCHead = managementTeamSecurityExpression.isCurrentCCHead();
         boolean isCurrentAdministrator = managementTeamSecurityExpression.isCurrentAdministrator();
         Set<Long> eventHeadEventIds = eventCrewRepository
@@ -148,6 +151,7 @@ public class AccountResource {
         dto.setEmail(user.getEmail());
         dto.setImageUrl(user.getImageUrl());
         dto.setAuthorities(authorityNames);
+        dto.setProfileCompleted(isProfileCompleted);
         dto.setCurrentCCHead(isCurrentCCHead);
         dto.setCurrentAdministrator(isCurrentAdministrator);
         dto.setEventHeadEventIds(eventHeadEventIds);
@@ -225,6 +229,10 @@ public class AccountResource {
         }
     }
 
+    /**
+     * Use the {@link #getAccountDetails()} endpoint instead.
+     */
+    @Deprecated
     @GetMapping("/account/is-profile-completed")
     public ResponseEntity<Map<String, Boolean>> isProfileCompleted() {
         User currentUser = SecurityUtils
