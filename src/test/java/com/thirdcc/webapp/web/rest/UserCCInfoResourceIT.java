@@ -397,11 +397,11 @@ public class UserCCInfoResourceIT {
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
             .andExpect(jsonPath("$", hasSize(2)))
             .andExpect(jsonPath("$.[*].userId").value(hasItem(currentUser.getId().intValue())))
-            .andExpect(jsonPath("$.[0].fishLevel").value(FIRST_YEAR_FISH_LEVEL))
-            .andExpect(jsonPath("$.[0].yearSession").value(intakeYearSession))
+            .andExpect(jsonPath("$.[0].fishLevel").value(SECOND_YEAR_FISH_LEVEL))
+            .andExpect(jsonPath("$.[0].yearSession").value(currentYearSession))
             .andExpect(jsonPath("$.[0].familyRole").value(nullValue()))
-            .andExpect(jsonPath("$.[1].fishLevel").value(SECOND_YEAR_FISH_LEVEL))
-            .andExpect(jsonPath("$.[1].yearSession").value(currentYearSession))
+            .andExpect(jsonPath("$.[1].fishLevel").value(FIRST_YEAR_FISH_LEVEL))
+            .andExpect(jsonPath("$.[1].yearSession").value(intakeYearSession))
             .andExpect(jsonPath("$.[1].familyRole").value(nullValue()));
     }
 
@@ -428,12 +428,12 @@ public class UserCCInfoResourceIT {
             .andExpect(jsonPath("$", hasSize(2)))
             .andExpect(jsonPath("$.[*].userId").value(hasItem(currentUser.getId().intValue())))
             .andExpect(jsonPath("$.[*].clubFamilyId").value(hasItem(DEFAULT_CLUB_FAMILY_ID.intValue())))
-            .andExpect(jsonPath("$.[0].fishLevel").value(FIRST_YEAR_FISH_LEVEL))
-            .andExpect(jsonPath("$.[0].yearSession").value(intakeYearSession))
-            .andExpect(jsonPath("$.[0].familyRole").value(nullValue()))
-            .andExpect(jsonPath("$.[1].fishLevel").value(SECOND_YEAR_FISH_LEVEL))
-            .andExpect(jsonPath("$.[1].yearSession").value(currentYearSession))
-            .andExpect(jsonPath("$.[1].familyRole").value(DEFAULT_FAMILY_ROLE.name()));
+            .andExpect(jsonPath("$.[0].fishLevel").value(SECOND_YEAR_FISH_LEVEL))
+            .andExpect(jsonPath("$.[0].yearSession").value(currentYearSession))
+            .andExpect(jsonPath("$.[0].familyRole").value(DEFAULT_FAMILY_ROLE.name()))
+            .andExpect(jsonPath("$.[1].fishLevel").value(FIRST_YEAR_FISH_LEVEL))
+            .andExpect(jsonPath("$.[1].yearSession").value(intakeYearSession))
+            .andExpect(jsonPath("$.[1].familyRole").value(nullValue()));
     }
 
     @Test
@@ -453,14 +453,14 @@ public class UserCCInfoResourceIT {
             .andExpect(status().isOk())
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
             .andExpect(jsonPath("$", hasSize(3)))
-            .andExpect(jsonPath("$.[*].userId").value(hasItem(currentUser.getId().intValue())))
-            .andExpect(jsonPath("$.[0].fishLevel").value(FIRST_YEAR_FISH_LEVEL))
-            .andExpect(jsonPath("$.[0].yearSession").value(intakeYearSession))
+            .andExpect(jsonPath("$.[0].fishLevel").value(OLDER_YEAR_FISH_LEVEL))
             .andExpect(jsonPath("$.[0].familyRole").value(nullValue()))
             .andExpect(jsonPath("$.[1].fishLevel").value(SECOND_YEAR_FISH_LEVEL))
             .andExpect(jsonPath("$.[1].yearSession").value(secondYearSession))
             .andExpect(jsonPath("$.[1].familyRole").value(nullValue()))
-            .andExpect(jsonPath("$.[2].fishLevel").value(OLDER_YEAR_FISH_LEVEL))
+            .andExpect(jsonPath("$.[*].userId").value(hasItem(currentUser.getId().intValue())))
+            .andExpect(jsonPath("$.[2].fishLevel").value(FIRST_YEAR_FISH_LEVEL))
+            .andExpect(jsonPath("$.[2].yearSession").value(intakeYearSession))
             .andExpect(jsonPath("$.[2].familyRole").value(nullValue()));
     }
 
@@ -488,13 +488,13 @@ public class UserCCInfoResourceIT {
             .andExpect(jsonPath("$", hasSize(3)))
             .andExpect(jsonPath("$.[*].userId").value(hasItem(currentUser.getId().intValue())))
             .andExpect(jsonPath("$.[*].clubFamilyId").value(hasItem(DEFAULT_CLUB_FAMILY_ID.intValue())))
-            .andExpect(jsonPath("$.[0].fishLevel").value(FIRST_YEAR_FISH_LEVEL))
-            .andExpect(jsonPath("$.[0].yearSession").value(intakeYearSession))
+            .andExpect(jsonPath("$.[0].fishLevel").value(OLDER_YEAR_FISH_LEVEL))
             .andExpect(jsonPath("$.[0].familyRole").value(nullValue()))
             .andExpect(jsonPath("$.[1].fishLevel").value(SECOND_YEAR_FISH_LEVEL))
             .andExpect(jsonPath("$.[1].yearSession").value(secondYearSession))
             .andExpect(jsonPath("$.[1].familyRole").value(DEFAULT_FAMILY_ROLE.name()))
-            .andExpect(jsonPath("$.[2].fishLevel").value(OLDER_YEAR_FISH_LEVEL))
+            .andExpect(jsonPath("$.[2].fishLevel").value(FIRST_YEAR_FISH_LEVEL))
+            .andExpect(jsonPath("$.[2].yearSession").value(intakeYearSession))
             .andExpect(jsonPath("$.[2].familyRole").value(nullValue()));
     }
 

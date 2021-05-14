@@ -163,7 +163,9 @@ public class UserCCInfoServiceImpl implements UserCCInfoService {
             }
             yearSessionCounter = YearSessionUtils.addYearSessionWithSemester(yearSessionCounter, 2);
         }
-        return fullUserCCInfoDTOList;
+        return fullUserCCInfoDTOList.stream()
+            .sorted(Comparator.comparing(UserCCInfoDTO::getYearSession).reversed())
+            .collect(Collectors.toList());
     }
 
     @Override
@@ -174,7 +176,7 @@ public class UserCCInfoServiceImpl implements UserCCInfoService {
         List<UserCCRoleDTO> userCCAdministratorRolesList = getUserCCAdministratorRole(userId);
         return Stream.of(userCCFamilyRoleDTOList, userCCEventRolesList, userCCAdministratorRolesList)
             .flatMap(Collection::stream)
-            .sorted(Comparator.comparing(UserCCRoleDTO::getYearSession))
+            .sorted(Comparator.comparing(UserCCRoleDTO::getYearSession).reversed())
             .collect(Collectors.toList());
     }
 

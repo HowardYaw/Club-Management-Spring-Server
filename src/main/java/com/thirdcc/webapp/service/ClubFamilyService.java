@@ -40,4 +40,6 @@ public interface ClubFamilyService {
      * @param id the id of the entity.
      */
     void delete(Long id);
+
+    Optional<ClubFamilyDTO> findClubFamilyByUserId(Long userId);
 }

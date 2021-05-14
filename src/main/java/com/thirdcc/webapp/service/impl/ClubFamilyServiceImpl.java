@@ -1,5 +1,7 @@
 package com.thirdcc.webapp.service.impl;
 
+import com.thirdcc.webapp.domain.UserCCInfo;
+import com.thirdcc.webapp.repository.UserCCInfoRepository;
 import com.thirdcc.webapp.service.ClubFamilyService;
 import com.thirdcc.webapp.domain.ClubFamily;
 import com.thirdcc.webapp.repository.ClubFamilyRepository;
@@ -29,9 +31,12 @@ public class ClubFamilyServiceImpl implements ClubFamilyService {
 
     private final ClubFamilyMapper clubFamilyMapper;
 
-    public ClubFamilyServiceImpl(ClubFamilyRepository clubFamilyRepository, ClubFamilyMapper clubFamilyMapper) {
+    private final UserCCInfoRepository userCCInfoRepository;
+
+    public ClubFamilyServiceImpl(ClubFamilyRepository clubFamilyRepository, ClubFamilyMapper clubFamilyMapper, UserCCInfoRepository userCCInfoRepository) {
         this.clubFamilyRepository = clubFamilyRepository;
         this.clubFamilyMapper = clubFamilyMapper;
+        this.userCCInfoRepository = userCCInfoRepository;
     }
 
     /**
@@ -86,5 +91,15 @@ public class ClubFamilyServiceImpl implements ClubFamilyService {
     public void delete(Long id) {
         log.debug("Request to delete ClubFamily : {}", id);
         clubFamilyRepository.deleteById(id);
+    }
+
+    @Override
+    public Optional<ClubFamilyDTO> findClubFamilyByUserId(Long userId) {
+        Optional<UserCCInfo> userCCInfo = userCCInfoRepository.findByUserId(userId);
+        if (userCCInfo.isPresent()) {
+            return clubFamilyRepository.findById(userCCInfo.get().getClubFamilyId())
+                .map(clubFamilyMapper::toDto);
+        }
+        return Optional.empty();
     }
 }
