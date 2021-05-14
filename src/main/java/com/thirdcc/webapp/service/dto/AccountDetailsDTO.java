@@ -18,6 +18,8 @@ public class AccountDetailsDTO {
 
     private Set<String> authorities;
 
+    private Boolean isProfileCompleted;
+
     private Boolean isCurrentCCHead;
 
     private Boolean isCurrentAdministrator;
@@ -64,6 +66,15 @@ public class AccountDetailsDTO {
 
     public void setAuthorities(Set<String> authorities) {
         this.authorities = authorities;
+    }
+
+    @JsonProperty("isProfileCompleted")
+    public Boolean getProfileCompleted() {
+        return isProfileCompleted;
+    }
+
+    public void setProfileCompleted(Boolean isProfileCompleted) {
+        this.isProfileCompleted = isProfileCompleted;
     }
 
     @JsonProperty("isCurrentCCHead")
