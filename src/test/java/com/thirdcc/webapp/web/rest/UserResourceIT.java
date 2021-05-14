@@ -678,7 +678,7 @@ public class UserResourceIT {
         userRepository.saveAndFlush(user);
 
         // Get all the users
-        restUserMockMvc.perform(get("/api/users/event-crews/{eventId}", Long.MAX_VALUE)
+        restUserMockMvc.perform(get("/api/users/event-crews/{eventId}?size={size}", Long.MAX_VALUE, 100)
             .accept(MediaType.APPLICATION_JSON))
             .andExpect(status().isOk())
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
