@@ -1,27 +1,33 @@
 {
-    "name": "EventAttendee",
-    "fields": [
-        {
-            "fieldName": "userId",
-            "fieldType": "Long"
-        },
-        {
-            "fieldName": "eventId",
-            "fieldType": "Long"
-        },
-        {
-            "fieldName": "provideTransport",
-            "fieldType": "Boolean"
-        }
-    ],
-    "relationships": [],
-    "changelogDate": "20201028013331",
-    "entityTableName": "event_attendee",
-    "dto": "mapstruct",
-    "pagination": "pagination",
-    "service": "serviceImpl",
-    "jpaMetamodelFiltering": false,
-    "fluentMethods": true,
-    "clientRootFolder": "",
-    "applications": "*"
+  "name": "EventAttendee",
+  "fields": [
+    {
+      "fieldName": "id",
+      "fieldType": "Long"
+    },
+    {
+      "fieldName": "userId",
+      "fieldType": "Long"
+    },
+    {
+      "fieldName": "eventId",
+      "fieldType": "Long"
+    },
+    {
+      "fieldName": "provideTransport",
+      "fieldType": "Boolean"
+    }
+  ],
+  "relationships": [],
+  "changelogDate": "20201028013331",
+  "entityTableName": "event_attendee",
+  "dto": "mapstruct",
+  "pagination": "pagination",
+  "service": "serviceImpl",
+  "jpaMetamodelFiltering": true,
+  "fluentMethods": true,
+  "clientRootFolder": "",
+  "applications": "*",
+  "readOnly": false,
+  "embedded": false
 }

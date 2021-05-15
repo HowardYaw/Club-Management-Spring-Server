@@ -1,38 +1,44 @@
 {
-    "name": "Checklist",
-    "fields": [
-        {
-            "fieldName": "eventId",
-            "fieldType": "Long"
-        },
-        {
-            "fieldName": "name",
-            "fieldType": "String"
-        },
-        {
-            "fieldName": "description",
-            "fieldType": "byte[]",
-            "fieldTypeBlobContent": "text"
-        },
-        {
-            "fieldName": "status",
-            "fieldType": "ChecklistStatus",
-            "fieldValues": "OPEN,IN_PROGRESS,FINISHED"
-        },
-        {
-            "fieldName": "type",
-            "fieldType": "ChecklistType",
-            "fieldValues": "PREPARATION,PURCHASE"
-        }
-    ],
-    "relationships": [],
-    "changelogDate": "20201028013336",
-    "entityTableName": "checklist",
-    "dto": "mapstruct",
-    "pagination": "pagination",
-    "service": "serviceImpl",
-    "jpaMetamodelFiltering": false,
-    "fluentMethods": true,
-    "clientRootFolder": "",
-    "applications": "*"
+  "name": "Checklist",
+  "fields": [
+    {
+      "fieldName": "id",
+      "fieldType": "Long"
+    },
+    {
+      "fieldName": "eventId",
+      "fieldType": "Long"
+    },
+    {
+      "fieldName": "name",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "description",
+      "fieldType": "byte[]",
+      "fieldTypeBlobContent": "text"
+    },
+    {
+      "fieldName": "status",
+      "fieldType": "ChecklistStatus",
+      "fieldValues": "OPEN,IN_PROGRESS,FINISHED"
+    },
+    {
+      "fieldName": "type",
+      "fieldType": "ChecklistType",
+      "fieldValues": "PREPARATION,PURCHASE"
+    }
+  ],
+  "relationships": [],
+  "changelogDate": "20201028013336",
+  "entityTableName": "checklist",
+  "dto": "mapstruct",
+  "pagination": "pagination",
+  "service": "serviceImpl",
+  "jpaMetamodelFiltering": true,
+  "fluentMethods": true,
+  "clientRootFolder": "",
+  "applications": "*",
+  "readOnly": false,
+  "embedded": false
 }

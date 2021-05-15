@@ -1,48 +1,54 @@
 {
-    "name": "Debt",
-    "fields": [
-        {
-            "fieldName": "receiptId",
-            "fieldType": "Long"
-        },
-        {
-            "fieldName": "eventAttendeeId",
-            "fieldType": "Long"
-        },
-        {
-            "fieldName": "amount",
-            "fieldType": "BigDecimal"
-        },
-        {
-            "fieldName": "status",
-            "fieldType": "DebtStatus",
-            "fieldValues": "OPEN,COLLECTED,UNREACHABLE"
-        },
-        {
-            "fieldName": "createdDate",
-            "fieldType": "Instant"
-        },
-        {
-            "fieldName": "createdBy",
-            "fieldType": "String"
-        },
-        {
-            "fieldName": "lastModifiedDate",
-            "fieldType": "Instant"
-        },
-        {
-            "fieldName": "lastModifiedBy",
-            "fieldType": "String"
-        }
-    ],
-    "relationships": [],
-    "changelogDate": "20201028013339",
-    "entityTableName": "debt",
-    "dto": "mapstruct",
-    "pagination": "pagination",
-    "service": "serviceImpl",
-    "jpaMetamodelFiltering": false,
-    "fluentMethods": true,
-    "clientRootFolder": "",
-    "applications": "*"
+  "name": "Debt",
+  "fields": [
+    {
+      "fieldName": "id",
+      "fieldType": "Long"
+    },
+    {
+      "fieldName": "receiptId",
+      "fieldType": "Long"
+    },
+    {
+      "fieldName": "eventAttendeeId",
+      "fieldType": "Long"
+    },
+    {
+      "fieldName": "amount",
+      "fieldType": "BigDecimal"
+    },
+    {
+      "fieldName": "status",
+      "fieldType": "DebtStatus",
+      "fieldValues": "OPEN,COLLECTED,UNREACHABLE"
+    },
+    {
+      "fieldName": "createdDate",
+      "fieldType": "Instant"
+    },
+    {
+      "fieldName": "createdBy",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "lastModifiedDate",
+      "fieldType": "Instant"
+    },
+    {
+      "fieldName": "lastModifiedBy",
+      "fieldType": "String"
+    }
+  ],
+  "relationships": [],
+  "changelogDate": "20201028013339",
+  "entityTableName": "debt",
+  "dto": "mapstruct",
+  "pagination": "pagination",
+  "service": "serviceImpl",
+  "jpaMetamodelFiltering": true,
+  "fluentMethods": true,
+  "clientRootFolder": "",
+  "applications": "*",
+  "readOnly": false,
+  "embedded": false
 }
