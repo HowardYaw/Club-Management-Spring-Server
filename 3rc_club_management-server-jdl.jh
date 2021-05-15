@@ -236,3 +236,4 @@ entity EventRegistrationClosingCriteria {
 dto * with mapstruct except Faculty, YearSession
 service * with serviceImpl
 paginate Transaction, Debt, Claim, EventAttendee, Event, EventActivity, Checklist with pagination
+filter *
