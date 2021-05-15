@@ -13,7 +13,7 @@ import com.thirdcc.webapp.repository.EventAttendeeRepository;
 import com.thirdcc.webapp.service.EventService;
 import com.thirdcc.webapp.service.dto.EventAttendeeDTO;
 import com.thirdcc.webapp.service.mapper.EventAttendeeMapper;
-import io.github.jhipster.web.util.PageUtil;
+import tech.jhipster.web.util.PageUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,7 +48,7 @@ public class EventAttendeeServiceImpl implements EventAttendeeService {
     private final EventService eventService;
 
     private final UserRepository userRepository;
-    
+
     private final UserUniInfoRepository userUniInfoRepository;
 
     private final EventAttendeeMapper eventAttendeeMapper;
@@ -109,7 +109,7 @@ public class EventAttendeeServiceImpl implements EventAttendeeService {
         return eventAttendeeRepository.findAll(pageable)
             .map(eventAttendeeMapper::toDto);
     }
-    
+
     /**
      * Get all the eventAttendees from an Event via Event Id.
      *
@@ -124,7 +124,7 @@ public class EventAttendeeServiceImpl implements EventAttendeeService {
         eventRepository
             .findById(eventId)
             .orElseThrow(() -> new BadRequestException("Event not found"));
-        //need to check the orderProperty in yearSession is yearSession 
+        //need to check the orderProperty in yearSession is yearSession
         //or other property
         String orderProperty = null;
         Direction orderDirection = null;
@@ -148,7 +148,7 @@ public class EventAttendeeServiceImpl implements EventAttendeeService {
                 .map(eventAttendeeMapper::toDto)
                 .map(this::mapEventAttendeeDetails)
                 .collect(Collectors.toList());
-            
+
             //final is needed because local variable inside Comparator must be final
             final boolean isAscending = (null == orderDirection || orderDirection.isAscending());
             eventAttendeeList.sort((EventAttendeeDTO e1, EventAttendeeDTO e2) -> {
@@ -157,7 +157,7 @@ public class EventAttendeeServiceImpl implements EventAttendeeService {
                 }
                 return e2.getYearSession().compareTo(e1.getYearSession());
             });
-            
+
             return PageUtil.createPageFromList(eventAttendeeList, pageable);
         }
     }

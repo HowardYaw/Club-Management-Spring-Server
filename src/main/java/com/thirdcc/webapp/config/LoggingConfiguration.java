@@ -3,7 +3,7 @@ package com.thirdcc.webapp.config;
 import ch.qos.logback.classic.LoggerContext;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.github.jhipster.config.JHipsterProperties;
+import tech.jhipster.config.JHipsterProperties;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
@@ -12,7 +12,7 @@ import org.springframework.context.annotation.Configuration;
 import java.util.HashMap;
 import java.util.Map;
 
-import static io.github.jhipster.config.logging.LoggingUtils.*;
+import static tech.jhipster.config.logging.LoggingUtils.*;
 
 /*
  * Configures the console and Logstash log appenders from the app properties

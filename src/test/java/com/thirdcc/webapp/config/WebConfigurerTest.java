@@ -1,7 +1,7 @@
 package com.thirdcc.webapp.config;
 
-import io.github.jhipster.config.JHipsterConstants;
-import io.github.jhipster.config.JHipsterProperties;
+import tech.jhipster.config.JHipsterConstants;
+import tech.jhipster.config.JHipsterProperties;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.web.embedded.undertow.UndertowServletWebServerFactory;

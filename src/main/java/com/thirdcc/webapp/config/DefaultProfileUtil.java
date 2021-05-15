@@ -1,6 +1,6 @@
 package com.thirdcc.webapp.config;
 
-import io.github.jhipster.config.JHipsterConstants;
+import tech.jhipster.config.JHipsterConstants;
 
 import org.springframework.boot.SpringApplication;
 

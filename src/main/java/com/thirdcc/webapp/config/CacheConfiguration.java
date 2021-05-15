@@ -6,7 +6,7 @@ import org.ehcache.config.builders.*;
 import org.ehcache.jsr107.Eh107Configuration;
 
 import org.hibernate.cache.jcache.ConfigSettings;
-import io.github.jhipster.config.JHipsterProperties;
+import tech.jhipster.config.JHipsterProperties;
 
 import org.springframework.boot.autoconfigure.cache.JCacheManagerCustomizer;
 import org.springframework.boot.autoconfigure.orm.jpa.HibernatePropertiesCustomizer;

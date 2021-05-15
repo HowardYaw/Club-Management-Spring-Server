@@ -1,7 +1,7 @@
 package com.thirdcc.webapp.config;
 
-import io.github.jhipster.config.JHipsterConstants;
-import io.github.jhipster.config.liquibase.AsyncSpringLiquibase;
+import tech.jhipster.config.JHipsterConstants;
+import tech.jhipster.config.liquibase.AsyncSpringLiquibase;
 import liquibase.integration.spring.SpringLiquibase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
