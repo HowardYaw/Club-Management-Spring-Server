@@ -11,7 +11,7 @@
     </changeSet>
     <changeSet id="20210510_2" author="LUXIANZE">
         <addColumn tableName="transaction">
-            <column name="title" type="varchar(50)" defaultValue="transaction title">
+            <column name="title" type="varchar(50)" defaultValue="transaction title generated for older records before changeSet 20210510_2">
                 <constraints nullable="false"/>
             </column>
             <column name="image_link" type="varchar(255)">
@@ -20,7 +20,7 @@
             <column name="transaction_date" type="datetime" defaultValue="2021-05-10, 00:00:00">
                 <constraints nullable="false"/>
             </column>
-            <column name="closed_by" type="long">
+            <column name="closed_by" type="varchar(50)">
                 <constraints nullable="true"/>
             </column>
         </addColumn>
@@ -34,5 +34,11 @@
     <changeSet id="20210510_4" author="LUXIANZE">
         <dropTable tableName="debt"/>
         <dropTable tableName="claim"/>
+    </changeSet>
+    <changeSet id="20210510_5" author="LUXIANZE">
+        <dropDefaultValue tableName="transaction" columnName="title"/>
+        <dropDefaultValue tableName="transaction" columnName="transaction_date"/>
+        <dropDefaultValue tableName="transaction" columnName="transaction_status"/>
+        <dropDefaultValue tableName="transaction" columnName="transaction_amount"/>
     </changeSet>
 </databaseChangeLog>
