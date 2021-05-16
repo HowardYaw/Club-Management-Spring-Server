@@ -49,7 +49,7 @@ public class Transaction extends AbstractAuditingEntity implements Serializable 
     private String imageLink;
 
     @Column(name = "closed_by")
-    private Long closedBy;
+    private String closedBy;
 
 
     @Column(name = "description")
@@ -190,16 +190,16 @@ public class Transaction extends AbstractAuditingEntity implements Serializable 
     // image_link
 
     // closed_by
-    public Long getClosedBy() {
+    public String getClosedBy() {
         return closedBy;
     }
 
-    public Transaction closedBy(Long closedBy) {
+    public Transaction closedBy(String closedBy) {
         this.closedBy = closedBy;
         return this;
     }
 
-    public void setClosedBy(Long closedBy) {
+    public void setClosedBy(String closedBy) {
         this.closedBy = closedBy;
     }
     // closed_by
