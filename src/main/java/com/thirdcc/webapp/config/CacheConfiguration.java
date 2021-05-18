@@ -52,8 +52,6 @@ public class CacheConfiguration {
             createCache(cm, com.thirdcc.webapp.domain.EventActivity.class.getName());
             createCache(cm, com.thirdcc.webapp.domain.EventChecklist.class.getName());
             createCache(cm, com.thirdcc.webapp.domain.Transaction.class.getName());
-            createCache(cm, com.thirdcc.webapp.domain.Claim.class.getName());
-            createCache(cm, com.thirdcc.webapp.domain.Debt.class.getName());
             createCache(cm, com.thirdcc.webapp.domain.Receipt.class.getName());
             createCache(cm, com.thirdcc.webapp.domain.Administrator.class.getName());
             createCache(cm, com.thirdcc.webapp.domain.ClubFamily.class.getName());
