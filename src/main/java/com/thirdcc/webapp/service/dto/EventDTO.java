@@ -32,6 +32,10 @@ public class EventDTO implements Serializable {
 
     private EventStatus status;
 
+    private Long imageStorageId;
+
+    private ImageStorageDTO imageStorageDTO;
+
 
     public Long getId() {
         return id;
@@ -147,6 +151,23 @@ public class EventDTO implements Serializable {
             ", fee=" + getFee() +
             ", requiredTransport='" + isRequiredTransport() + "'" +
             ", status='" + getStatus() + "'" +
+            ", imageStorageId='" + getImageStorageId() + "'" +
             "}";
+    }
+
+    public ImageStorageDTO getImageStorageDTO() {
+        return imageStorageDTO;
+    }
+
+    public void setImageStorageDTO(ImageStorageDTO imageStorageDTO) {
+        this.imageStorageDTO = imageStorageDTO;
+    }
+
+    public Long getImageStorageId() {
+        return imageStorageId;
+    }
+
+    public void setImageStorageId(Long imageStorageId) {
+        this.imageStorageId = imageStorageId;
     }
 }
