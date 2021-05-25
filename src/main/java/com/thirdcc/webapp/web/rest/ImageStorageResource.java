@@ -1,7 +1,6 @@
 package com.thirdcc.webapp.web.rest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.cloud.storage.*;
 import com.thirdcc.webapp.service.ImageStorageService;
 import com.thirdcc.webapp.web.rest.errors.BadRequestAlertException;
 import com.thirdcc.webapp.service.dto.ImageStorageDTO;
@@ -10,20 +9,13 @@ import io.github.jhipster.web.util.HeaderUtil;
 import io.github.jhipster.web.util.ResponseUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.net.URI;
-import java.net.URISyntaxException;
 
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -38,16 +30,16 @@ public class ImageStorageResource {
 
     private static final String ENTITY_NAME = "imageStorage";
 
-    @Autowired
-    private ObjectMapper objectMapper;
+    private final ObjectMapper objectMapper;
 
     @Value("${jhipster.clientApp.name}")
     private String applicationName;
 
     private final ImageStorageService imageStorageService;
 
-    public ImageStorageResource(ImageStorageService imageStorageService) {
+    public ImageStorageResource(ImageStorageService imageStorageService, ObjectMapper objectMapper) {
         this.imageStorageService = imageStorageService;
+        this.objectMapper = objectMapper;
     }
 
     /**

@@ -4,14 +4,13 @@ import com.thirdcc.webapp.domain.Event;
 import com.thirdcc.webapp.domain.enumeration.TransactionStatus;
 import com.thirdcc.webapp.domain.enumeration.TransactionType;
 import com.thirdcc.webapp.exception.BadRequestException;
-import com.thirdcc.webapp.repository.EventRepository;
 import com.thirdcc.webapp.service.EventService;
-import com.thirdcc.webapp.service.ReceiptService;
+import com.thirdcc.webapp.service.ImageStorageService;
 import com.thirdcc.webapp.service.TransactionService;
 import com.thirdcc.webapp.domain.Transaction;
 import com.thirdcc.webapp.repository.TransactionRepository;
 import com.thirdcc.webapp.service.dto.EventBudgetTotalDTO;
-import com.thirdcc.webapp.service.dto.ReceiptDTO;
+import com.thirdcc.webapp.service.dto.ImageStorageDTO;
 import com.thirdcc.webapp.service.dto.TransactionDTO;
 import com.thirdcc.webapp.service.mapper.TransactionMapper;
 import org.slf4j.Logger;
@@ -21,7 +20,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.Optional;
 
 /**
@@ -37,29 +38,20 @@ public class TransactionServiceImpl implements TransactionService {
 
     private final TransactionMapper transactionMapper;
 
-    private final EventRepository eventRepository;
-
     private final EventService eventService;
 
-    private final ReceiptService receiptService;
-
-    // TODO: [LU] refactor transaction service
-//    private final ClaimService claimService;
+    private final ImageStorageService imageStorageService;
 
     public TransactionServiceImpl(
         TransactionRepository transactionRepository,
         TransactionMapper transactionMapper,
-        EventRepository eventRepository,
         EventService eventService,
-        ReceiptService receiptService
-//        ClaimService claimService
+        ImageStorageService imageStorageService
     ) {
         this.transactionRepository = transactionRepository;
         this.transactionMapper = transactionMapper;
-        this.eventRepository = eventRepository;
         this.eventService = eventService;
-        this.receiptService = receiptService;
-//        this.claimService = claimService;
+        this.imageStorageService = imageStorageService;
     }
 
     /**
@@ -69,36 +61,56 @@ public class TransactionServiceImpl implements TransactionService {
      * @return the persisted entity.
      */
     @Override
-    public TransactionDTO save(TransactionDTO transactionDTO) {
+    public TransactionDTO save(MultipartFile multipartFile, TransactionDTO transactionDTO) throws IOException {
         log.debug("Request to save Transaction : {}", transactionDTO);
-        eventService.findEventByIdAndNotCancelledStatus(transactionDTO.getEventId());
-        if (transactionDTO.getTransactionType() == TransactionType.EXPENSE && transactionDTO.getReceiptDTO() == null) {
-            throw new BadRequestException("Expense transaction required an receipt image as proof ");
+
+        // EventID is nullable because some INCOME/EXPENSE might not be associated to event (donation & etc)
+        // - Check all required fields present
+        // - transaction_amount
+        //   - created_by
+        //   - transaction_status
+        //   - title
+        // - Create object
+        // - Save
+
+        if (transactionDTO.getEventId() != null){
+            // Check if there is existing event and the status is not cancelled
+            Event ongoingEvent = eventService.findEventByIdAndNotCancelledStatus(transactionDTO.getEventId());
+            if (ongoingEvent == null) {
+                throw new BadRequestException("Event is cancelled");
+            }
         }
-        if (transactionDTO.getReceiptDTO() != null) {
-            ReceiptDTO receiptDTO = saveReceipt(transactionDTO.getReceiptDTO());
-            transactionDTO.setReceiptId(receiptDTO.getId());
+
+        boolean isTransactionDTOValid = validateTransactionDTO(transactionDTO, multipartFile);
+
+        // Throw exception on invalid transactionDTO
+        if (!isTransactionDTOValid){
+            throw new BadRequestException(
+                "Transaction must include fields " +
+                    "transaction_amount, " +
+                    "created_by, " +
+                    "transaction_status, " +
+                    "title, " +
+                    "image_link(expense) OR multipartFile(if no image_link)"
+            );
         }
+
+        // Generate imageLink if required
+        if (transactionDTO.getImageLink() == null || transactionDTO.getImageLink().isEmpty()){
+            // Create new Image
+            ImageStorageDTO imageStorageDTO = new ImageStorageDTO();
+            String imageLink = imageStorageService.save(imageStorageDTO, multipartFile).getImageUrl();
+
+            log.debug("imageStorageDTO: {}",imageStorageDTO);
+            log.debug("imageLink: {}",imageLink);
+
+            // Set the new Image URL for this transaction
+            transactionDTO.setImageLink(imageLink);
+        }
+
+        // Save the transaction
         Transaction transaction = transactionMapper.toEntity(transactionDTO);
         transaction.setTransactionStatus(TransactionStatus.SUCCESS);
-        transaction = transactionRepository.save(transaction);
-        if (transactionDTO.getTransactionType() == TransactionType.EXPENSE) {
-//            createClaimRecord(transaction);
-        }
-        return transactionMapper.toDto(transaction);
-    }
-
-    @Override
-    public TransactionDTO update(TransactionDTO transactionDTO) {
-        log.debug("Request to update Transaction: {}", transactionDTO);
-        Transaction transaction = transactionRepository
-            .findById(transactionDTO.getId())
-            .orElseThrow(() -> new BadRequestException("Id not found when updating transaction"));
-        if (transaction.getTransactionStatus() == TransactionStatus.CANCELLED) {
-            throw new BadRequestException("Cannot update transaction that is cancelled");
-        }
-        transaction.setDescription(transactionDTO.getDescription());
-        transaction.setTransactionStatus(transactionDTO.getStatus());
         transaction = transactionRepository.save(transaction);
         return transactionMapper.toDto(transaction);
     }
@@ -166,31 +178,34 @@ public class TransactionServiceImpl implements TransactionService {
         return eventBudgetTotalDTO;
     }
 
-//    private TransactionDTO mapEventName(TransactionDTO transactionDTO) {
-//        Event event = eventRepository.findById(transactionDTO.getEventId())
-//            .orElseThrow(() -> new BadRequestException("Event Not Found "+ transactionDTO.getEventId()));
-//        transactionDTO.setEventName(event.getName());
-//        return transactionDTO;
-//    }
+    /**
+     * Validate on fields:
+     * - title
+     * - transaction_amount
+     * - created_by
+     * - transaction_status
+     * - file
+     *
+     * @param transactionDTO the TransactionDTO to validate.
+     * @return is the TransactionDTO valid
+     */
+    private boolean validateTransactionDTO(TransactionDTO transactionDTO, MultipartFile multipartFile){
 
-    private ReceiptDTO saveReceipt(ReceiptDTO receiptDTO) {
-        receiptDTO = uploadReceipt(receiptDTO);
-        return receiptService.save(receiptDTO);
+        boolean hasTitle = !transactionDTO.getTitle().isEmpty();
+        boolean hasTransactionAmount = transactionDTO.getTransactionAmount() != null && transactionDTO.getTransactionAmount().intValue() >= 0;
+        boolean hasCreatedBy = transactionDTO.getCreatedBy() != null;
+        boolean hasTransactionStatus = transactionDTO.getTransactionStatus() != null;
+        boolean hasImageLink = (transactionDTO.getImageLink() != null && !transactionDTO.getImageLink().isEmpty());
+
+        if (transactionDTO.getTransactionType() == TransactionType.EXPENSE){
+            // if there is no image link, then it is a new transaction, thus must have an image file to be uploaded
+            if (!hasImageLink){
+                if (multipartFile == null || multipartFile.isEmpty()) return false;
+            }
+            return (hasTitle && hasCreatedBy && hasImageLink && hasTransactionAmount && hasTransactionStatus);
+        }else{
+            // if this is INCOME (DEBT), then image link is not necessary, because treasurer doesn't have to audit this transaction with receipt image
+            return (hasTitle && hasCreatedBy && hasTransactionAmount && hasTransactionStatus);
+        }
     }
-
-    private ReceiptDTO uploadReceipt(ReceiptDTO receiptDTO) {
-        // TODO: upload receipt image to cloud storage
-        // TODO: set info of uploaded receipt to receiptDTO
-        return receiptDTO;
-    }
-
-//    private ClaimDTO createClaimRecord(Transaction transaction) {
-//        ClaimDTO claimDTO = new ClaimDTO();
-//        claimDTO.setAmount(transaction.getTransactionAmount());
-//        claimDTO.setStatus(ClaimStatus.OPEN);
-//        claimDTO.setCreatedBy(transaction.getCreatedBy());
-//        claimDTO.setCreatedDate(transaction.getCreatedDate());
-//        claimDTO.setTransactionId(transaction.getId());
-//        return claimService.save(claimDTO);
-//    }
 }

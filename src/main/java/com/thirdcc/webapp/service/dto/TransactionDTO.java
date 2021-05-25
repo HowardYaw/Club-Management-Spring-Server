@@ -175,11 +175,11 @@ public class TransactionDTO implements Serializable {
         this.receiptDTO = receiptDTO;
     }
 
-    public TransactionStatus getStatus() {
+    public TransactionStatus getTransactionStatus() {
         return transactionStatus;
     }
 
-    public void setStatus(TransactionStatus status) {
+    public void setTransactionStatus(TransactionStatus status) {
         this.transactionStatus = status;
     }
 
