@@ -46,6 +46,10 @@ if [ -z "$MAVEN_SKIP_RC" ] ; then
 
 fi
 
+if [ -z $GOOGLE_APPLICATION_CREDENTIALS ] ; then
+    export GOOGLE_APPLICATION_CREDENTIALS="./ccclubmanagement-firebase-adminsdk-7lbr4-924a830b45.json"
+fi
+
 # OS specific support.  $var _must_ be set to either true or false.
 cygwin=false;
 darwin=false;
@@ -246,7 +250,7 @@ else
         else
             curl --user $MVNW_USERNAME:$MVNW_PASSWORD -o "$wrapperJarPath" "$jarUrl" -f
         fi
-        
+
     else
         if [ "$MVNW_VERBOSE" = true ]; then
           echo "Falling back to using Java to download"
