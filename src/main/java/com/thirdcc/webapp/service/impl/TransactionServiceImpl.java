@@ -1,7 +1,6 @@
 package com.thirdcc.webapp.service.impl;
 
 import com.thirdcc.webapp.domain.Event;
-import com.thirdcc.webapp.domain.enumeration.ClaimStatus;
 import com.thirdcc.webapp.domain.enumeration.TransactionStatus;
 import com.thirdcc.webapp.domain.enumeration.TransactionType;
 import com.thirdcc.webapp.exception.BadRequestException;
@@ -73,7 +72,7 @@ public class TransactionServiceImpl implements TransactionService {
     public TransactionDTO save(TransactionDTO transactionDTO) {
         log.debug("Request to save Transaction : {}", transactionDTO);
         eventService.findEventByIdAndNotCancelledStatus(transactionDTO.getEventId());
-        if (transactionDTO.getType() == TransactionType.EXPENSE && transactionDTO.getReceiptDTO() == null) {
+        if (transactionDTO.getTransactionType() == TransactionType.EXPENSE && transactionDTO.getReceiptDTO() == null) {
             throw new BadRequestException("Expense transaction required an receipt image as proof ");
         }
         if (transactionDTO.getReceiptDTO() != null) {
@@ -83,7 +82,7 @@ public class TransactionServiceImpl implements TransactionService {
         Transaction transaction = transactionMapper.toEntity(transactionDTO);
         transaction.setTransactionStatus(TransactionStatus.SUCCESS);
         transaction = transactionRepository.save(transaction);
-        if (transactionDTO.getType() == TransactionType.EXPENSE) {
+        if (transactionDTO.getTransactionType() == TransactionType.EXPENSE) {
 //            createClaimRecord(transaction);
         }
         return transactionMapper.toDto(transaction);
@@ -98,7 +97,7 @@ public class TransactionServiceImpl implements TransactionService {
         if (transaction.getTransactionStatus() == TransactionStatus.CANCELLED) {
             throw new BadRequestException("Cannot update transaction that is cancelled");
         }
-        transaction.setDescription(transactionDTO.getDetails());
+        transaction.setDescription(transactionDTO.getDescription());
         transaction.setTransactionStatus(transactionDTO.getStatus());
         transaction = transactionRepository.save(transaction);
         return transactionMapper.toDto(transaction);
@@ -115,8 +114,7 @@ public class TransactionServiceImpl implements TransactionService {
     public Page<TransactionDTO> findAll(Pageable pageable) {
         log.debug("Request to get all Transactions");
         return transactionRepository.findAll(pageable)
-            .map(transactionMapper::toDto)
-            .map(this::mapEventName);
+            .map(transactionMapper::toDto);
     }
 
 
@@ -168,12 +166,12 @@ public class TransactionServiceImpl implements TransactionService {
         return eventBudgetTotalDTO;
     }
 
-    private TransactionDTO mapEventName(TransactionDTO transactionDTO) {
-        Event event = eventRepository.findById(transactionDTO.getEventId())
-            .orElseThrow(() -> new BadRequestException("Event Not Found "+ transactionDTO.getEventId()));
-        transactionDTO.setEventName(event.getName());
-        return transactionDTO;
-    }
+//    private TransactionDTO mapEventName(TransactionDTO transactionDTO) {
+//        Event event = eventRepository.findById(transactionDTO.getEventId())
+//            .orElseThrow(() -> new BadRequestException("Event Not Found "+ transactionDTO.getEventId()));
+//        transactionDTO.setEventName(event.getName());
+//        return transactionDTO;
+//    }
 
     private ReceiptDTO saveReceipt(ReceiptDTO receiptDTO) {
         receiptDTO = uploadReceipt(receiptDTO);

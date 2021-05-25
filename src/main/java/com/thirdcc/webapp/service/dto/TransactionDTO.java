@@ -18,13 +18,13 @@ public class TransactionDTO implements Serializable {
 
     private Long receiptId;
 
-    private TransactionType type;
+    private TransactionType transactionType;
 
-    private BigDecimal amount;
+    private BigDecimal transactionAmount;
 
-    private String details;
+    private String description;
 
-    private TransactionStatus status;
+    private TransactionStatus transactionStatus;
 
     private String createdBy;
 
@@ -34,10 +34,37 @@ public class TransactionDTO implements Serializable {
 
     private Instant lastModifiedDate;
 
-    private String eventName;
-
     private ReceiptDTO receiptDTO;
 
+    private String title;
+
+    private String imageLink;
+
+    private Instant transactionDate;
+
+    private String closedBy;
+
+    @Override
+    public String toString() {
+        return "TransactionDTO{" +
+            "id=" + id +
+            ", eventId=" + eventId +
+            ", receiptId=" + receiptId +
+            ", transactionType=" + transactionType +
+            ", transactionAmount=" + transactionAmount +
+            ", description='" + description + '\'' +
+            ", transactionStatus=" + transactionStatus +
+            ", createdBy='" + createdBy + '\'' +
+            ", createdDate=" + createdDate +
+            ", lastModifiedBy='" + lastModifiedBy + '\'' +
+            ", lastModifiedDate=" + lastModifiedDate +
+            ", receiptDTO=" + receiptDTO +
+            ", title='" + title + '\'' +
+            ", imageLink='" + imageLink + '\'' +
+            ", transactionDate=" + transactionDate +
+            ", closedBy='" + closedBy + '\'' +
+            '}';
+    }
 
     public Long getId() {
         return id;
@@ -63,28 +90,28 @@ public class TransactionDTO implements Serializable {
         this.receiptId = receiptId;
     }
 
-    public TransactionType getType() {
-        return type;
+    public TransactionType getTransactionType() {
+        return transactionType;
     }
 
-    public void setType(TransactionType type) {
-        this.type = type;
+    public void setTransactionType(TransactionType transactionType) {
+        this.transactionType = transactionType;
     }
 
-    public BigDecimal getAmount() {
-        return amount;
+    public BigDecimal getTransactionAmount() {
+        return transactionAmount;
     }
 
-    public void setAmount(BigDecimal amount) {
-        this.amount = amount;
+    public void setTransactionAmount(BigDecimal transactionAmount) {
+        this.transactionAmount = transactionAmount;
     }
 
-    public String getDetails() {
-        return details;
+    public String getDescription() {
+        return description;
     }
 
-    public void setDetails(String details) {
-        this.details = details;
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     public String getCreatedBy() {
@@ -140,30 +167,6 @@ public class TransactionDTO implements Serializable {
         return Objects.hashCode(getId());
     }
 
-    @Override
-    public String toString() {
-        return "TransactionDTO{" +
-            "id=" + getId() +
-            ", eventId=" + getEventId() +
-            ", receiptId=" + getReceiptId() +
-            ", type='" + getType() + "'" +
-            ", amount=" + getAmount() +
-            ", details='" + getDetails() + "'" +
-            ", createdBy='" + getCreatedBy() + "'" +
-            ", createdDate='" + getCreatedDate() + "'" +
-            ", lastModifiedBy='" + getLastModifiedBy() + "'" +
-            ", lastModifiedDate='" + getLastModifiedDate() + "'" +
-            "}";
-    }
-
-    public String getEventName() {
-        return eventName;
-    }
-
-    public void setEventName(String eventName) {
-        this.eventName = eventName;
-    }
-
     public ReceiptDTO getReceiptDTO() {
         return receiptDTO;
     }
@@ -173,10 +176,42 @@ public class TransactionDTO implements Serializable {
     }
 
     public TransactionStatus getStatus() {
-        return status;
+        return transactionStatus;
     }
 
     public void setStatus(TransactionStatus status) {
-        this.status = status;
+        this.transactionStatus = status;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public String getImageLink() {
+        return imageLink;
+    }
+
+    public void setImageLink(String imageLink) {
+        this.imageLink = imageLink;
+    }
+
+    public Instant getTransactionDate() {
+        return transactionDate;
+    }
+
+    public void setTransactionDate(Instant transactionDate) {
+        this.transactionDate = transactionDate;
+    }
+
+    public String getClosedBy() {
+        return closedBy;
+    }
+
+    public void setClosedBy(String closedBy) {
+        this.closedBy = closedBy;
     }
 }
