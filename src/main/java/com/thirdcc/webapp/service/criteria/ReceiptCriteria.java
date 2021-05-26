@@ -32,6 +32,8 @@ public class ReceiptCriteria implements Serializable, Criteria {
 
   private StringFilter fileType;
 
+  private StringFilter receiptUniqueId;
+
   public ReceiptCriteria() {}
 
   public ReceiptCriteria(ReceiptCriteria other) {
@@ -39,6 +41,7 @@ public class ReceiptCriteria implements Serializable, Criteria {
     this.receiptUrl = other.receiptUrl == null ? null : other.receiptUrl.copy();
     this.fileName = other.fileName == null ? null : other.fileName.copy();
     this.fileType = other.fileType == null ? null : other.fileType.copy();
+    this.receiptUniqueId = other.receiptUniqueId == null ? null : other.receiptUniqueId.copy();
   }
 
   @Override
@@ -106,36 +109,48 @@ public class ReceiptCriteria implements Serializable, Criteria {
     this.fileType = fileType;
   }
 
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-    final ReceiptCriteria that = (ReceiptCriteria) o;
-    return (
-      Objects.equals(id, that.id) &&
-      Objects.equals(receiptUrl, that.receiptUrl) &&
-      Objects.equals(fileName, that.fileName) &&
-      Objects.equals(fileType, that.fileType)
-    );
+  public StringFilter getReceiptUniqueId() {
+    return receiptUniqueId;
   }
 
-  @Override
-  public int hashCode() {
-    return Objects.hash(id, receiptUrl, fileName, fileType);
+  public StringFilter receiptUniqueId() {
+    if (receiptUniqueId == null) {
+        receiptUniqueId = new StringFilter();
+    }
+    return receiptUniqueId;
   }
 
-  // prettier-ignore
+  public void setReceiptUniqueId(StringFilter receiptUniqueId) {
+    this.receiptUniqueId = receiptUniqueId;
+  }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ReceiptCriteria that = (ReceiptCriteria) o;
+        return Objects.equals(id, that.id) &&
+            Objects.equals(receiptUrl, that.receiptUrl) &&
+            Objects.equals(fileName, that.fileName) &&
+            Objects.equals(fileType, that.fileType) &&
+            Objects.equals(receiptUniqueId, that.receiptUniqueId);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, receiptUrl, fileName, fileType, receiptUniqueId);
+    }
+
+    // prettier-ignore
+
     @Override
     public String toString() {
         return "ReceiptCriteria{" +
-            (id != null ? "id=" + id + ", " : "") +
-            (receiptUrl != null ? "receiptUrl=" + receiptUrl + ", " : "") +
-            (fileName != null ? "fileName=" + fileName + ", " : "") +
-            (fileType != null ? "fileType=" + fileType + ", " : "") +
-            "}";
+            "id=" + id +
+            ", receiptUrl=" + receiptUrl +
+            ", fileName=" + fileName +
+            ", fileType=" + fileType +
+            ", receiptUniqueId=" + receiptUniqueId +
+            '}';
     }
 }
