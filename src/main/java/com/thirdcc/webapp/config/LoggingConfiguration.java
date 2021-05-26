@@ -45,8 +45,8 @@ public class LoggingConfiguration {
         if (loggingProperties.isUseJsonFormat() || logstashProperties.isEnabled()) {
             addContextListener(context, customFields, loggingProperties);
         }
-        if (jHipsterProperties.getMetrics().getLogs().isEnabled()) {
-            setMetricsMarkerLogbackFilter(context, loggingProperties.isUseJsonFormat());
-        }
+//        if (jHipsterProperties.getMetrics().getLogs().isEnabled()) {
+//            setMetricsMarkerLogbackFilter(context, loggingProperties.isUseJsonFormat());
+//        }
     }
 }

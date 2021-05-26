@@ -35,12 +35,14 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 
+import static com.thirdcc.webapp.web.rest.TestUtil.sameNumber;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.hasItem;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import com.thirdcc.webapp.domain.enumeration.TransactionType;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Integration tests for the {@Link BudgetResource} REST controller.
@@ -50,10 +52,14 @@ import com.thirdcc.webapp.domain.enumeration.TransactionType;
 @InitYearSession
 public class BudgetResourceIT {
 
+    private static final String ENTITY_API_URL = "/api/event-budget";
+
     private static final Long DEFAULT_EVENT_ID = 1L;
+    private static final Long SMALLER_EVENT_ID = DEFAULT_EVENT_ID - 1L;
     private static final Long UPDATED_EVENT_ID = 2L;
 
     private static final BigDecimal DEFAULT_AMOUNT = BigDecimal.valueOf(11, 2);
+    private static final BigDecimal SMALLER_AMOUNT = BigDecimal.valueOf(11, 2).subtract(BigDecimal.ONE);
     private static final BigDecimal UPDATED_AMOUNT = BigDecimal.valueOf(21, 2);
 
     private static final TransactionType DEFAULT_TYPE = TransactionType.INCOME;
@@ -331,6 +337,433 @@ public class BudgetResourceIT {
             .andExpect(status().isForbidden());
     }
 
+
+    @Test
+    @Transactional
+    void getBudgetsByIdFiltering() throws Exception {
+        // Initialize the database
+        Budget budget = createBudgetEntity();
+        Budget savedBudget = initBudgetDB(budget);
+
+        Long id = budget.getId();
+
+        defaultBudgetShouldBeFound(savedBudget, "id.equals=" + id);
+        defaultBudgetShouldNotBeFound("id.notEquals=" + id);
+
+        defaultBudgetShouldBeFound(savedBudget, "id.greaterThanOrEqual=" + id);
+        defaultBudgetShouldNotBeFound("id.greaterThan=" + id);
+
+        defaultBudgetShouldBeFound(savedBudget, "id.lessThanOrEqual=" + id);
+        defaultBudgetShouldNotBeFound("id.lessThan=" + id);
+    }
+
+    @Test
+    @Transactional
+    void getAllBudgetsByEventIdIsEqualToSomething() throws Exception {
+        // Initialize the database
+        Budget budget = createBudgetEntity();
+        Budget savedBudget = initBudgetDB(budget);
+
+        // Get all the budgetList where eventId equals to DEFAULT_EVENT_ID
+        defaultBudgetShouldBeFound(savedBudget, "eventId.equals=" + DEFAULT_EVENT_ID);
+
+        // Get all the budgetList where eventId equals to UPDATED_EVENT_ID
+        defaultBudgetShouldNotBeFound("eventId.equals=" + UPDATED_EVENT_ID);
+    }
+
+    @Test
+    @Transactional
+    void getAllBudgetsByEventIdIsNotEqualToSomething() throws Exception {
+        // Initialize the database
+        Budget budget = createBudgetEntity();
+        Budget savedBudget = initBudgetDB(budget);
+
+        // Get all the budgetList where eventId not equals to DEFAULT_EVENT_ID
+        defaultBudgetShouldNotBeFound("eventId.notEquals=" + DEFAULT_EVENT_ID);
+
+        // Get all the budgetList where eventId not equals to UPDATED_EVENT_ID
+        defaultBudgetShouldBeFound(savedBudget, "eventId.notEquals=" + UPDATED_EVENT_ID);
+    }
+
+    @Test
+    @Transactional
+    void getAllBudgetsByEventIdIsInShouldWork() throws Exception {
+        // Initialize the database
+        Budget budget = createBudgetEntity();
+        Budget savedBudget = initBudgetDB(budget);
+
+        // Get all the budgetList where eventId in DEFAULT_EVENT_ID or UPDATED_EVENT_ID
+        defaultBudgetShouldBeFound(savedBudget, "eventId.in=" + DEFAULT_EVENT_ID + "," + UPDATED_EVENT_ID);
+
+        // Get all the budgetList where eventId equals to UPDATED_EVENT_ID
+        defaultBudgetShouldNotBeFound("eventId.in=" + UPDATED_EVENT_ID);
+    }
+
+    @Test
+    @Transactional
+    void getAllBudgetsByEventIdIsNullOrNotNull() throws Exception {
+        // Initialize the database
+        Budget budget = createBudgetEntity();
+        Budget savedBudget = initBudgetDB(budget);
+
+        // Get all the budgetList where eventId is not null
+        defaultBudgetShouldBeFound(savedBudget, "eventId.specified=true");
+
+        // Get all the budgetList where eventId is null
+        defaultBudgetShouldNotBeFound("eventId.specified=false");
+    }
+
+    @Test
+    @Transactional
+    void getAllBudgetsByEventIdIsGreaterThanOrEqualToSomething() throws Exception {
+        // Initialize the database
+        Budget budget = createBudgetEntity();
+        Budget savedBudget = initBudgetDB(budget);
+
+        // Get all the budgetList where eventId is greater than or equal to DEFAULT_EVENT_ID
+        defaultBudgetShouldBeFound(savedBudget, "eventId.greaterThanOrEqual=" + DEFAULT_EVENT_ID);
+
+        // Get all the budgetList where eventId is greater than or equal to UPDATED_EVENT_ID
+        defaultBudgetShouldNotBeFound("eventId.greaterThanOrEqual=" + UPDATED_EVENT_ID);
+    }
+
+    @Test
+    @Transactional
+    void getAllBudgetsByEventIdIsLessThanOrEqualToSomething() throws Exception {
+        // Initialize the database
+        Budget budget = createBudgetEntity();
+        Budget savedBudget = initBudgetDB(budget);
+
+        // Get all the budgetList where eventId is less than or equal to DEFAULT_EVENT_ID
+        defaultBudgetShouldBeFound(savedBudget, "eventId.lessThanOrEqual=" + DEFAULT_EVENT_ID);
+
+        // Get all the budgetList where eventId is less than or equal to SMALLER_EVENT_ID
+        defaultBudgetShouldNotBeFound("eventId.lessThanOrEqual=" + SMALLER_EVENT_ID);
+    }
+
+    @Test
+    @Transactional
+    void getAllBudgetsByEventIdIsLessThanSomething() throws Exception {
+        // Initialize the database
+        Budget budget = createBudgetEntity();
+        Budget savedBudget = initBudgetDB(budget);
+
+        // Get all the budgetList where eventId is less than DEFAULT_EVENT_ID
+        defaultBudgetShouldNotBeFound("eventId.lessThan=" + DEFAULT_EVENT_ID);
+
+        // Get all the budgetList where eventId is less than UPDATED_EVENT_ID
+        defaultBudgetShouldBeFound(savedBudget, "eventId.lessThan=" + UPDATED_EVENT_ID);
+    }
+
+    @Test
+    @Transactional
+    void getAllBudgetsByEventIdIsGreaterThanSomething() throws Exception {
+        // Initialize the database
+        Budget budget = createBudgetEntity();
+        Budget savedBudget = initBudgetDB(budget);
+
+        // Get all the budgetList where eventId is greater than DEFAULT_EVENT_ID
+        defaultBudgetShouldNotBeFound("eventId.greaterThan=" + DEFAULT_EVENT_ID);
+
+        // Get all the budgetList where eventId is greater than SMALLER_EVENT_ID
+        defaultBudgetShouldBeFound(savedBudget, "eventId.greaterThan=" + SMALLER_EVENT_ID);
+    }
+
+    @Test
+    @Transactional
+    void getAllBudgetsByAmountIsEqualToSomething() throws Exception {
+        // Initialize the database
+        Budget budget = createBudgetEntity();
+        Budget savedBudget = initBudgetDB(budget);
+
+        // Get all the budgetList where amount equals to DEFAULT_AMOUNT
+        defaultBudgetShouldBeFound(savedBudget, "amount.equals=" + DEFAULT_AMOUNT);
+
+        // Get all the budgetList where amount equals to UPDATED_AMOUNT
+        defaultBudgetShouldNotBeFound("amount.equals=" + UPDATED_AMOUNT);
+    }
+
+    @Test
+    @Transactional
+    void getAllBudgetsByAmountIsNotEqualToSomething() throws Exception {
+        // Initialize the database
+        Budget budget = createBudgetEntity();
+        Budget savedBudget = initBudgetDB(budget);
+
+        // Get all the budgetList where amount not equals to DEFAULT_AMOUNT
+        defaultBudgetShouldNotBeFound("amount.notEquals=" + DEFAULT_AMOUNT);
+
+        // Get all the budgetList where amount not equals to UPDATED_AMOUNT
+        defaultBudgetShouldBeFound(savedBudget, "amount.notEquals=" + UPDATED_AMOUNT);
+    }
+
+    @Test
+    @Transactional
+    void getAllBudgetsByAmountIsInShouldWork() throws Exception {
+        // Initialize the database
+        Budget budget = createBudgetEntity();
+        Budget savedBudget = initBudgetDB(budget);
+
+        // Get all the budgetList where amount in DEFAULT_AMOUNT or UPDATED_AMOUNT
+        defaultBudgetShouldBeFound(savedBudget, "amount.in=" + DEFAULT_AMOUNT + "," + UPDATED_AMOUNT);
+
+        // Get all the budgetList where amount equals to UPDATED_AMOUNT
+        defaultBudgetShouldNotBeFound("amount.in=" + UPDATED_AMOUNT);
+    }
+
+    @Test
+    @Transactional
+    void getAllBudgetsByAmountIsNullOrNotNull() throws Exception {
+        // Initialize the database
+        Budget budget = createBudgetEntity();
+        Budget savedBudget = initBudgetDB(budget);
+
+        // Get all the budgetList where amount is not null
+        defaultBudgetShouldBeFound(savedBudget, "amount.specified=true");
+
+        // Get all the budgetList where amount is null
+        defaultBudgetShouldNotBeFound("amount.specified=false");
+    }
+
+    @Test
+    @Transactional
+    void getAllBudgetsByAmountIsGreaterThanOrEqualToSomething() throws Exception {
+        // Initialize the database
+        Budget budget = createBudgetEntity();
+        Budget savedBudget = initBudgetDB(budget);
+
+        // Get all the budgetList where amount is greater than or equal to DEFAULT_AMOUNT
+        defaultBudgetShouldBeFound(savedBudget, "amount.greaterThanOrEqual=" + DEFAULT_AMOUNT);
+
+        // Get all the budgetList where amount is greater than or equal to UPDATED_AMOUNT
+        defaultBudgetShouldNotBeFound("amount.greaterThanOrEqual=" + UPDATED_AMOUNT);
+    }
+
+    @Test
+    @Transactional
+    void getAllBudgetsByAmountIsLessThanOrEqualToSomething() throws Exception {
+        // Initialize the database
+        Budget budget = createBudgetEntity();
+        Budget savedBudget = initBudgetDB(budget);
+
+        // Get all the budgetList where amount is less than or equal to DEFAULT_AMOUNT
+        defaultBudgetShouldBeFound(savedBudget, "amount.lessThanOrEqual=" + DEFAULT_AMOUNT);
+
+        // Get all the budgetList where amount is less than or equal to SMALLER_AMOUNT
+        defaultBudgetShouldNotBeFound("amount.lessThanOrEqual=" + SMALLER_AMOUNT);
+    }
+
+    @Test
+    @Transactional
+    void getAllBudgetsByAmountIsLessThanSomething() throws Exception {
+        // Initialize the database
+        Budget budget = createBudgetEntity();
+        Budget savedBudget = initBudgetDB(budget);
+
+        // Get all the budgetList where amount is less than DEFAULT_AMOUNT
+        defaultBudgetShouldNotBeFound("amount.lessThan=" + DEFAULT_AMOUNT);
+
+        // Get all the budgetList where amount is less than UPDATED_AMOUNT
+        defaultBudgetShouldBeFound(savedBudget, "amount.lessThan=" + UPDATED_AMOUNT);
+    }
+
+    @Test
+    @Transactional
+    void getAllBudgetsByAmountIsGreaterThanSomething() throws Exception {
+        // Initialize the database
+        Budget budget = createBudgetEntity();
+        Budget savedBudget = initBudgetDB(budget);
+
+        // Get all the budgetList where amount is greater than DEFAULT_AMOUNT
+        defaultBudgetShouldNotBeFound("amount.greaterThan=" + DEFAULT_AMOUNT);
+
+        // Get all the budgetList where amount is greater than SMALLER_AMOUNT
+        defaultBudgetShouldBeFound(savedBudget, "amount.greaterThan=" + SMALLER_AMOUNT);
+    }
+
+    @Test
+    @Transactional
+    void getAllBudgetsByTypeIsEqualToSomething() throws Exception {
+        // Initialize the database
+        Budget budget = createBudgetEntity();
+        Budget savedBudget = initBudgetDB(budget);
+
+        // Get all the budgetList where type equals to DEFAULT_TYPE
+        defaultBudgetShouldBeFound(savedBudget, "type.equals=" + DEFAULT_TYPE);
+
+        // Get all the budgetList where type equals to UPDATED_TYPE
+        defaultBudgetShouldNotBeFound("type.equals=" + UPDATED_TYPE);
+    }
+
+    @Test
+    @Transactional
+    void getAllBudgetsByTypeIsNotEqualToSomething() throws Exception {
+        // Initialize the database
+        Budget budget = createBudgetEntity();
+        Budget savedBudget = initBudgetDB(budget);
+
+        // Get all the budgetList where type not equals to DEFAULT_TYPE
+        defaultBudgetShouldNotBeFound("type.notEquals=" + DEFAULT_TYPE);
+
+        // Get all the budgetList where type not equals to UPDATED_TYPE
+        defaultBudgetShouldBeFound(savedBudget, "type.notEquals=" + UPDATED_TYPE);
+    }
+
+    @Test
+    @Transactional
+    void getAllBudgetsByTypeIsInShouldWork() throws Exception {
+        // Initialize the database
+        Budget budget = createBudgetEntity();
+        Budget savedBudget = initBudgetDB(budget);
+
+        // Get all the budgetList where type in DEFAULT_TYPE or UPDATED_TYPE
+        defaultBudgetShouldBeFound(savedBudget, "type.in=" + DEFAULT_TYPE + "," + UPDATED_TYPE);
+
+        // Get all the budgetList where type equals to UPDATED_TYPE
+        defaultBudgetShouldNotBeFound("type.in=" + UPDATED_TYPE);
+    }
+
+    @Test
+    @Transactional
+    void getAllBudgetsByTypeIsNullOrNotNull() throws Exception {
+        // Initialize the database
+        Budget budget = createBudgetEntity();
+        Budget savedBudget = initBudgetDB(budget);
+
+        // Get all the budgetList where type is not null
+        defaultBudgetShouldBeFound(savedBudget, "type.specified=true");
+
+        // Get all the budgetList where type is null
+        defaultBudgetShouldNotBeFound("type.specified=false");
+    }
+
+    @Test
+    @Transactional
+    void getAllBudgetsByNameIsEqualToSomething() throws Exception {
+        // Initialize the database
+        Budget budget = createBudgetEntity();
+        Budget savedBudget = initBudgetDB(budget);
+
+        // Get all the budgetList where name equals to DEFAULT_NAME
+        defaultBudgetShouldBeFound(savedBudget, "name.equals=" + DEFAULT_NAME);
+
+        // Get all the budgetList where name equals to UPDATED_NAME
+        defaultBudgetShouldNotBeFound("name.equals=" + UPDATED_NAME);
+    }
+
+    @Test
+    @Transactional
+    void getAllBudgetsByNameIsNotEqualToSomething() throws Exception {
+        // Initialize the database
+        Budget budget = createBudgetEntity();
+        Budget savedBudget = initBudgetDB(budget);
+
+        // Get all the budgetList where name not equals to DEFAULT_NAME
+        defaultBudgetShouldNotBeFound("name.notEquals=" + DEFAULT_NAME);
+
+        // Get all the budgetList where name not equals to UPDATED_NAME
+        defaultBudgetShouldBeFound(savedBudget, "name.notEquals=" + UPDATED_NAME);
+    }
+
+    @Test
+    @Transactional
+    void getAllBudgetsByNameIsInShouldWork() throws Exception {
+        // Initialize the database
+        Budget budget = createBudgetEntity();
+        Budget savedBudget = initBudgetDB(budget);
+
+        // Get all the budgetList where name in DEFAULT_NAME or UPDATED_NAME
+        defaultBudgetShouldBeFound(savedBudget, "name.in=" + DEFAULT_NAME + "," + UPDATED_NAME);
+
+        // Get all the budgetList where name equals to UPDATED_NAME
+        defaultBudgetShouldNotBeFound("name.in=" + UPDATED_NAME);
+    }
+
+    @Test
+    @Transactional
+    void getAllBudgetsByNameIsNullOrNotNull() throws Exception {
+        // Initialize the database
+        Budget budget = createBudgetEntity();
+        Budget savedBudget = initBudgetDB(budget);
+
+        // Get all the budgetList where name is not null
+        defaultBudgetShouldBeFound(savedBudget, "name.specified=true");
+
+        // Get all the budgetList where name is null
+        defaultBudgetShouldNotBeFound("name.specified=false");
+    }
+
+    @Test
+    @Transactional
+    void getAllBudgetsByNameContainsSomething() throws Exception {
+        // Initialize the database
+        Budget budget = createBudgetEntity();
+        Budget savedBudget = initBudgetDB(budget);
+
+        // Get all the budgetList where name contains DEFAULT_NAME
+        defaultBudgetShouldBeFound(savedBudget, "name.contains=" + DEFAULT_NAME);
+
+        // Get all the budgetList where name contains UPDATED_NAME
+        defaultBudgetShouldNotBeFound("name.contains=" + UPDATED_NAME);
+    }
+
+    @Test
+    @Transactional
+    void getAllBudgetsByNameNotContainsSomething() throws Exception {
+        // Initialize the database
+        Budget budget = createBudgetEntity();
+        Budget savedBudget = initBudgetDB(budget);
+
+        // Get all the budgetList where name does not contain DEFAULT_NAME
+        defaultBudgetShouldNotBeFound("name.doesNotContain=" + DEFAULT_NAME);
+
+        // Get all the budgetList where name does not contain UPDATED_NAME
+        defaultBudgetShouldBeFound(savedBudget, "name.doesNotContain=" + UPDATED_NAME);
+    }
+
+    /**
+     * Executes the search, and checks that the default entity is returned.
+     */
+    private void defaultBudgetShouldBeFound(Budget budget, String filter) throws Exception {
+        restBudgetMockMvc
+            .perform(get(ENTITY_API_URL + "?sort=id,desc&" + filter))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(jsonPath("$.[*].id").value(hasItem(budget.getId().intValue())))
+            .andExpect(jsonPath("$.[*].eventId").value(hasItem(DEFAULT_EVENT_ID.intValue())))
+            .andExpect(jsonPath("$.[*].amount").value(hasItem(sameNumber(DEFAULT_AMOUNT))))
+            .andExpect(jsonPath("$.[*].type").value(hasItem(DEFAULT_TYPE.toString())))
+            .andExpect(jsonPath("$.[*].name").value(hasItem(DEFAULT_NAME)))
+            .andExpect(jsonPath("$.[*].details").value(hasItem(DEFAULT_DETAILS.toString())));
+
+        // Check, that the count call also returns 1
+        restBudgetMockMvc
+            .perform(get(ENTITY_API_URL + "/count?sort=id,desc&" + filter))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(content().string("1"));
+    }
+
+    /**
+     * Executes the search, and checks that the default entity is not returned.
+     */
+    private void defaultBudgetShouldNotBeFound(String filter) throws Exception {
+        restBudgetMockMvc
+            .perform(get(ENTITY_API_URL + "?sort=id,desc&" + filter))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(jsonPath("$").isArray())
+            .andExpect(jsonPath("$").isEmpty());
+
+        // Check, that the count call also returns 0
+        restBudgetMockMvc
+            .perform(get(ENTITY_API_URL + "/count?sort=id,desc&" + filter))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(content().string("0"));
+    }
+
+
     @Test
     @WithCurrentCCAdministrator
     public void getBudget_WithCurrentCCAdministrator() throws Exception {
@@ -575,13 +1008,13 @@ public class BudgetResourceIT {
     public void getTotalBudgetByEventId_WithCurrentCCAdministrator() throws Exception {
         Event savedEvent = initEventDB(createEventEntity());
         EventBudgetTotalDTO eventBudgetTotalDTO = new EventBudgetTotalDTO();
-        for (int i = 0; i < 2; i ++) {
+        for (int i = 0; i < 2; i++) {
             Budget budget = createBudgetEntity();
             budget.setEventId(savedEvent.getId());
             Budget savedBudget = initBudgetDB(budget);
             eventBudgetTotalDTO.addTotalIncome(savedBudget.getAmount());
         }
-        for (int i = 0; i < 2; i ++) {
+        for (int i = 0; i < 2; i++) {
             Budget budget = createBudgetEntity();
             budget.setEventId(savedEvent.getId());
             budget.setType(UPDATED_TYPE);
@@ -601,13 +1034,13 @@ public class BudgetResourceIT {
     public void getTotalBudgetByEventId_WithEventCrew() throws Exception {
         EventCrew savedEventCrew = getEventCrewByCurrentLoginUser();
         EventBudgetTotalDTO eventBudgetTotalDTO = new EventBudgetTotalDTO();
-        for (int i = 0; i < 2; i ++) {
+        for (int i = 0; i < 2; i++) {
             Budget budget = createBudgetEntity();
             budget.setEventId(savedEventCrew.getEventId());
             Budget savedBudget = initBudgetDB(budget);
             eventBudgetTotalDTO.addTotalIncome(savedBudget.getAmount());
         }
-        for (int i = 0; i < 2; i ++) {
+        for (int i = 0; i < 2; i++) {
             Budget budget = createBudgetEntity();
             budget.setEventId(savedEventCrew.getEventId());
             budget.setType(UPDATED_TYPE);
@@ -640,13 +1073,13 @@ public class BudgetResourceIT {
     public void getTotalBudgetByEventId_WithNormalUser_ShouldThrow403() throws Exception {
         Event savedEvent = initEventDB(createEventEntity());
         EventBudgetTotalDTO eventBudgetTotalDTO = new EventBudgetTotalDTO();
-        for (int i = 0; i < 2; i ++) {
+        for (int i = 0; i < 2; i++) {
             Budget budget = createBudgetEntity();
             budget.setEventId(savedEvent.getId());
             Budget savedBudget = initBudgetDB(budget);
             eventBudgetTotalDTO.addTotalIncome(savedBudget.getAmount());
         }
-        for (int i = 0; i < 2; i ++) {
+        for (int i = 0; i < 2; i++) {
             Budget budget = createBudgetEntity();
             budget.setEventId(savedEvent.getId());
             budget.setType(UPDATED_TYPE);
@@ -669,10 +1102,10 @@ public class BudgetResourceIT {
         int databaseSizeBeforeDelete = budgetRepository.findAll().size();
 
         restBudgetMockMvc.perform(delete(
-                "/api/event-budget/{id}/event/{eventId}",
-                savedBudget.getId(),
-                savedEvent.getId()
-            ).accept(TestUtil.APPLICATION_JSON_UTF8))
+            "/api/event-budget/{id}/event/{eventId}",
+            savedBudget.getId(),
+            savedEvent.getId()
+        ).accept(TestUtil.APPLICATION_JSON_UTF8))
             .andExpect(status().isNoContent());
 
         List<Budget> budgetList = budgetRepository.findAll();

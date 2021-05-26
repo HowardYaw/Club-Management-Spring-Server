@@ -3,6 +3,7 @@ package com.thirdcc.webapp.web.rest;
 import com.thirdcc.webapp.ClubmanagementApp;
 import com.thirdcc.webapp.domain.EventRegistrationClosingCriteria;
 import com.thirdcc.webapp.repository.EventRegistrationClosingCriteriaRepository;
+import com.thirdcc.webapp.service.EventRegistrationClosingCriteriaQueryService;
 import com.thirdcc.webapp.service.EventRegistrationClosingCriteriaService;
 import com.thirdcc.webapp.service.dto.EventRegistrationClosingCriteriaDTO;
 import com.thirdcc.webapp.service.mapper.EventRegistrationClosingCriteriaMapper;
@@ -38,10 +39,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest(classes = ClubmanagementApp.class)
 public class EventRegistrationClosingCriteriaResourceIT {
 
+    private static final String ENTITY_API_URL = "/api/event-registration-closing-criteria";
+
     private static final Long DEFAULT_EVENT_ID = 1L;
+    private static final Long SMALLER_EVENT_ID = DEFAULT_EVENT_ID - 1L;
     private static final Long UPDATED_EVENT_ID = 2L;
 
     private static final Integer DEFAULT_MAX_ATTENDEES = 1;
+    private static final Integer SMALLER_MAX_ATTENDEES = DEFAULT_MAX_ATTENDEES - 1;
     private static final Integer UPDATED_MAX_ATTENDEES = 2;
 
     private static final Instant DEFAULT_CLOSING_DATE = Instant.ofEpochMilli(0L);
@@ -58,6 +63,9 @@ public class EventRegistrationClosingCriteriaResourceIT {
 
     @Autowired
     private EventRegistrationClosingCriteriaService eventRegistrationClosingCriteriaService;
+
+    @Autowired
+    private EventRegistrationClosingCriteriaQueryService eventRegistrationClosingCriteriaQueryService;
 
     @Autowired
     private MappingJackson2HttpMessageConverter jacksonMessageConverter;
@@ -81,7 +89,7 @@ public class EventRegistrationClosingCriteriaResourceIT {
     @BeforeEach
     public void setup() {
         MockitoAnnotations.initMocks(this);
-        final EventRegistrationClosingCriteriaResource eventRegistrationClosingCriteriaResource = new EventRegistrationClosingCriteriaResource(eventRegistrationClosingCriteriaService);
+        final EventRegistrationClosingCriteriaResource eventRegistrationClosingCriteriaResource = new EventRegistrationClosingCriteriaResource(eventRegistrationClosingCriteriaService, eventRegistrationClosingCriteriaQueryService);
         this.restEventRegistrationClosingCriteriaMockMvc = MockMvcBuilders.standaloneSetup(eventRegistrationClosingCriteriaResource)
             .setCustomArgumentResolvers(pageableArgumentResolver)
             .setControllerAdvice(exceptionTranslator)
@@ -183,7 +191,378 @@ public class EventRegistrationClosingCriteriaResourceIT {
             .andExpect(jsonPath("$.[*].closingDate").value(hasItem(DEFAULT_CLOSING_DATE.toString())))
             .andExpect(jsonPath("$.[*].forceClose").value(hasItem(DEFAULT_FORCE_CLOSE.booleanValue())));
     }
-    
+
+    @Test
+    @Transactional
+    void getEventRegistrationClosingCriteriaByIdFiltering() throws Exception {
+        // Initialize the database
+        eventRegistrationClosingCriteriaRepository.saveAndFlush(eventRegistrationClosingCriteria);
+
+        Long id = eventRegistrationClosingCriteria.getId();
+
+        defaultEventRegistrationClosingCriteriaShouldBeFound("id.equals=" + id);
+        defaultEventRegistrationClosingCriteriaShouldNotBeFound("id.notEquals=" + id);
+
+        defaultEventRegistrationClosingCriteriaShouldBeFound("id.greaterThanOrEqual=" + id);
+        defaultEventRegistrationClosingCriteriaShouldNotBeFound("id.greaterThan=" + id);
+
+        defaultEventRegistrationClosingCriteriaShouldBeFound("id.lessThanOrEqual=" + id);
+        defaultEventRegistrationClosingCriteriaShouldNotBeFound("id.lessThan=" + id);
+    }
+
+    @Test
+    @Transactional
+    void getAllEventRegistrationClosingCriteriaByEventIdIsEqualToSomething() throws Exception {
+        // Initialize the database
+        eventRegistrationClosingCriteriaRepository.saveAndFlush(eventRegistrationClosingCriteria);
+
+        // Get all the eventRegistrationClosingCriteriaList where eventId equals to DEFAULT_EVENT_ID
+        defaultEventRegistrationClosingCriteriaShouldBeFound("eventId.equals=" + DEFAULT_EVENT_ID);
+
+        // Get all the eventRegistrationClosingCriteriaList where eventId equals to UPDATED_EVENT_ID
+        defaultEventRegistrationClosingCriteriaShouldNotBeFound("eventId.equals=" + UPDATED_EVENT_ID);
+    }
+
+    @Test
+    @Transactional
+    void getAllEventRegistrationClosingCriteriaByEventIdIsNotEqualToSomething() throws Exception {
+        // Initialize the database
+        eventRegistrationClosingCriteriaRepository.saveAndFlush(eventRegistrationClosingCriteria);
+
+        // Get all the eventRegistrationClosingCriteriaList where eventId not equals to DEFAULT_EVENT_ID
+        defaultEventRegistrationClosingCriteriaShouldNotBeFound("eventId.notEquals=" + DEFAULT_EVENT_ID);
+
+        // Get all the eventRegistrationClosingCriteriaList where eventId not equals to UPDATED_EVENT_ID
+        defaultEventRegistrationClosingCriteriaShouldBeFound("eventId.notEquals=" + UPDATED_EVENT_ID);
+    }
+
+    @Test
+    @Transactional
+    void getAllEventRegistrationClosingCriteriaByEventIdIsInShouldWork() throws Exception {
+        // Initialize the database
+        eventRegistrationClosingCriteriaRepository.saveAndFlush(eventRegistrationClosingCriteria);
+
+        // Get all the eventRegistrationClosingCriteriaList where eventId in DEFAULT_EVENT_ID or UPDATED_EVENT_ID
+        defaultEventRegistrationClosingCriteriaShouldBeFound("eventId.in=" + DEFAULT_EVENT_ID + "," + UPDATED_EVENT_ID);
+
+        // Get all the eventRegistrationClosingCriteriaList where eventId equals to UPDATED_EVENT_ID
+        defaultEventRegistrationClosingCriteriaShouldNotBeFound("eventId.in=" + UPDATED_EVENT_ID);
+    }
+
+    @Test
+    @Transactional
+    void getAllEventRegistrationClosingCriteriaByEventIdIsNullOrNotNull() throws Exception {
+        // Initialize the database
+        eventRegistrationClosingCriteriaRepository.saveAndFlush(eventRegistrationClosingCriteria);
+
+        // Get all the eventRegistrationClosingCriteriaList where eventId is not null
+        defaultEventRegistrationClosingCriteriaShouldBeFound("eventId.specified=true");
+
+        // Get all the eventRegistrationClosingCriteriaList where eventId is null
+        defaultEventRegistrationClosingCriteriaShouldNotBeFound("eventId.specified=false");
+    }
+
+    @Test
+    @Transactional
+    void getAllEventRegistrationClosingCriteriaByEventIdIsGreaterThanOrEqualToSomething() throws Exception {
+        // Initialize the database
+        eventRegistrationClosingCriteriaRepository.saveAndFlush(eventRegistrationClosingCriteria);
+
+        // Get all the eventRegistrationClosingCriteriaList where eventId is greater than or equal to DEFAULT_EVENT_ID
+        defaultEventRegistrationClosingCriteriaShouldBeFound("eventId.greaterThanOrEqual=" + DEFAULT_EVENT_ID);
+
+        // Get all the eventRegistrationClosingCriteriaList where eventId is greater than or equal to UPDATED_EVENT_ID
+        defaultEventRegistrationClosingCriteriaShouldNotBeFound("eventId.greaterThanOrEqual=" + UPDATED_EVENT_ID);
+    }
+
+    @Test
+    @Transactional
+    void getAllEventRegistrationClosingCriteriaByEventIdIsLessThanOrEqualToSomething() throws Exception {
+        // Initialize the database
+        eventRegistrationClosingCriteriaRepository.saveAndFlush(eventRegistrationClosingCriteria);
+
+        // Get all the eventRegistrationClosingCriteriaList where eventId is less than or equal to DEFAULT_EVENT_ID
+        defaultEventRegistrationClosingCriteriaShouldBeFound("eventId.lessThanOrEqual=" + DEFAULT_EVENT_ID);
+
+        // Get all the eventRegistrationClosingCriteriaList where eventId is less than or equal to SMALLER_EVENT_ID
+        defaultEventRegistrationClosingCriteriaShouldNotBeFound("eventId.lessThanOrEqual=" + SMALLER_EVENT_ID);
+    }
+
+    @Test
+    @Transactional
+    void getAllEventRegistrationClosingCriteriaByEventIdIsLessThanSomething() throws Exception {
+        // Initialize the database
+        eventRegistrationClosingCriteriaRepository.saveAndFlush(eventRegistrationClosingCriteria);
+
+        // Get all the eventRegistrationClosingCriteriaList where eventId is less than DEFAULT_EVENT_ID
+        defaultEventRegistrationClosingCriteriaShouldNotBeFound("eventId.lessThan=" + DEFAULT_EVENT_ID);
+
+        // Get all the eventRegistrationClosingCriteriaList where eventId is less than UPDATED_EVENT_ID
+        defaultEventRegistrationClosingCriteriaShouldBeFound("eventId.lessThan=" + UPDATED_EVENT_ID);
+    }
+
+    @Test
+    @Transactional
+    void getAllEventRegistrationClosingCriteriaByEventIdIsGreaterThanSomething() throws Exception {
+        // Initialize the database
+        eventRegistrationClosingCriteriaRepository.saveAndFlush(eventRegistrationClosingCriteria);
+
+        // Get all the eventRegistrationClosingCriteriaList where eventId is greater than DEFAULT_EVENT_ID
+        defaultEventRegistrationClosingCriteriaShouldNotBeFound("eventId.greaterThan=" + DEFAULT_EVENT_ID);
+
+        // Get all the eventRegistrationClosingCriteriaList where eventId is greater than SMALLER_EVENT_ID
+        defaultEventRegistrationClosingCriteriaShouldBeFound("eventId.greaterThan=" + SMALLER_EVENT_ID);
+    }
+
+    @Test
+    @Transactional
+    void getAllEventRegistrationClosingCriteriaByMaxAttendeesIsEqualToSomething() throws Exception {
+        // Initialize the database
+        eventRegistrationClosingCriteriaRepository.saveAndFlush(eventRegistrationClosingCriteria);
+
+        // Get all the eventRegistrationClosingCriteriaList where maxAttendees equals to DEFAULT_MAX_ATTENDEES
+        defaultEventRegistrationClosingCriteriaShouldBeFound("maxAttendees.equals=" + DEFAULT_MAX_ATTENDEES);
+
+        // Get all the eventRegistrationClosingCriteriaList where maxAttendees equals to UPDATED_MAX_ATTENDEES
+        defaultEventRegistrationClosingCriteriaShouldNotBeFound("maxAttendees.equals=" + UPDATED_MAX_ATTENDEES);
+    }
+
+    @Test
+    @Transactional
+    void getAllEventRegistrationClosingCriteriaByMaxAttendeesIsNotEqualToSomething() throws Exception {
+        // Initialize the database
+        eventRegistrationClosingCriteriaRepository.saveAndFlush(eventRegistrationClosingCriteria);
+
+        // Get all the eventRegistrationClosingCriteriaList where maxAttendees not equals to DEFAULT_MAX_ATTENDEES
+        defaultEventRegistrationClosingCriteriaShouldNotBeFound("maxAttendees.notEquals=" + DEFAULT_MAX_ATTENDEES);
+
+        // Get all the eventRegistrationClosingCriteriaList where maxAttendees not equals to UPDATED_MAX_ATTENDEES
+        defaultEventRegistrationClosingCriteriaShouldBeFound("maxAttendees.notEquals=" + UPDATED_MAX_ATTENDEES);
+    }
+
+    @Test
+    @Transactional
+    void getAllEventRegistrationClosingCriteriaByMaxAttendeesIsInShouldWork() throws Exception {
+        // Initialize the database
+        eventRegistrationClosingCriteriaRepository.saveAndFlush(eventRegistrationClosingCriteria);
+
+        // Get all the eventRegistrationClosingCriteriaList where maxAttendees in DEFAULT_MAX_ATTENDEES or UPDATED_MAX_ATTENDEES
+        defaultEventRegistrationClosingCriteriaShouldBeFound("maxAttendees.in=" + DEFAULT_MAX_ATTENDEES + "," + UPDATED_MAX_ATTENDEES);
+
+        // Get all the eventRegistrationClosingCriteriaList where maxAttendees equals to UPDATED_MAX_ATTENDEES
+        defaultEventRegistrationClosingCriteriaShouldNotBeFound("maxAttendees.in=" + UPDATED_MAX_ATTENDEES);
+    }
+
+    @Test
+    @Transactional
+    void getAllEventRegistrationClosingCriteriaByMaxAttendeesIsNullOrNotNull() throws Exception {
+        // Initialize the database
+        eventRegistrationClosingCriteriaRepository.saveAndFlush(eventRegistrationClosingCriteria);
+
+        // Get all the eventRegistrationClosingCriteriaList where maxAttendees is not null
+        defaultEventRegistrationClosingCriteriaShouldBeFound("maxAttendees.specified=true");
+
+        // Get all the eventRegistrationClosingCriteriaList where maxAttendees is null
+        defaultEventRegistrationClosingCriteriaShouldNotBeFound("maxAttendees.specified=false");
+    }
+
+    @Test
+    @Transactional
+    void getAllEventRegistrationClosingCriteriaByMaxAttendeesIsGreaterThanOrEqualToSomething() throws Exception {
+        // Initialize the database
+        eventRegistrationClosingCriteriaRepository.saveAndFlush(eventRegistrationClosingCriteria);
+
+        // Get all the eventRegistrationClosingCriteriaList where maxAttendees is greater than or equal to DEFAULT_MAX_ATTENDEES
+        defaultEventRegistrationClosingCriteriaShouldBeFound("maxAttendees.greaterThanOrEqual=" + DEFAULT_MAX_ATTENDEES);
+
+        // Get all the eventRegistrationClosingCriteriaList where maxAttendees is greater than or equal to UPDATED_MAX_ATTENDEES
+        defaultEventRegistrationClosingCriteriaShouldNotBeFound("maxAttendees.greaterThanOrEqual=" + UPDATED_MAX_ATTENDEES);
+    }
+
+    @Test
+    @Transactional
+    void getAllEventRegistrationClosingCriteriaByMaxAttendeesIsLessThanOrEqualToSomething() throws Exception {
+        // Initialize the database
+        eventRegistrationClosingCriteriaRepository.saveAndFlush(eventRegistrationClosingCriteria);
+
+        // Get all the eventRegistrationClosingCriteriaList where maxAttendees is less than or equal to DEFAULT_MAX_ATTENDEES
+        defaultEventRegistrationClosingCriteriaShouldBeFound("maxAttendees.lessThanOrEqual=" + DEFAULT_MAX_ATTENDEES);
+
+        // Get all the eventRegistrationClosingCriteriaList where maxAttendees is less than or equal to SMALLER_MAX_ATTENDEES
+        defaultEventRegistrationClosingCriteriaShouldNotBeFound("maxAttendees.lessThanOrEqual=" + SMALLER_MAX_ATTENDEES);
+    }
+
+    @Test
+    @Transactional
+    void getAllEventRegistrationClosingCriteriaByMaxAttendeesIsLessThanSomething() throws Exception {
+        // Initialize the database
+        eventRegistrationClosingCriteriaRepository.saveAndFlush(eventRegistrationClosingCriteria);
+
+        // Get all the eventRegistrationClosingCriteriaList where maxAttendees is less than DEFAULT_MAX_ATTENDEES
+        defaultEventRegistrationClosingCriteriaShouldNotBeFound("maxAttendees.lessThan=" + DEFAULT_MAX_ATTENDEES);
+
+        // Get all the eventRegistrationClosingCriteriaList where maxAttendees is less than UPDATED_MAX_ATTENDEES
+        defaultEventRegistrationClosingCriteriaShouldBeFound("maxAttendees.lessThan=" + UPDATED_MAX_ATTENDEES);
+    }
+
+    @Test
+    @Transactional
+    void getAllEventRegistrationClosingCriteriaByMaxAttendeesIsGreaterThanSomething() throws Exception {
+        // Initialize the database
+        eventRegistrationClosingCriteriaRepository.saveAndFlush(eventRegistrationClosingCriteria);
+
+        // Get all the eventRegistrationClosingCriteriaList where maxAttendees is greater than DEFAULT_MAX_ATTENDEES
+        defaultEventRegistrationClosingCriteriaShouldNotBeFound("maxAttendees.greaterThan=" + DEFAULT_MAX_ATTENDEES);
+
+        // Get all the eventRegistrationClosingCriteriaList where maxAttendees is greater than SMALLER_MAX_ATTENDEES
+        defaultEventRegistrationClosingCriteriaShouldBeFound("maxAttendees.greaterThan=" + SMALLER_MAX_ATTENDEES);
+    }
+
+    @Test
+    @Transactional
+    void getAllEventRegistrationClosingCriteriaByClosingDateIsEqualToSomething() throws Exception {
+        // Initialize the database
+        eventRegistrationClosingCriteriaRepository.saveAndFlush(eventRegistrationClosingCriteria);
+
+        // Get all the eventRegistrationClosingCriteriaList where closingDate equals to DEFAULT_CLOSING_DATE
+        defaultEventRegistrationClosingCriteriaShouldBeFound("closingDate.equals=" + DEFAULT_CLOSING_DATE);
+
+        // Get all the eventRegistrationClosingCriteriaList where closingDate equals to UPDATED_CLOSING_DATE
+        defaultEventRegistrationClosingCriteriaShouldNotBeFound("closingDate.equals=" + UPDATED_CLOSING_DATE);
+    }
+
+    @Test
+    @Transactional
+    void getAllEventRegistrationClosingCriteriaByClosingDateIsNotEqualToSomething() throws Exception {
+        // Initialize the database
+        eventRegistrationClosingCriteriaRepository.saveAndFlush(eventRegistrationClosingCriteria);
+
+        // Get all the eventRegistrationClosingCriteriaList where closingDate not equals to DEFAULT_CLOSING_DATE
+        defaultEventRegistrationClosingCriteriaShouldNotBeFound("closingDate.notEquals=" + DEFAULT_CLOSING_DATE);
+
+        // Get all the eventRegistrationClosingCriteriaList where closingDate not equals to UPDATED_CLOSING_DATE
+        defaultEventRegistrationClosingCriteriaShouldBeFound("closingDate.notEquals=" + UPDATED_CLOSING_DATE);
+    }
+
+    @Test
+    @Transactional
+    void getAllEventRegistrationClosingCriteriaByClosingDateIsInShouldWork() throws Exception {
+        // Initialize the database
+        eventRegistrationClosingCriteriaRepository.saveAndFlush(eventRegistrationClosingCriteria);
+
+        // Get all the eventRegistrationClosingCriteriaList where closingDate in DEFAULT_CLOSING_DATE or UPDATED_CLOSING_DATE
+        defaultEventRegistrationClosingCriteriaShouldBeFound("closingDate.in=" + DEFAULT_CLOSING_DATE + "," + UPDATED_CLOSING_DATE);
+
+        // Get all the eventRegistrationClosingCriteriaList where closingDate equals to UPDATED_CLOSING_DATE
+        defaultEventRegistrationClosingCriteriaShouldNotBeFound("closingDate.in=" + UPDATED_CLOSING_DATE);
+    }
+
+    @Test
+    @Transactional
+    void getAllEventRegistrationClosingCriteriaByClosingDateIsNullOrNotNull() throws Exception {
+        // Initialize the database
+        eventRegistrationClosingCriteriaRepository.saveAndFlush(eventRegistrationClosingCriteria);
+
+        // Get all the eventRegistrationClosingCriteriaList where closingDate is not null
+        defaultEventRegistrationClosingCriteriaShouldBeFound("closingDate.specified=true");
+
+        // Get all the eventRegistrationClosingCriteriaList where closingDate is null
+        defaultEventRegistrationClosingCriteriaShouldNotBeFound("closingDate.specified=false");
+    }
+
+    @Test
+    @Transactional
+    void getAllEventRegistrationClosingCriteriaByForceCloseIsEqualToSomething() throws Exception {
+        // Initialize the database
+        eventRegistrationClosingCriteriaRepository.saveAndFlush(eventRegistrationClosingCriteria);
+
+        // Get all the eventRegistrationClosingCriteriaList where forceClose equals to DEFAULT_FORCE_CLOSE
+        defaultEventRegistrationClosingCriteriaShouldBeFound("forceClose.equals=" + DEFAULT_FORCE_CLOSE);
+
+        // Get all the eventRegistrationClosingCriteriaList where forceClose equals to UPDATED_FORCE_CLOSE
+        defaultEventRegistrationClosingCriteriaShouldNotBeFound("forceClose.equals=" + UPDATED_FORCE_CLOSE);
+    }
+
+    @Test
+    @Transactional
+    void getAllEventRegistrationClosingCriteriaByForceCloseIsNotEqualToSomething() throws Exception {
+        // Initialize the database
+        eventRegistrationClosingCriteriaRepository.saveAndFlush(eventRegistrationClosingCriteria);
+
+        // Get all the eventRegistrationClosingCriteriaList where forceClose not equals to DEFAULT_FORCE_CLOSE
+        defaultEventRegistrationClosingCriteriaShouldNotBeFound("forceClose.notEquals=" + DEFAULT_FORCE_CLOSE);
+
+        // Get all the eventRegistrationClosingCriteriaList where forceClose not equals to UPDATED_FORCE_CLOSE
+        defaultEventRegistrationClosingCriteriaShouldBeFound("forceClose.notEquals=" + UPDATED_FORCE_CLOSE);
+    }
+
+    @Test
+    @Transactional
+    void getAllEventRegistrationClosingCriteriaByForceCloseIsInShouldWork() throws Exception {
+        // Initialize the database
+        eventRegistrationClosingCriteriaRepository.saveAndFlush(eventRegistrationClosingCriteria);
+
+        // Get all the eventRegistrationClosingCriteriaList where forceClose in DEFAULT_FORCE_CLOSE or UPDATED_FORCE_CLOSE
+        defaultEventRegistrationClosingCriteriaShouldBeFound("forceClose.in=" + DEFAULT_FORCE_CLOSE + "," + UPDATED_FORCE_CLOSE);
+
+        // Get all the eventRegistrationClosingCriteriaList where forceClose equals to UPDATED_FORCE_CLOSE
+        defaultEventRegistrationClosingCriteriaShouldNotBeFound("forceClose.in=" + UPDATED_FORCE_CLOSE);
+    }
+
+    @Test
+    @Transactional
+    void getAllEventRegistrationClosingCriteriaByForceCloseIsNullOrNotNull() throws Exception {
+        // Initialize the database
+        eventRegistrationClosingCriteriaRepository.saveAndFlush(eventRegistrationClosingCriteria);
+
+        // Get all the eventRegistrationClosingCriteriaList where forceClose is not null
+        defaultEventRegistrationClosingCriteriaShouldBeFound("forceClose.specified=true");
+
+        // Get all the eventRegistrationClosingCriteriaList where forceClose is null
+        defaultEventRegistrationClosingCriteriaShouldNotBeFound("forceClose.specified=false");
+    }
+
+    /**
+     * Executes the search, and checks that the default entity is returned.
+     */
+    private void defaultEventRegistrationClosingCriteriaShouldBeFound(String filter) throws Exception {
+        restEventRegistrationClosingCriteriaMockMvc
+            .perform(get(ENTITY_API_URL + "?sort=id,desc&" + filter))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(jsonPath("$.[*].id").value(hasItem(eventRegistrationClosingCriteria.getId().intValue())))
+            .andExpect(jsonPath("$.[*].eventId").value(hasItem(DEFAULT_EVENT_ID.intValue())))
+            .andExpect(jsonPath("$.[*].maxAttendees").value(hasItem(DEFAULT_MAX_ATTENDEES)))
+            .andExpect(jsonPath("$.[*].closingDate").value(hasItem(DEFAULT_CLOSING_DATE.toString())))
+            .andExpect(jsonPath("$.[*].forceClose").value(hasItem(DEFAULT_FORCE_CLOSE.booleanValue())));
+
+        // Check, that the count call also returns 1
+        restEventRegistrationClosingCriteriaMockMvc
+            .perform(get(ENTITY_API_URL + "/count?sort=id,desc&" + filter))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(content().string("1"));
+    }
+
+    /**
+     * Executes the search, and checks that the default entity is not returned.
+     */
+    private void defaultEventRegistrationClosingCriteriaShouldNotBeFound(String filter) throws Exception {
+        restEventRegistrationClosingCriteriaMockMvc
+            .perform(get(ENTITY_API_URL + "?sort=id,desc&" + filter))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(jsonPath("$").isArray())
+            .andExpect(jsonPath("$").isEmpty());
+
+        // Check, that the count call also returns 0
+        restEventRegistrationClosingCriteriaMockMvc
+            .perform(get(ENTITY_API_URL + "/count?sort=id,desc&" + filter))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(content().string("0"));
+    }
+
     @Test
     @Transactional
     public void getEventRegistrationClosingCriteria() throws Exception {

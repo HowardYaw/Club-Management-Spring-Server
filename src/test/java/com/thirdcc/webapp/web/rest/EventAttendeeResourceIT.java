@@ -35,6 +35,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.transaction.annotation.Transactional;
 
 
 import javax.persistence.EntityManager;
@@ -58,10 +59,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 public class EventAttendeeResourceIT {
     private final Logger log = LoggerFactory.getLogger(EventAttendeeServiceImpl.class);
 
+    private static final String ENTITY_API_URL = "/api/event-attendees";
+
     private static final Long DEFAULT_USER_ID = 1L;
+    private static final Long SMALLER_USER_ID = DEFAULT_USER_ID - 1L;
     private static final Long UPDATED_USER_ID = 2L;
 
     private static final Long DEFAULT_EVENT_ID = 1L;
+    private static final Long SMALLER_EVENT_ID = DEFAULT_EVENT_ID - 1L;
     private static final Long UPDATED_EVENT_ID = 2L;
 
     private static final Boolean DEFAULT_PROVIDE_TRANSPORT = false;
@@ -456,6 +461,326 @@ public class EventAttendeeResourceIT {
         restEventAttendeeMockMvc.perform(get("/api/event-attendees/event/{eventId}?sort=id,desc", savedEvent.getId()))
             .andExpect(status().isForbidden());
     }
+
+    @Test
+    @Transactional
+    void getEventAttendeesByIdFiltering() throws Exception {
+        // Initialize the database
+        eventAttendeeRepository.saveAndFlush(eventAttendee);
+
+        Long id = eventAttendee.getId();
+
+        defaultEventAttendeeShouldBeFound("id.equals=" + id);
+        defaultEventAttendeeShouldNotBeFound("id.notEquals=" + id);
+
+        defaultEventAttendeeShouldBeFound("id.greaterThanOrEqual=" + id);
+        defaultEventAttendeeShouldNotBeFound("id.greaterThan=" + id);
+
+        defaultEventAttendeeShouldBeFound("id.lessThanOrEqual=" + id);
+        defaultEventAttendeeShouldNotBeFound("id.lessThan=" + id);
+    }
+
+    @Test
+    @Transactional
+    void getAllEventAttendeesByUserIdIsEqualToSomething() throws Exception {
+        // Initialize the database
+        eventAttendeeRepository.saveAndFlush(eventAttendee);
+
+        // Get all the eventAttendeeList where userId equals to DEFAULT_USER_ID
+        defaultEventAttendeeShouldBeFound("userId.equals=" + DEFAULT_USER_ID);
+
+        // Get all the eventAttendeeList where userId equals to UPDATED_USER_ID
+        defaultEventAttendeeShouldNotBeFound("userId.equals=" + UPDATED_USER_ID);
+    }
+
+    @Test
+    @Transactional
+    void getAllEventAttendeesByUserIdIsNotEqualToSomething() throws Exception {
+        // Initialize the database
+        eventAttendeeRepository.saveAndFlush(eventAttendee);
+
+        // Get all the eventAttendeeList where userId not equals to DEFAULT_USER_ID
+        defaultEventAttendeeShouldNotBeFound("userId.notEquals=" + DEFAULT_USER_ID);
+
+        // Get all the eventAttendeeList where userId not equals to UPDATED_USER_ID
+        defaultEventAttendeeShouldBeFound("userId.notEquals=" + UPDATED_USER_ID);
+    }
+
+    @Test
+    @Transactional
+    void getAllEventAttendeesByUserIdIsInShouldWork() throws Exception {
+        // Initialize the database
+        eventAttendeeRepository.saveAndFlush(eventAttendee);
+
+        // Get all the eventAttendeeList where userId in DEFAULT_USER_ID or UPDATED_USER_ID
+        defaultEventAttendeeShouldBeFound("userId.in=" + DEFAULT_USER_ID + "," + UPDATED_USER_ID);
+
+        // Get all the eventAttendeeList where userId equals to UPDATED_USER_ID
+        defaultEventAttendeeShouldNotBeFound("userId.in=" + UPDATED_USER_ID);
+    }
+
+    @Test
+    @Transactional
+    void getAllEventAttendeesByUserIdIsNullOrNotNull() throws Exception {
+        // Initialize the database
+        eventAttendeeRepository.saveAndFlush(eventAttendee);
+
+        // Get all the eventAttendeeList where userId is not null
+        defaultEventAttendeeShouldBeFound("userId.specified=true");
+
+        // Get all the eventAttendeeList where userId is null
+        defaultEventAttendeeShouldNotBeFound("userId.specified=false");
+    }
+
+    @Test
+    @Transactional
+    void getAllEventAttendeesByUserIdIsGreaterThanOrEqualToSomething() throws Exception {
+        // Initialize the database
+        eventAttendeeRepository.saveAndFlush(eventAttendee);
+
+        // Get all the eventAttendeeList where userId is greater than or equal to DEFAULT_USER_ID
+        defaultEventAttendeeShouldBeFound("userId.greaterThanOrEqual=" + DEFAULT_USER_ID);
+
+        // Get all the eventAttendeeList where userId is greater than or equal to UPDATED_USER_ID
+        defaultEventAttendeeShouldNotBeFound("userId.greaterThanOrEqual=" + UPDATED_USER_ID);
+    }
+
+    @Test
+    @Transactional
+    void getAllEventAttendeesByUserIdIsLessThanOrEqualToSomething() throws Exception {
+        // Initialize the database
+        eventAttendeeRepository.saveAndFlush(eventAttendee);
+
+        // Get all the eventAttendeeList where userId is less than or equal to DEFAULT_USER_ID
+        defaultEventAttendeeShouldBeFound("userId.lessThanOrEqual=" + DEFAULT_USER_ID);
+
+        // Get all the eventAttendeeList where userId is less than or equal to SMALLER_USER_ID
+        defaultEventAttendeeShouldNotBeFound("userId.lessThanOrEqual=" + SMALLER_USER_ID);
+    }
+
+    @Test
+    @Transactional
+    void getAllEventAttendeesByUserIdIsLessThanSomething() throws Exception {
+        // Initialize the database
+        eventAttendeeRepository.saveAndFlush(eventAttendee);
+
+        // Get all the eventAttendeeList where userId is less than DEFAULT_USER_ID
+        defaultEventAttendeeShouldNotBeFound("userId.lessThan=" + DEFAULT_USER_ID);
+
+        // Get all the eventAttendeeList where userId is less than UPDATED_USER_ID
+        defaultEventAttendeeShouldBeFound("userId.lessThan=" + UPDATED_USER_ID);
+    }
+
+    @Test
+    @Transactional
+    void getAllEventAttendeesByUserIdIsGreaterThanSomething() throws Exception {
+        // Initialize the database
+        eventAttendeeRepository.saveAndFlush(eventAttendee);
+
+        // Get all the eventAttendeeList where userId is greater than DEFAULT_USER_ID
+        defaultEventAttendeeShouldNotBeFound("userId.greaterThan=" + DEFAULT_USER_ID);
+
+        // Get all the eventAttendeeList where userId is greater than SMALLER_USER_ID
+        defaultEventAttendeeShouldBeFound("userId.greaterThan=" + SMALLER_USER_ID);
+    }
+
+    @Test
+    @Transactional
+    void getAllEventAttendeesByEventIdIsEqualToSomething() throws Exception {
+        // Initialize the database
+        eventAttendeeRepository.saveAndFlush(eventAttendee);
+
+        // Get all the eventAttendeeList where eventId equals to DEFAULT_EVENT_ID
+        defaultEventAttendeeShouldBeFound("eventId.equals=" + DEFAULT_EVENT_ID);
+
+        // Get all the eventAttendeeList where eventId equals to UPDATED_EVENT_ID
+        defaultEventAttendeeShouldNotBeFound("eventId.equals=" + UPDATED_EVENT_ID);
+    }
+
+    @Test
+    @Transactional
+    void getAllEventAttendeesByEventIdIsNotEqualToSomething() throws Exception {
+        // Initialize the database
+        eventAttendeeRepository.saveAndFlush(eventAttendee);
+
+        // Get all the eventAttendeeList where eventId not equals to DEFAULT_EVENT_ID
+        defaultEventAttendeeShouldNotBeFound("eventId.notEquals=" + DEFAULT_EVENT_ID);
+
+        // Get all the eventAttendeeList where eventId not equals to UPDATED_EVENT_ID
+        defaultEventAttendeeShouldBeFound("eventId.notEquals=" + UPDATED_EVENT_ID);
+    }
+
+    @Test
+    @Transactional
+    void getAllEventAttendeesByEventIdIsInShouldWork() throws Exception {
+        // Initialize the database
+        eventAttendeeRepository.saveAndFlush(eventAttendee);
+
+        // Get all the eventAttendeeList where eventId in DEFAULT_EVENT_ID or UPDATED_EVENT_ID
+        defaultEventAttendeeShouldBeFound("eventId.in=" + DEFAULT_EVENT_ID + "," + UPDATED_EVENT_ID);
+
+        // Get all the eventAttendeeList where eventId equals to UPDATED_EVENT_ID
+        defaultEventAttendeeShouldNotBeFound("eventId.in=" + UPDATED_EVENT_ID);
+    }
+
+    @Test
+    @Transactional
+    void getAllEventAttendeesByEventIdIsNullOrNotNull() throws Exception {
+        // Initialize the database
+        eventAttendeeRepository.saveAndFlush(eventAttendee);
+
+        // Get all the eventAttendeeList where eventId is not null
+        defaultEventAttendeeShouldBeFound("eventId.specified=true");
+
+        // Get all the eventAttendeeList where eventId is null
+        defaultEventAttendeeShouldNotBeFound("eventId.specified=false");
+    }
+
+    @Test
+    @Transactional
+    void getAllEventAttendeesByEventIdIsGreaterThanOrEqualToSomething() throws Exception {
+        // Initialize the database
+        eventAttendeeRepository.saveAndFlush(eventAttendee);
+
+        // Get all the eventAttendeeList where eventId is greater than or equal to DEFAULT_EVENT_ID
+        defaultEventAttendeeShouldBeFound("eventId.greaterThanOrEqual=" + DEFAULT_EVENT_ID);
+
+        // Get all the eventAttendeeList where eventId is greater than or equal to UPDATED_EVENT_ID
+        defaultEventAttendeeShouldNotBeFound("eventId.greaterThanOrEqual=" + UPDATED_EVENT_ID);
+    }
+
+    @Test
+    @Transactional
+    void getAllEventAttendeesByEventIdIsLessThanOrEqualToSomething() throws Exception {
+        // Initialize the database
+        eventAttendeeRepository.saveAndFlush(eventAttendee);
+
+        // Get all the eventAttendeeList where eventId is less than or equal to DEFAULT_EVENT_ID
+        defaultEventAttendeeShouldBeFound("eventId.lessThanOrEqual=" + DEFAULT_EVENT_ID);
+
+        // Get all the eventAttendeeList where eventId is less than or equal to SMALLER_EVENT_ID
+        defaultEventAttendeeShouldNotBeFound("eventId.lessThanOrEqual=" + SMALLER_EVENT_ID);
+    }
+
+    @Test
+    @Transactional
+    void getAllEventAttendeesByEventIdIsLessThanSomething() throws Exception {
+        // Initialize the database
+        eventAttendeeRepository.saveAndFlush(eventAttendee);
+
+        // Get all the eventAttendeeList where eventId is less than DEFAULT_EVENT_ID
+        defaultEventAttendeeShouldNotBeFound("eventId.lessThan=" + DEFAULT_EVENT_ID);
+
+        // Get all the eventAttendeeList where eventId is less than UPDATED_EVENT_ID
+        defaultEventAttendeeShouldBeFound("eventId.lessThan=" + UPDATED_EVENT_ID);
+    }
+
+    @Test
+    @Transactional
+    void getAllEventAttendeesByEventIdIsGreaterThanSomething() throws Exception {
+        // Initialize the database
+        eventAttendeeRepository.saveAndFlush(eventAttendee);
+
+        // Get all the eventAttendeeList where eventId is greater than DEFAULT_EVENT_ID
+        defaultEventAttendeeShouldNotBeFound("eventId.greaterThan=" + DEFAULT_EVENT_ID);
+
+        // Get all the eventAttendeeList where eventId is greater than SMALLER_EVENT_ID
+        defaultEventAttendeeShouldBeFound("eventId.greaterThan=" + SMALLER_EVENT_ID);
+    }
+
+    @Test
+    @Transactional
+    void getAllEventAttendeesByProvideTransportIsEqualToSomething() throws Exception {
+        // Initialize the database
+        eventAttendeeRepository.saveAndFlush(eventAttendee);
+
+        // Get all the eventAttendeeList where provideTransport equals to DEFAULT_PROVIDE_TRANSPORT
+        defaultEventAttendeeShouldBeFound("provideTransport.equals=" + DEFAULT_PROVIDE_TRANSPORT);
+
+        // Get all the eventAttendeeList where provideTransport equals to UPDATED_PROVIDE_TRANSPORT
+        defaultEventAttendeeShouldNotBeFound("provideTransport.equals=" + UPDATED_PROVIDE_TRANSPORT);
+    }
+
+    @Test
+    @Transactional
+    void getAllEventAttendeesByProvideTransportIsNotEqualToSomething() throws Exception {
+        // Initialize the database
+        eventAttendeeRepository.saveAndFlush(eventAttendee);
+
+        // Get all the eventAttendeeList where provideTransport not equals to DEFAULT_PROVIDE_TRANSPORT
+        defaultEventAttendeeShouldNotBeFound("provideTransport.notEquals=" + DEFAULT_PROVIDE_TRANSPORT);
+
+        // Get all the eventAttendeeList where provideTransport not equals to UPDATED_PROVIDE_TRANSPORT
+        defaultEventAttendeeShouldBeFound("provideTransport.notEquals=" + UPDATED_PROVIDE_TRANSPORT);
+    }
+
+    @Test
+    @Transactional
+    void getAllEventAttendeesByProvideTransportIsInShouldWork() throws Exception {
+        // Initialize the database
+        eventAttendeeRepository.saveAndFlush(eventAttendee);
+
+        // Get all the eventAttendeeList where provideTransport in DEFAULT_PROVIDE_TRANSPORT or UPDATED_PROVIDE_TRANSPORT
+        defaultEventAttendeeShouldBeFound("provideTransport.in=" + DEFAULT_PROVIDE_TRANSPORT + "," + UPDATED_PROVIDE_TRANSPORT);
+
+        // Get all the eventAttendeeList where provideTransport equals to UPDATED_PROVIDE_TRANSPORT
+        defaultEventAttendeeShouldNotBeFound("provideTransport.in=" + UPDATED_PROVIDE_TRANSPORT);
+    }
+
+    @Test
+    @Transactional
+    void getAllEventAttendeesByProvideTransportIsNullOrNotNull() throws Exception {
+        // Initialize the database
+        eventAttendeeRepository.saveAndFlush(eventAttendee);
+
+        // Get all the eventAttendeeList where provideTransport is not null
+        defaultEventAttendeeShouldBeFound("provideTransport.specified=true");
+
+        // Get all the eventAttendeeList where provideTransport is null
+        defaultEventAttendeeShouldNotBeFound("provideTransport.specified=false");
+    }
+
+    /**
+     * Executes the search, and checks that the default entity is returned.
+     */
+    private void defaultEventAttendeeShouldBeFound(String filter) throws Exception {
+        restEventAttendeeMockMvc
+            .perform(get(ENTITY_API_URL + "?sort=id,desc&" + filter))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(jsonPath("$.[*].id").value(hasItem(eventAttendee.getId().intValue())))
+            .andExpect(jsonPath("$.[*].userId").value(hasItem(DEFAULT_USER_ID.intValue())))
+            .andExpect(jsonPath("$.[*].eventId").value(hasItem(DEFAULT_EVENT_ID.intValue())))
+            .andExpect(jsonPath("$.[*].provideTransport").value(hasItem(DEFAULT_PROVIDE_TRANSPORT.booleanValue())));
+
+        // Check, that the count call also returns 1
+        restEventAttendeeMockMvc
+            .perform(get(ENTITY_API_URL + "/count?sort=id,desc&" + filter))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(content().string("1"));
+    }
+
+    /**
+     * Executes the search, and checks that the default entity is not returned.
+     */
+    private void defaultEventAttendeeShouldNotBeFound(String filter) throws Exception {
+        restEventAttendeeMockMvc
+            .perform(get(ENTITY_API_URL + "?sort=id,desc&" + filter))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(jsonPath("$").isArray())
+            .andExpect(jsonPath("$").isEmpty());
+
+        // Check, that the count call also returns 0
+        restEventAttendeeMockMvc
+            .perform(get(ENTITY_API_URL + "/count?sort=id,desc&" + filter))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(content().string("0"));
+    }
+
+
 
     @Test
     @WithCurrentCCAdministrator

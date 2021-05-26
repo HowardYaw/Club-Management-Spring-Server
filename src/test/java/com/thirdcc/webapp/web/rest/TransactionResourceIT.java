@@ -25,13 +25,16 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.EntityManager;
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 
+import static com.thirdcc.webapp.web.rest.TestUtil.sameNumber;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.hasItem;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -46,22 +49,39 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @InitYearSession
 public class TransactionResourceIT {
 
+    private static final String ENTITY_API_URL = "/api/transactions";
+
     private static final Long DEFAULT_EVENT_ID = 1L;
+    private static final Long SMALLER_EVENT_ID = DEFAULT_EVENT_ID - 1L;
     private static final Long UPDATED_EVENT_ID = 2L;
 
     private static final Long DEFAULT_RECEIPT_ID = 1L;
+    private static final Long SMALLER_RECEIPT_ID = DEFAULT_RECEIPT_ID - 1L;
     private static final Long UPDATED_RECEIPT_ID = 2L;
 
     private static final TransactionType DEFAULT_TYPE = TransactionType.INCOME;
     private static final TransactionType UPDATED_TYPE = TransactionType.EXPENSE;
 
     private static final BigDecimal DEFAULT_AMOUNT = new BigDecimal(1);
+    private static final BigDecimal SMALLER_AMOUNT = DEFAULT_AMOUNT.subtract(BigDecimal.ONE);
     private static final BigDecimal UPDATED_AMOUNT = new BigDecimal(2);
 
     private static final String DEFAULT_DETAILS = "TRANSACTION_DETAILS";
     private static final String UPDATED_DETAILS = "TRANSACTION_UPDATED_DETAILS";
 
     private static final TransactionStatus DEFAULT_TRANSACTION_STATUS = TransactionStatus.SUCCESS;
+
+    private static final String DEFAULT_CREATED_BY = "DEFAULT_CREATED_BY";
+    private static final String UPDATED_CREATED_BY = "UPDATED_CREATED_BY";
+
+    private static final LocalDate DEFAULT_CREATED_DATE = LocalDate.ofEpochDay(123);
+    private static final LocalDate UPDATED_CREATED_DATE = LocalDate.ofEpochDay(657);
+
+    private static final String DEFAULT_LAST_MODIFIED_BY = "DEFAULT_LAST_MODIFIED_BY";
+    private static final String UPDATED_LAST_MODIFIED_BY = "UPDATED_LAST_MODIFIED_BY";
+
+    private static final LocalDate DEFAULT_LAST_MODIFIED_DATE = LocalDate.ofEpochDay(45123);
+    private static final LocalDate UPDATED_LAST_MODIFIED_DATE = LocalDate.ofEpochDay(5675657);
 
     // Event Default data
     private static final String DEFAULT_EVENT_NAME = "DEFAULT_EVENT_NAME";
@@ -554,6 +574,773 @@ public class TransactionResourceIT {
         // Get all the transactionList
         restTransactionMockMvc.perform(get("/api/transactions/event/{eventId}?sort=id,desc", savedEvent.getId()))
             .andExpect(status().isBadRequest());
+    }
+
+
+    @Test
+    @Transactional
+    void getTransactionsByIdFiltering() throws Exception {
+        // Initialize the database
+        transactionRepository.saveAndFlush(transaction);
+
+        Long id = transaction.getId();
+
+        defaultTransactionShouldBeFound("id.equals=" + id);
+        defaultTransactionShouldNotBeFound("id.notEquals=" + id);
+
+        defaultTransactionShouldBeFound("id.greaterThanOrEqual=" + id);
+        defaultTransactionShouldNotBeFound("id.greaterThan=" + id);
+
+        defaultTransactionShouldBeFound("id.lessThanOrEqual=" + id);
+        defaultTransactionShouldNotBeFound("id.lessThan=" + id);
+    }
+
+    @Test
+    @Transactional
+    void getAllTransactionsByEventIdIsEqualToSomething() throws Exception {
+        // Initialize the database
+        transactionRepository.saveAndFlush(transaction);
+
+        // Get all the transactionList where eventId equals to DEFAULT_EVENT_ID
+        defaultTransactionShouldBeFound("eventId.equals=" + DEFAULT_EVENT_ID);
+
+        // Get all the transactionList where eventId equals to UPDATED_EVENT_ID
+        defaultTransactionShouldNotBeFound("eventId.equals=" + UPDATED_EVENT_ID);
+    }
+
+    @Test
+    @Transactional
+    void getAllTransactionsByEventIdIsNotEqualToSomething() throws Exception {
+        // Initialize the database
+        transactionRepository.saveAndFlush(transaction);
+
+        // Get all the transactionList where eventId not equals to DEFAULT_EVENT_ID
+        defaultTransactionShouldNotBeFound("eventId.notEquals=" + DEFAULT_EVENT_ID);
+
+        // Get all the transactionList where eventId not equals to UPDATED_EVENT_ID
+        defaultTransactionShouldBeFound("eventId.notEquals=" + UPDATED_EVENT_ID);
+    }
+
+    @Test
+    @Transactional
+    void getAllTransactionsByEventIdIsInShouldWork() throws Exception {
+        // Initialize the database
+        transactionRepository.saveAndFlush(transaction);
+
+        // Get all the transactionList where eventId in DEFAULT_EVENT_ID or UPDATED_EVENT_ID
+        defaultTransactionShouldBeFound("eventId.in=" + DEFAULT_EVENT_ID + "," + UPDATED_EVENT_ID);
+
+        // Get all the transactionList where eventId equals to UPDATED_EVENT_ID
+        defaultTransactionShouldNotBeFound("eventId.in=" + UPDATED_EVENT_ID);
+    }
+
+    @Test
+    @Transactional
+    void getAllTransactionsByEventIdIsNullOrNotNull() throws Exception {
+        // Initialize the database
+        transactionRepository.saveAndFlush(transaction);
+
+        // Get all the transactionList where eventId is not null
+        defaultTransactionShouldBeFound("eventId.specified=true");
+
+        // Get all the transactionList where eventId is null
+        defaultTransactionShouldNotBeFound("eventId.specified=false");
+    }
+
+    @Test
+    @Transactional
+    void getAllTransactionsByEventIdIsGreaterThanOrEqualToSomething() throws Exception {
+        // Initialize the database
+        transactionRepository.saveAndFlush(transaction);
+
+        // Get all the transactionList where eventId is greater than or equal to DEFAULT_EVENT_ID
+        defaultTransactionShouldBeFound("eventId.greaterThanOrEqual=" + DEFAULT_EVENT_ID);
+
+        // Get all the transactionList where eventId is greater than or equal to UPDATED_EVENT_ID
+        defaultTransactionShouldNotBeFound("eventId.greaterThanOrEqual=" + UPDATED_EVENT_ID);
+    }
+
+    @Test
+    @Transactional
+    void getAllTransactionsByEventIdIsLessThanOrEqualToSomething() throws Exception {
+        // Initialize the database
+        transactionRepository.saveAndFlush(transaction);
+
+        // Get all the transactionList where eventId is less than or equal to DEFAULT_EVENT_ID
+        defaultTransactionShouldBeFound("eventId.lessThanOrEqual=" + DEFAULT_EVENT_ID);
+
+        // Get all the transactionList where eventId is less than or equal to SMALLER_EVENT_ID
+        defaultTransactionShouldNotBeFound("eventId.lessThanOrEqual=" + SMALLER_EVENT_ID);
+    }
+
+    @Test
+    @Transactional
+    void getAllTransactionsByEventIdIsLessThanSomething() throws Exception {
+        // Initialize the database
+        transactionRepository.saveAndFlush(transaction);
+
+        // Get all the transactionList where eventId is less than DEFAULT_EVENT_ID
+        defaultTransactionShouldNotBeFound("eventId.lessThan=" + DEFAULT_EVENT_ID);
+
+        // Get all the transactionList where eventId is less than UPDATED_EVENT_ID
+        defaultTransactionShouldBeFound("eventId.lessThan=" + UPDATED_EVENT_ID);
+    }
+
+    @Test
+    @Transactional
+    void getAllTransactionsByEventIdIsGreaterThanSomething() throws Exception {
+        // Initialize the database
+        transactionRepository.saveAndFlush(transaction);
+
+        // Get all the transactionList where eventId is greater than DEFAULT_EVENT_ID
+        defaultTransactionShouldNotBeFound("eventId.greaterThan=" + DEFAULT_EVENT_ID);
+
+        // Get all the transactionList where eventId is greater than SMALLER_EVENT_ID
+        defaultTransactionShouldBeFound("eventId.greaterThan=" + SMALLER_EVENT_ID);
+    }
+
+    @Test
+    @Transactional
+    void getAllTransactionsByReceiptIdIsEqualToSomething() throws Exception {
+        // Initialize the database
+        transactionRepository.saveAndFlush(transaction);
+
+        // Get all the transactionList where receiptId equals to DEFAULT_RECEIPT_ID
+        defaultTransactionShouldBeFound("receiptId.equals=" + DEFAULT_RECEIPT_ID);
+
+        // Get all the transactionList where receiptId equals to UPDATED_RECEIPT_ID
+        defaultTransactionShouldNotBeFound("receiptId.equals=" + UPDATED_RECEIPT_ID);
+    }
+
+    @Test
+    @Transactional
+    void getAllTransactionsByReceiptIdIsNotEqualToSomething() throws Exception {
+        // Initialize the database
+        transactionRepository.saveAndFlush(transaction);
+
+        // Get all the transactionList where receiptId not equals to DEFAULT_RECEIPT_ID
+        defaultTransactionShouldNotBeFound("receiptId.notEquals=" + DEFAULT_RECEIPT_ID);
+
+        // Get all the transactionList where receiptId not equals to UPDATED_RECEIPT_ID
+        defaultTransactionShouldBeFound("receiptId.notEquals=" + UPDATED_RECEIPT_ID);
+    }
+
+    @Test
+    @Transactional
+    void getAllTransactionsByReceiptIdIsInShouldWork() throws Exception {
+        // Initialize the database
+        transactionRepository.saveAndFlush(transaction);
+
+        // Get all the transactionList where receiptId in DEFAULT_RECEIPT_ID or UPDATED_RECEIPT_ID
+        defaultTransactionShouldBeFound("receiptId.in=" + DEFAULT_RECEIPT_ID + "," + UPDATED_RECEIPT_ID);
+
+        // Get all the transactionList where receiptId equals to UPDATED_RECEIPT_ID
+        defaultTransactionShouldNotBeFound("receiptId.in=" + UPDATED_RECEIPT_ID);
+    }
+
+    @Test
+    @Transactional
+    void getAllTransactionsByReceiptIdIsNullOrNotNull() throws Exception {
+        // Initialize the database
+        transactionRepository.saveAndFlush(transaction);
+
+        // Get all the transactionList where receiptId is not null
+        defaultTransactionShouldBeFound("receiptId.specified=true");
+
+        // Get all the transactionList where receiptId is null
+        defaultTransactionShouldNotBeFound("receiptId.specified=false");
+    }
+
+    @Test
+    @Transactional
+    void getAllTransactionsByReceiptIdIsGreaterThanOrEqualToSomething() throws Exception {
+        // Initialize the database
+        transactionRepository.saveAndFlush(transaction);
+
+        // Get all the transactionList where receiptId is greater than or equal to DEFAULT_RECEIPT_ID
+        defaultTransactionShouldBeFound("receiptId.greaterThanOrEqual=" + DEFAULT_RECEIPT_ID);
+
+        // Get all the transactionList where receiptId is greater than or equal to UPDATED_RECEIPT_ID
+        defaultTransactionShouldNotBeFound("receiptId.greaterThanOrEqual=" + UPDATED_RECEIPT_ID);
+    }
+
+    @Test
+    @Transactional
+    void getAllTransactionsByReceiptIdIsLessThanOrEqualToSomething() throws Exception {
+        // Initialize the database
+        transactionRepository.saveAndFlush(transaction);
+
+        // Get all the transactionList where receiptId is less than or equal to DEFAULT_RECEIPT_ID
+        defaultTransactionShouldBeFound("receiptId.lessThanOrEqual=" + DEFAULT_RECEIPT_ID);
+
+        // Get all the transactionList where receiptId is less than or equal to SMALLER_RECEIPT_ID
+        defaultTransactionShouldNotBeFound("receiptId.lessThanOrEqual=" + SMALLER_RECEIPT_ID);
+    }
+
+    @Test
+    @Transactional
+    void getAllTransactionsByReceiptIdIsLessThanSomething() throws Exception {
+        // Initialize the database
+        transactionRepository.saveAndFlush(transaction);
+
+        // Get all the transactionList where receiptId is less than DEFAULT_RECEIPT_ID
+        defaultTransactionShouldNotBeFound("receiptId.lessThan=" + DEFAULT_RECEIPT_ID);
+
+        // Get all the transactionList where receiptId is less than UPDATED_RECEIPT_ID
+        defaultTransactionShouldBeFound("receiptId.lessThan=" + UPDATED_RECEIPT_ID);
+    }
+
+    @Test
+    @Transactional
+    void getAllTransactionsByReceiptIdIsGreaterThanSomething() throws Exception {
+        // Initialize the database
+        transactionRepository.saveAndFlush(transaction);
+
+        // Get all the transactionList where receiptId is greater than DEFAULT_RECEIPT_ID
+        defaultTransactionShouldNotBeFound("receiptId.greaterThan=" + DEFAULT_RECEIPT_ID);
+
+        // Get all the transactionList where receiptId is greater than SMALLER_RECEIPT_ID
+        defaultTransactionShouldBeFound("receiptId.greaterThan=" + SMALLER_RECEIPT_ID);
+    }
+
+    @Test
+    @Transactional
+    void getAllTransactionsByTypeIsEqualToSomething() throws Exception {
+        // Initialize the database
+        transactionRepository.saveAndFlush(transaction);
+
+        // Get all the transactionList where type equals to DEFAULT_TYPE
+        defaultTransactionShouldBeFound("type.equals=" + DEFAULT_TYPE);
+
+        // Get all the transactionList where type equals to UPDATED_TYPE
+        defaultTransactionShouldNotBeFound("type.equals=" + UPDATED_TYPE);
+    }
+
+    @Test
+    @Transactional
+    void getAllTransactionsByTypeIsNotEqualToSomething() throws Exception {
+        // Initialize the database
+        transactionRepository.saveAndFlush(transaction);
+
+        // Get all the transactionList where type not equals to DEFAULT_TYPE
+        defaultTransactionShouldNotBeFound("type.notEquals=" + DEFAULT_TYPE);
+
+        // Get all the transactionList where type not equals to UPDATED_TYPE
+        defaultTransactionShouldBeFound("type.notEquals=" + UPDATED_TYPE);
+    }
+
+    @Test
+    @Transactional
+    void getAllTransactionsByTypeIsInShouldWork() throws Exception {
+        // Initialize the database
+        transactionRepository.saveAndFlush(transaction);
+
+        // Get all the transactionList where type in DEFAULT_TYPE or UPDATED_TYPE
+        defaultTransactionShouldBeFound("type.in=" + DEFAULT_TYPE + "," + UPDATED_TYPE);
+
+        // Get all the transactionList where type equals to UPDATED_TYPE
+        defaultTransactionShouldNotBeFound("type.in=" + UPDATED_TYPE);
+    }
+
+    @Test
+    @Transactional
+    void getAllTransactionsByTypeIsNullOrNotNull() throws Exception {
+        // Initialize the database
+        transactionRepository.saveAndFlush(transaction);
+
+        // Get all the transactionList where type is not null
+        defaultTransactionShouldBeFound("type.specified=true");
+
+        // Get all the transactionList where type is null
+        defaultTransactionShouldNotBeFound("type.specified=false");
+    }
+
+    @Test
+    @Transactional
+    void getAllTransactionsByAmountIsEqualToSomething() throws Exception {
+        // Initialize the database
+        transactionRepository.saveAndFlush(transaction);
+
+        // Get all the transactionList where amount equals to DEFAULT_AMOUNT
+        defaultTransactionShouldBeFound("amount.equals=" + DEFAULT_AMOUNT);
+
+        // Get all the transactionList where amount equals to UPDATED_AMOUNT
+        defaultTransactionShouldNotBeFound("amount.equals=" + UPDATED_AMOUNT);
+    }
+
+    @Test
+    @Transactional
+    void getAllTransactionsByAmountIsNotEqualToSomething() throws Exception {
+        // Initialize the database
+        transactionRepository.saveAndFlush(transaction);
+
+        // Get all the transactionList where amount not equals to DEFAULT_AMOUNT
+        defaultTransactionShouldNotBeFound("amount.notEquals=" + DEFAULT_AMOUNT);
+
+        // Get all the transactionList where amount not equals to UPDATED_AMOUNT
+        defaultTransactionShouldBeFound("amount.notEquals=" + UPDATED_AMOUNT);
+    }
+
+    @Test
+    @Transactional
+    void getAllTransactionsByAmountIsInShouldWork() throws Exception {
+        // Initialize the database
+        transactionRepository.saveAndFlush(transaction);
+
+        // Get all the transactionList where amount in DEFAULT_AMOUNT or UPDATED_AMOUNT
+        defaultTransactionShouldBeFound("amount.in=" + DEFAULT_AMOUNT + "," + UPDATED_AMOUNT);
+
+        // Get all the transactionList where amount equals to UPDATED_AMOUNT
+        defaultTransactionShouldNotBeFound("amount.in=" + UPDATED_AMOUNT);
+    }
+
+    @Test
+    @Transactional
+    void getAllTransactionsByAmountIsNullOrNotNull() throws Exception {
+        // Initialize the database
+        transactionRepository.saveAndFlush(transaction);
+
+        // Get all the transactionList where amount is not null
+        defaultTransactionShouldBeFound("amount.specified=true");
+
+        // Get all the transactionList where amount is null
+        defaultTransactionShouldNotBeFound("amount.specified=false");
+    }
+
+    @Test
+    @Transactional
+    void getAllTransactionsByAmountIsGreaterThanOrEqualToSomething() throws Exception {
+        // Initialize the database
+        transactionRepository.saveAndFlush(transaction);
+
+        // Get all the transactionList where amount is greater than or equal to DEFAULT_AMOUNT
+        defaultTransactionShouldBeFound("amount.greaterThanOrEqual=" + DEFAULT_AMOUNT);
+
+        // Get all the transactionList where amount is greater than or equal to UPDATED_AMOUNT
+        defaultTransactionShouldNotBeFound("amount.greaterThanOrEqual=" + UPDATED_AMOUNT);
+    }
+
+    @Test
+    @Transactional
+    void getAllTransactionsByAmountIsLessThanOrEqualToSomething() throws Exception {
+        // Initialize the database
+        transactionRepository.saveAndFlush(transaction);
+
+        // Get all the transactionList where amount is less than or equal to DEFAULT_AMOUNT
+        defaultTransactionShouldBeFound("amount.lessThanOrEqual=" + DEFAULT_AMOUNT);
+
+        // Get all the transactionList where amount is less than or equal to SMALLER_AMOUNT
+        defaultTransactionShouldNotBeFound("amount.lessThanOrEqual=" + SMALLER_AMOUNT);
+    }
+
+    @Test
+    @Transactional
+    void getAllTransactionsByAmountIsLessThanSomething() throws Exception {
+        // Initialize the database
+        transactionRepository.saveAndFlush(transaction);
+
+        // Get all the transactionList where amount is less than DEFAULT_AMOUNT
+        defaultTransactionShouldNotBeFound("amount.lessThan=" + DEFAULT_AMOUNT);
+
+        // Get all the transactionList where amount is less than UPDATED_AMOUNT
+        defaultTransactionShouldBeFound("amount.lessThan=" + UPDATED_AMOUNT);
+    }
+
+    @Test
+    @Transactional
+    void getAllTransactionsByAmountIsGreaterThanSomething() throws Exception {
+        // Initialize the database
+        transactionRepository.saveAndFlush(transaction);
+
+        // Get all the transactionList where amount is greater than DEFAULT_AMOUNT
+        defaultTransactionShouldNotBeFound("amount.greaterThan=" + DEFAULT_AMOUNT);
+
+        // Get all the transactionList where amount is greater than SMALLER_AMOUNT
+        defaultTransactionShouldBeFound("amount.greaterThan=" + SMALLER_AMOUNT);
+    }
+
+    @Test
+    @Transactional
+    void getAllTransactionsByDetailsIsEqualToSomething() throws Exception {
+        // Initialize the database
+        transactionRepository.saveAndFlush(transaction);
+
+        // Get all the transactionList where details equals to DEFAULT_DETAILS
+        defaultTransactionShouldBeFound("details.equals=" + DEFAULT_DETAILS);
+
+        // Get all the transactionList where details equals to UPDATED_DETAILS
+        defaultTransactionShouldNotBeFound("details.equals=" + UPDATED_DETAILS);
+    }
+
+    @Test
+    @Transactional
+    void getAllTransactionsByDetailsIsNotEqualToSomething() throws Exception {
+        // Initialize the database
+        transactionRepository.saveAndFlush(transaction);
+
+        // Get all the transactionList where details not equals to DEFAULT_DETAILS
+        defaultTransactionShouldNotBeFound("details.notEquals=" + DEFAULT_DETAILS);
+
+        // Get all the transactionList where details not equals to UPDATED_DETAILS
+        defaultTransactionShouldBeFound("details.notEquals=" + UPDATED_DETAILS);
+    }
+
+    @Test
+    @Transactional
+    void getAllTransactionsByDetailsIsInShouldWork() throws Exception {
+        // Initialize the database
+        transactionRepository.saveAndFlush(transaction);
+
+        // Get all the transactionList where details in DEFAULT_DETAILS or UPDATED_DETAILS
+        defaultTransactionShouldBeFound("details.in=" + DEFAULT_DETAILS + "," + UPDATED_DETAILS);
+
+        // Get all the transactionList where details equals to UPDATED_DETAILS
+        defaultTransactionShouldNotBeFound("details.in=" + UPDATED_DETAILS);
+    }
+
+    @Test
+    @Transactional
+    void getAllTransactionsByDetailsIsNullOrNotNull() throws Exception {
+        // Initialize the database
+        transactionRepository.saveAndFlush(transaction);
+
+        // Get all the transactionList where details is not null
+        defaultTransactionShouldBeFound("details.specified=true");
+
+        // Get all the transactionList where details is null
+        defaultTransactionShouldNotBeFound("details.specified=false");
+    }
+
+    @Test
+    @Transactional
+    void getAllTransactionsByDetailsContainsSomething() throws Exception {
+        // Initialize the database
+        transactionRepository.saveAndFlush(transaction);
+
+        // Get all the transactionList where details contains DEFAULT_DETAILS
+        defaultTransactionShouldBeFound("details.contains=" + DEFAULT_DETAILS);
+
+        // Get all the transactionList where details contains UPDATED_DETAILS
+        defaultTransactionShouldNotBeFound("details.contains=" + UPDATED_DETAILS);
+    }
+
+    @Test
+    @Transactional
+    void getAllTransactionsByDetailsNotContainsSomething() throws Exception {
+        // Initialize the database
+        transactionRepository.saveAndFlush(transaction);
+
+        // Get all the transactionList where details does not contain DEFAULT_DETAILS
+        defaultTransactionShouldNotBeFound("details.doesNotContain=" + DEFAULT_DETAILS);
+
+        // Get all the transactionList where details does not contain UPDATED_DETAILS
+        defaultTransactionShouldBeFound("details.doesNotContain=" + UPDATED_DETAILS);
+    }
+
+    @Test
+    @Transactional
+    void getAllTransactionsByCreatedByIsEqualToSomething() throws Exception {
+        // Initialize the database
+        transactionRepository.saveAndFlush(transaction);
+
+        // Get all the transactionList where createdBy equals to DEFAULT_CREATED_BY
+        defaultTransactionShouldBeFound("createdBy.equals=" + DEFAULT_CREATED_BY);
+
+        // Get all the transactionList where createdBy equals to UPDATED_CREATED_BY
+        defaultTransactionShouldNotBeFound("createdBy.equals=" + UPDATED_CREATED_BY);
+    }
+
+    @Test
+    @Transactional
+    void getAllTransactionsByCreatedByIsNotEqualToSomething() throws Exception {
+        // Initialize the database
+        transactionRepository.saveAndFlush(transaction);
+
+        // Get all the transactionList where createdBy not equals to DEFAULT_CREATED_BY
+        defaultTransactionShouldNotBeFound("createdBy.notEquals=" + DEFAULT_CREATED_BY);
+
+        // Get all the transactionList where createdBy not equals to UPDATED_CREATED_BY
+        defaultTransactionShouldBeFound("createdBy.notEquals=" + UPDATED_CREATED_BY);
+    }
+
+    @Test
+    @Transactional
+    void getAllTransactionsByCreatedByIsInShouldWork() throws Exception {
+        // Initialize the database
+        transactionRepository.saveAndFlush(transaction);
+
+        // Get all the transactionList where createdBy in DEFAULT_CREATED_BY or UPDATED_CREATED_BY
+        defaultTransactionShouldBeFound("createdBy.in=" + DEFAULT_CREATED_BY + "," + UPDATED_CREATED_BY);
+
+        // Get all the transactionList where createdBy equals to UPDATED_CREATED_BY
+        defaultTransactionShouldNotBeFound("createdBy.in=" + UPDATED_CREATED_BY);
+    }
+
+    @Test
+    @Transactional
+    void getAllTransactionsByCreatedByIsNullOrNotNull() throws Exception {
+        // Initialize the database
+        transactionRepository.saveAndFlush(transaction);
+
+        // Get all the transactionList where createdBy is not null
+        defaultTransactionShouldBeFound("createdBy.specified=true");
+
+        // Get all the transactionList where createdBy is null
+        defaultTransactionShouldNotBeFound("createdBy.specified=false");
+    }
+
+    @Test
+    @Transactional
+    void getAllTransactionsByCreatedByContainsSomething() throws Exception {
+        // Initialize the database
+        transactionRepository.saveAndFlush(transaction);
+
+        // Get all the transactionList where createdBy contains DEFAULT_CREATED_BY
+        defaultTransactionShouldBeFound("createdBy.contains=" + DEFAULT_CREATED_BY);
+
+        // Get all the transactionList where createdBy contains UPDATED_CREATED_BY
+        defaultTransactionShouldNotBeFound("createdBy.contains=" + UPDATED_CREATED_BY);
+    }
+
+    @Test
+    @Transactional
+    void getAllTransactionsByCreatedByNotContainsSomething() throws Exception {
+        // Initialize the database
+        transactionRepository.saveAndFlush(transaction);
+
+        // Get all the transactionList where createdBy does not contain DEFAULT_CREATED_BY
+        defaultTransactionShouldNotBeFound("createdBy.doesNotContain=" + DEFAULT_CREATED_BY);
+
+        // Get all the transactionList where createdBy does not contain UPDATED_CREATED_BY
+        defaultTransactionShouldBeFound("createdBy.doesNotContain=" + UPDATED_CREATED_BY);
+    }
+
+    @Test
+    @Transactional
+    void getAllTransactionsByCreatedDateIsEqualToSomething() throws Exception {
+        // Initialize the database
+        transactionRepository.saveAndFlush(transaction);
+
+        // Get all the transactionList where createdDate equals to DEFAULT_CREATED_DATE
+        defaultTransactionShouldBeFound("createdDate.equals=" + DEFAULT_CREATED_DATE);
+
+        // Get all the transactionList where createdDate equals to UPDATED_CREATED_DATE
+        defaultTransactionShouldNotBeFound("createdDate.equals=" + UPDATED_CREATED_DATE);
+    }
+
+    @Test
+    @Transactional
+    void getAllTransactionsByCreatedDateIsNotEqualToSomething() throws Exception {
+        // Initialize the database
+        transactionRepository.saveAndFlush(transaction);
+
+        // Get all the transactionList where createdDate not equals to DEFAULT_CREATED_DATE
+        defaultTransactionShouldNotBeFound("createdDate.notEquals=" + DEFAULT_CREATED_DATE);
+
+        // Get all the transactionList where createdDate not equals to UPDATED_CREATED_DATE
+        defaultTransactionShouldBeFound("createdDate.notEquals=" + UPDATED_CREATED_DATE);
+    }
+
+    @Test
+    @Transactional
+    void getAllTransactionsByCreatedDateIsInShouldWork() throws Exception {
+        // Initialize the database
+        transactionRepository.saveAndFlush(transaction);
+
+        // Get all the transactionList where createdDate in DEFAULT_CREATED_DATE or UPDATED_CREATED_DATE
+        defaultTransactionShouldBeFound("createdDate.in=" + DEFAULT_CREATED_DATE + "," + UPDATED_CREATED_DATE);
+
+        // Get all the transactionList where createdDate equals to UPDATED_CREATED_DATE
+        defaultTransactionShouldNotBeFound("createdDate.in=" + UPDATED_CREATED_DATE);
+    }
+
+    @Test
+    @Transactional
+    void getAllTransactionsByCreatedDateIsNullOrNotNull() throws Exception {
+        // Initialize the database
+        transactionRepository.saveAndFlush(transaction);
+
+        // Get all the transactionList where createdDate is not null
+        defaultTransactionShouldBeFound("createdDate.specified=true");
+
+        // Get all the transactionList where createdDate is null
+        defaultTransactionShouldNotBeFound("createdDate.specified=false");
+    }
+
+    @Test
+    @Transactional
+    void getAllTransactionsByLastModifiedByIsEqualToSomething() throws Exception {
+        // Initialize the database
+        transactionRepository.saveAndFlush(transaction);
+
+        // Get all the transactionList where lastModifiedBy equals to DEFAULT_LAST_MODIFIED_BY
+        defaultTransactionShouldBeFound("lastModifiedBy.equals=" + DEFAULT_LAST_MODIFIED_BY);
+
+        // Get all the transactionList where lastModifiedBy equals to UPDATED_LAST_MODIFIED_BY
+        defaultTransactionShouldNotBeFound("lastModifiedBy.equals=" + UPDATED_LAST_MODIFIED_BY);
+    }
+
+    @Test
+    @Transactional
+    void getAllTransactionsByLastModifiedByIsNotEqualToSomething() throws Exception {
+        // Initialize the database
+        transactionRepository.saveAndFlush(transaction);
+
+        // Get all the transactionList where lastModifiedBy not equals to DEFAULT_LAST_MODIFIED_BY
+        defaultTransactionShouldNotBeFound("lastModifiedBy.notEquals=" + DEFAULT_LAST_MODIFIED_BY);
+
+        // Get all the transactionList where lastModifiedBy not equals to UPDATED_LAST_MODIFIED_BY
+        defaultTransactionShouldBeFound("lastModifiedBy.notEquals=" + UPDATED_LAST_MODIFIED_BY);
+    }
+
+    @Test
+    @Transactional
+    void getAllTransactionsByLastModifiedByIsInShouldWork() throws Exception {
+        // Initialize the database
+        transactionRepository.saveAndFlush(transaction);
+
+        // Get all the transactionList where lastModifiedBy in DEFAULT_LAST_MODIFIED_BY or UPDATED_LAST_MODIFIED_BY
+        defaultTransactionShouldBeFound("lastModifiedBy.in=" + DEFAULT_LAST_MODIFIED_BY + "," + UPDATED_LAST_MODIFIED_BY);
+
+        // Get all the transactionList where lastModifiedBy equals to UPDATED_LAST_MODIFIED_BY
+        defaultTransactionShouldNotBeFound("lastModifiedBy.in=" + UPDATED_LAST_MODIFIED_BY);
+    }
+
+    @Test
+    @Transactional
+    void getAllTransactionsByLastModifiedByIsNullOrNotNull() throws Exception {
+        // Initialize the database
+        transactionRepository.saveAndFlush(transaction);
+
+        // Get all the transactionList where lastModifiedBy is not null
+        defaultTransactionShouldBeFound("lastModifiedBy.specified=true");
+
+        // Get all the transactionList where lastModifiedBy is null
+        defaultTransactionShouldNotBeFound("lastModifiedBy.specified=false");
+    }
+
+    @Test
+    @Transactional
+    void getAllTransactionsByLastModifiedByContainsSomething() throws Exception {
+        // Initialize the database
+        transactionRepository.saveAndFlush(transaction);
+
+        // Get all the transactionList where lastModifiedBy contains DEFAULT_LAST_MODIFIED_BY
+        defaultTransactionShouldBeFound("lastModifiedBy.contains=" + DEFAULT_LAST_MODIFIED_BY);
+
+        // Get all the transactionList where lastModifiedBy contains UPDATED_LAST_MODIFIED_BY
+        defaultTransactionShouldNotBeFound("lastModifiedBy.contains=" + UPDATED_LAST_MODIFIED_BY);
+    }
+
+    @Test
+    @Transactional
+    void getAllTransactionsByLastModifiedByNotContainsSomething() throws Exception {
+        // Initialize the database
+        transactionRepository.saveAndFlush(transaction);
+
+        // Get all the transactionList where lastModifiedBy does not contain DEFAULT_LAST_MODIFIED_BY
+        defaultTransactionShouldNotBeFound("lastModifiedBy.doesNotContain=" + DEFAULT_LAST_MODIFIED_BY);
+
+        // Get all the transactionList where lastModifiedBy does not contain UPDATED_LAST_MODIFIED_BY
+        defaultTransactionShouldBeFound("lastModifiedBy.doesNotContain=" + UPDATED_LAST_MODIFIED_BY);
+    }
+
+    @Test
+    @Transactional
+    void getAllTransactionsByLastModifiedDateIsEqualToSomething() throws Exception {
+        // Initialize the database
+        transactionRepository.saveAndFlush(transaction);
+
+        // Get all the transactionList where lastModifiedDate equals to DEFAULT_LAST_MODIFIED_DATE
+        defaultTransactionShouldBeFound("lastModifiedDate.equals=" + DEFAULT_LAST_MODIFIED_DATE);
+
+        // Get all the transactionList where lastModifiedDate equals to UPDATED_LAST_MODIFIED_DATE
+        defaultTransactionShouldNotBeFound("lastModifiedDate.equals=" + UPDATED_LAST_MODIFIED_DATE);
+    }
+
+    @Test
+    @Transactional
+    void getAllTransactionsByLastModifiedDateIsNotEqualToSomething() throws Exception {
+        // Initialize the database
+        transactionRepository.saveAndFlush(transaction);
+
+        // Get all the transactionList where lastModifiedDate not equals to DEFAULT_LAST_MODIFIED_DATE
+        defaultTransactionShouldNotBeFound("lastModifiedDate.notEquals=" + DEFAULT_LAST_MODIFIED_DATE);
+
+        // Get all the transactionList where lastModifiedDate not equals to UPDATED_LAST_MODIFIED_DATE
+        defaultTransactionShouldBeFound("lastModifiedDate.notEquals=" + UPDATED_LAST_MODIFIED_DATE);
+    }
+
+    @Test
+    @Transactional
+    void getAllTransactionsByLastModifiedDateIsInShouldWork() throws Exception {
+        // Initialize the database
+        transactionRepository.saveAndFlush(transaction);
+
+        // Get all the transactionList where lastModifiedDate in DEFAULT_LAST_MODIFIED_DATE or UPDATED_LAST_MODIFIED_DATE
+        defaultTransactionShouldBeFound("lastModifiedDate.in=" + DEFAULT_LAST_MODIFIED_DATE + "," + UPDATED_LAST_MODIFIED_DATE);
+
+        // Get all the transactionList where lastModifiedDate equals to UPDATED_LAST_MODIFIED_DATE
+        defaultTransactionShouldNotBeFound("lastModifiedDate.in=" + UPDATED_LAST_MODIFIED_DATE);
+    }
+
+    @Test
+    @Transactional
+    void getAllTransactionsByLastModifiedDateIsNullOrNotNull() throws Exception {
+        // Initialize the database
+        transactionRepository.saveAndFlush(transaction);
+
+        // Get all the transactionList where lastModifiedDate is not null
+        defaultTransactionShouldBeFound("lastModifiedDate.specified=true");
+
+        // Get all the transactionList where lastModifiedDate is null
+        defaultTransactionShouldNotBeFound("lastModifiedDate.specified=false");
+    }
+
+    /**
+     * Executes the search, and checks that the default entity is returned.
+     */
+    private void defaultTransactionShouldBeFound(String filter) throws Exception {
+        restTransactionMockMvc
+            .perform(get(ENTITY_API_URL + "?sort=id,desc&" + filter))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(jsonPath("$.[*].id").value(hasItem(transaction.getId().intValue())))
+            .andExpect(jsonPath("$.[*].eventId").value(hasItem(DEFAULT_EVENT_ID.intValue())))
+            .andExpect(jsonPath("$.[*].receiptId").value(hasItem(DEFAULT_RECEIPT_ID.intValue())))
+            .andExpect(jsonPath("$.[*].type").value(hasItem(DEFAULT_TYPE.toString())))
+            .andExpect(jsonPath("$.[*].amount").value(hasItem(sameNumber(DEFAULT_AMOUNT))))
+            .andExpect(jsonPath("$.[*].details").value(hasItem(DEFAULT_DETAILS)))
+            .andExpect(jsonPath("$.[*].createdBy").value(hasItem(DEFAULT_CREATED_BY)))
+            .andExpect(jsonPath("$.[*].createdDate").value(hasItem(DEFAULT_CREATED_DATE.toString())))
+            .andExpect(jsonPath("$.[*].lastModifiedBy").value(hasItem(DEFAULT_LAST_MODIFIED_BY)))
+            .andExpect(jsonPath("$.[*].lastModifiedDate").value(hasItem(DEFAULT_LAST_MODIFIED_DATE.toString())));
+
+        // Check, that the count call also returns 1
+        restTransactionMockMvc
+            .perform(get(ENTITY_API_URL + "/count?sort=id,desc&" + filter))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(content().string("1"));
+    }
+
+    /**
+     * Executes the search, and checks that the default entity is not returned.
+     */
+    private void defaultTransactionShouldNotBeFound(String filter) throws Exception {
+        restTransactionMockMvc
+            .perform(get(ENTITY_API_URL + "?sort=id,desc&" + filter))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(jsonPath("$").isArray())
+            .andExpect(jsonPath("$").isEmpty());
+
+        // Check, that the count call also returns 0
+        restTransactionMockMvc
+            .perform(get(ENTITY_API_URL + "/count?sort=id,desc&" + filter))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(content().string("0"));
     }
 
     @Test

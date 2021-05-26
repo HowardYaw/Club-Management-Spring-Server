@@ -34,6 +34,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WithMockUser(value = "user")
 public class ReceiptResourceIT {
 
+    private static final String ENTITY_API_URL = "/api/receipts";
+
     private static final String DEFAULT_RECEIPT_URL = "AAAAAAAAAA";
     private static final String UPDATED_RECEIPT_URL = "BBBBBBBBBB";
 
@@ -141,18 +143,294 @@ public class ReceiptResourceIT {
 
     @Test
     @Transactional
-    public void getAllReceipts() throws Exception {
+    void getReceiptsByIdFiltering() throws Exception {
         // Initialize the database
         receiptRepository.saveAndFlush(receipt);
 
-        // Get all the receiptList
-        restReceiptMockMvc.perform(get("/api/receipts?sort=id,desc"))
+        Long id = receipt.getId();
+
+        defaultReceiptShouldBeFound("id.equals=" + id);
+        defaultReceiptShouldNotBeFound("id.notEquals=" + id);
+
+        defaultReceiptShouldBeFound("id.greaterThanOrEqual=" + id);
+        defaultReceiptShouldNotBeFound("id.greaterThan=" + id);
+
+        defaultReceiptShouldBeFound("id.lessThanOrEqual=" + id);
+        defaultReceiptShouldNotBeFound("id.lessThan=" + id);
+    }
+
+    @Test
+    @Transactional
+    void getAllReceiptsByReceiptUrlIsEqualToSomething() throws Exception {
+        // Initialize the database
+        receiptRepository.saveAndFlush(receipt);
+
+        // Get all the receiptList where receiptUrl equals to DEFAULT_RECEIPT_URL
+        defaultReceiptShouldBeFound("receiptUrl.equals=" + DEFAULT_RECEIPT_URL);
+
+        // Get all the receiptList where receiptUrl equals to UPDATED_RECEIPT_URL
+        defaultReceiptShouldNotBeFound("receiptUrl.equals=" + UPDATED_RECEIPT_URL);
+    }
+
+    @Test
+    @Transactional
+    void getAllReceiptsByReceiptUrlIsNotEqualToSomething() throws Exception {
+        // Initialize the database
+        receiptRepository.saveAndFlush(receipt);
+
+        // Get all the receiptList where receiptUrl not equals to DEFAULT_RECEIPT_URL
+        defaultReceiptShouldNotBeFound("receiptUrl.notEquals=" + DEFAULT_RECEIPT_URL);
+
+        // Get all the receiptList where receiptUrl not equals to UPDATED_RECEIPT_URL
+        defaultReceiptShouldBeFound("receiptUrl.notEquals=" + UPDATED_RECEIPT_URL);
+    }
+
+    @Test
+    @Transactional
+    void getAllReceiptsByReceiptUrlIsInShouldWork() throws Exception {
+        // Initialize the database
+        receiptRepository.saveAndFlush(receipt);
+
+        // Get all the receiptList where receiptUrl in DEFAULT_RECEIPT_URL or UPDATED_RECEIPT_URL
+        defaultReceiptShouldBeFound("receiptUrl.in=" + DEFAULT_RECEIPT_URL + "," + UPDATED_RECEIPT_URL);
+
+        // Get all the receiptList where receiptUrl equals to UPDATED_RECEIPT_URL
+        defaultReceiptShouldNotBeFound("receiptUrl.in=" + UPDATED_RECEIPT_URL);
+    }
+
+    @Test
+    @Transactional
+    void getAllReceiptsByReceiptUrlIsNullOrNotNull() throws Exception {
+        // Initialize the database
+        receiptRepository.saveAndFlush(receipt);
+
+        // Get all the receiptList where receiptUrl is not null
+        defaultReceiptShouldBeFound("receiptUrl.specified=true");
+
+        // Get all the receiptList where receiptUrl is null
+        defaultReceiptShouldNotBeFound("receiptUrl.specified=false");
+    }
+
+    @Test
+    @Transactional
+    void getAllReceiptsByReceiptUrlContainsSomething() throws Exception {
+        // Initialize the database
+        receiptRepository.saveAndFlush(receipt);
+
+        // Get all the receiptList where receiptUrl contains DEFAULT_RECEIPT_URL
+        defaultReceiptShouldBeFound("receiptUrl.contains=" + DEFAULT_RECEIPT_URL);
+
+        // Get all the receiptList where receiptUrl contains UPDATED_RECEIPT_URL
+        defaultReceiptShouldNotBeFound("receiptUrl.contains=" + UPDATED_RECEIPT_URL);
+    }
+
+    @Test
+    @Transactional
+    void getAllReceiptsByReceiptUrlNotContainsSomething() throws Exception {
+        // Initialize the database
+        receiptRepository.saveAndFlush(receipt);
+
+        // Get all the receiptList where receiptUrl does not contain DEFAULT_RECEIPT_URL
+        defaultReceiptShouldNotBeFound("receiptUrl.doesNotContain=" + DEFAULT_RECEIPT_URL);
+
+        // Get all the receiptList where receiptUrl does not contain UPDATED_RECEIPT_URL
+        defaultReceiptShouldBeFound("receiptUrl.doesNotContain=" + UPDATED_RECEIPT_URL);
+    }
+
+    @Test
+    @Transactional
+    void getAllReceiptsByFileNameIsEqualToSomething() throws Exception {
+        // Initialize the database
+        receiptRepository.saveAndFlush(receipt);
+
+        // Get all the receiptList where fileName equals to DEFAULT_FILE_NAME
+        defaultReceiptShouldBeFound("fileName.equals=" + DEFAULT_FILE_NAME);
+
+        // Get all the receiptList where fileName equals to UPDATED_FILE_NAME
+        defaultReceiptShouldNotBeFound("fileName.equals=" + UPDATED_FILE_NAME);
+    }
+
+    @Test
+    @Transactional
+    void getAllReceiptsByFileNameIsNotEqualToSomething() throws Exception {
+        // Initialize the database
+        receiptRepository.saveAndFlush(receipt);
+
+        // Get all the receiptList where fileName not equals to DEFAULT_FILE_NAME
+        defaultReceiptShouldNotBeFound("fileName.notEquals=" + DEFAULT_FILE_NAME);
+
+        // Get all the receiptList where fileName not equals to UPDATED_FILE_NAME
+        defaultReceiptShouldBeFound("fileName.notEquals=" + UPDATED_FILE_NAME);
+    }
+
+    @Test
+    @Transactional
+    void getAllReceiptsByFileNameIsInShouldWork() throws Exception {
+        // Initialize the database
+        receiptRepository.saveAndFlush(receipt);
+
+        // Get all the receiptList where fileName in DEFAULT_FILE_NAME or UPDATED_FILE_NAME
+        defaultReceiptShouldBeFound("fileName.in=" + DEFAULT_FILE_NAME + "," + UPDATED_FILE_NAME);
+
+        // Get all the receiptList where fileName equals to UPDATED_FILE_NAME
+        defaultReceiptShouldNotBeFound("fileName.in=" + UPDATED_FILE_NAME);
+    }
+
+    @Test
+    @Transactional
+    void getAllReceiptsByFileNameIsNullOrNotNull() throws Exception {
+        // Initialize the database
+        receiptRepository.saveAndFlush(receipt);
+
+        // Get all the receiptList where fileName is not null
+        defaultReceiptShouldBeFound("fileName.specified=true");
+
+        // Get all the receiptList where fileName is null
+        defaultReceiptShouldNotBeFound("fileName.specified=false");
+    }
+
+    @Test
+    @Transactional
+    void getAllReceiptsByFileNameContainsSomething() throws Exception {
+        // Initialize the database
+        receiptRepository.saveAndFlush(receipt);
+
+        // Get all the receiptList where fileName contains DEFAULT_FILE_NAME
+        defaultReceiptShouldBeFound("fileName.contains=" + DEFAULT_FILE_NAME);
+
+        // Get all the receiptList where fileName contains UPDATED_FILE_NAME
+        defaultReceiptShouldNotBeFound("fileName.contains=" + UPDATED_FILE_NAME);
+    }
+
+    @Test
+    @Transactional
+    void getAllReceiptsByFileNameNotContainsSomething() throws Exception {
+        // Initialize the database
+        receiptRepository.saveAndFlush(receipt);
+
+        // Get all the receiptList where fileName does not contain DEFAULT_FILE_NAME
+        defaultReceiptShouldNotBeFound("fileName.doesNotContain=" + DEFAULT_FILE_NAME);
+
+        // Get all the receiptList where fileName does not contain UPDATED_FILE_NAME
+        defaultReceiptShouldBeFound("fileName.doesNotContain=" + UPDATED_FILE_NAME);
+    }
+
+    @Test
+    @Transactional
+    void getAllReceiptsByFileTypeIsEqualToSomething() throws Exception {
+        // Initialize the database
+        receiptRepository.saveAndFlush(receipt);
+
+        // Get all the receiptList where fileType equals to DEFAULT_FILE_TYPE
+        defaultReceiptShouldBeFound("fileType.equals=" + DEFAULT_FILE_TYPE);
+
+        // Get all the receiptList where fileType equals to UPDATED_FILE_TYPE
+        defaultReceiptShouldNotBeFound("fileType.equals=" + UPDATED_FILE_TYPE);
+    }
+
+    @Test
+    @Transactional
+    void getAllReceiptsByFileTypeIsNotEqualToSomething() throws Exception {
+        // Initialize the database
+        receiptRepository.saveAndFlush(receipt);
+
+        // Get all the receiptList where fileType not equals to DEFAULT_FILE_TYPE
+        defaultReceiptShouldNotBeFound("fileType.notEquals=" + DEFAULT_FILE_TYPE);
+
+        // Get all the receiptList where fileType not equals to UPDATED_FILE_TYPE
+        defaultReceiptShouldBeFound("fileType.notEquals=" + UPDATED_FILE_TYPE);
+    }
+
+    @Test
+    @Transactional
+    void getAllReceiptsByFileTypeIsInShouldWork() throws Exception {
+        // Initialize the database
+        receiptRepository.saveAndFlush(receipt);
+
+        // Get all the receiptList where fileType in DEFAULT_FILE_TYPE or UPDATED_FILE_TYPE
+        defaultReceiptShouldBeFound("fileType.in=" + DEFAULT_FILE_TYPE + "," + UPDATED_FILE_TYPE);
+
+        // Get all the receiptList where fileType equals to UPDATED_FILE_TYPE
+        defaultReceiptShouldNotBeFound("fileType.in=" + UPDATED_FILE_TYPE);
+    }
+
+    @Test
+    @Transactional
+    void getAllReceiptsByFileTypeIsNullOrNotNull() throws Exception {
+        // Initialize the database
+        receiptRepository.saveAndFlush(receipt);
+
+        // Get all the receiptList where fileType is not null
+        defaultReceiptShouldBeFound("fileType.specified=true");
+
+        // Get all the receiptList where fileType is null
+        defaultReceiptShouldNotBeFound("fileType.specified=false");
+    }
+
+    @Test
+    @Transactional
+    void getAllReceiptsByFileTypeContainsSomething() throws Exception {
+        // Initialize the database
+        receiptRepository.saveAndFlush(receipt);
+
+        // Get all the receiptList where fileType contains DEFAULT_FILE_TYPE
+        defaultReceiptShouldBeFound("fileType.contains=" + DEFAULT_FILE_TYPE);
+
+        // Get all the receiptList where fileType contains UPDATED_FILE_TYPE
+        defaultReceiptShouldNotBeFound("fileType.contains=" + UPDATED_FILE_TYPE);
+    }
+
+    @Test
+    @Transactional
+    void getAllReceiptsByFileTypeNotContainsSomething() throws Exception {
+        // Initialize the database
+        receiptRepository.saveAndFlush(receipt);
+
+        // Get all the receiptList where fileType does not contain DEFAULT_FILE_TYPE
+        defaultReceiptShouldNotBeFound("fileType.doesNotContain=" + DEFAULT_FILE_TYPE);
+
+        // Get all the receiptList where fileType does not contain UPDATED_FILE_TYPE
+        defaultReceiptShouldBeFound("fileType.doesNotContain=" + UPDATED_FILE_TYPE);
+    }
+
+    /**
+     * Executes the search, and checks that the default entity is returned.
+     */
+    private void defaultReceiptShouldBeFound(String filter) throws Exception {
+        restReceiptMockMvc
+            .perform(get(ENTITY_API_URL + "?sort=id,desc&" + filter))
             .andExpect(status().isOk())
-            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
             .andExpect(jsonPath("$.[*].id").value(hasItem(receipt.getId().intValue())))
-            .andExpect(jsonPath("$.[*].receiptUrl").value(hasItem(DEFAULT_RECEIPT_URL.toString())))
-            .andExpect(jsonPath("$.[*].fileName").value(hasItem(DEFAULT_FILE_NAME.toString())))
-            .andExpect(jsonPath("$.[*].fileType").value(hasItem(DEFAULT_FILE_TYPE.toString())));
+            .andExpect(jsonPath("$.[*].receiptUrl").value(hasItem(DEFAULT_RECEIPT_URL)))
+            .andExpect(jsonPath("$.[*].fileName").value(hasItem(DEFAULT_FILE_NAME)))
+            .andExpect(jsonPath("$.[*].fileType").value(hasItem(DEFAULT_FILE_TYPE)));
+
+        // Check, that the count call also returns 1
+        restReceiptMockMvc
+            .perform(get(ENTITY_API_URL + "/count?sort=id,desc&" + filter))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(content().string("1"));
+    }
+
+    /**
+     * Executes the search, and checks that the default entity is not returned.
+     */
+    private void defaultReceiptShouldNotBeFound(String filter) throws Exception {
+        restReceiptMockMvc
+            .perform(get(ENTITY_API_URL + "?sort=id,desc&" + filter))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(jsonPath("$").isArray())
+            .andExpect(jsonPath("$").isEmpty());
+
+        // Check, that the count call also returns 0
+        restReceiptMockMvc
+            .perform(get(ENTITY_API_URL + "/count?sort=id,desc&" + filter))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(content().string("0"));
     }
 
     @Test

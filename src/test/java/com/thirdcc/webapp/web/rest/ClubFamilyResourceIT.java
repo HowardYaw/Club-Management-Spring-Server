@@ -3,6 +3,7 @@ package com.thirdcc.webapp.web.rest;
 import com.thirdcc.webapp.ClubmanagementApp;
 import com.thirdcc.webapp.domain.ClubFamily;
 import com.thirdcc.webapp.repository.ClubFamilyRepository;
+import com.thirdcc.webapp.service.ClubFamilyQueryService;
 import com.thirdcc.webapp.service.ClubFamilyService;
 import com.thirdcc.webapp.service.dto.ClubFamilyDTO;
 import com.thirdcc.webapp.service.mapper.ClubFamilyMapper;
@@ -34,6 +35,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WithMockUser(value = "user")
 public class ClubFamilyResourceIT {
 
+    private static final String ENTITY_API_URL = "/api/club-families";
+
     private static final String DEFAULT_NAME = "AAAAAAAAAA";
     private static final String UPDATED_NAME = "BBBBBBBBBB";
 
@@ -50,6 +53,9 @@ public class ClubFamilyResourceIT {
     private ClubFamilyService clubFamilyService;
 
     @Autowired
+    private ClubFamilyQueryService clubFamilyQueryService;
+
+    @Autowired
     private EntityManager em;
 
     @Autowired
@@ -60,7 +66,7 @@ public class ClubFamilyResourceIT {
     @BeforeEach
     public void setup() {
         MockitoAnnotations.initMocks(this);
-        final ClubFamilyResource clubFamilyResource = new ClubFamilyResource(clubFamilyService);
+        final ClubFamilyResource clubFamilyResource = new ClubFamilyResource(clubFamilyService, clubFamilyQueryService);
     }
 
     /**
@@ -136,17 +142,153 @@ public class ClubFamilyResourceIT {
 
     @Test
     @Transactional
-    public void getAllClubFamilies() throws Exception {
+    void getAllClubFamilies() throws Exception {
         // Initialize the database
         clubFamilyRepository.saveAndFlush(clubFamily);
 
         // Get all the clubFamilyList
-        restClubFamilyMockMvc.perform(get("/api/club-families?sort=id,desc"))
+        restClubFamilyMockMvc
+            .perform(get(ENTITY_API_URL + "?sort=id,desc"))
             .andExpect(status().isOk())
-            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
             .andExpect(jsonPath("$.[*].id").value(hasItem(clubFamily.getId().intValue())))
-            .andExpect(jsonPath("$.[*].name").value(hasItem(DEFAULT_NAME.toString())))
+            .andExpect(jsonPath("$.[*].name").value(hasItem(DEFAULT_NAME)))
             .andExpect(jsonPath("$.[*].slogan").value(hasItem(DEFAULT_SLOGAN.toString())));
+    }
+
+    @Test
+    @Transactional
+    void getClubFamiliesByIdFiltering() throws Exception {
+        // Initialize the database
+        clubFamilyRepository.saveAndFlush(clubFamily);
+
+        Long id = clubFamily.getId();
+
+        defaultClubFamilyShouldBeFound("id.equals=" + id);
+        defaultClubFamilyShouldNotBeFound("id.notEquals=" + id);
+
+        defaultClubFamilyShouldBeFound("id.greaterThanOrEqual=" + id);
+        defaultClubFamilyShouldNotBeFound("id.greaterThan=" + id);
+
+        defaultClubFamilyShouldBeFound("id.lessThanOrEqual=" + id);
+        defaultClubFamilyShouldNotBeFound("id.lessThan=" + id);
+    }
+
+    @Test
+    @Transactional
+    void getAllClubFamiliesByNameIsEqualToSomething() throws Exception {
+        // Initialize the database
+        clubFamilyRepository.saveAndFlush(clubFamily);
+
+        // Get all the clubFamilyList where name equals to DEFAULT_NAME
+        defaultClubFamilyShouldBeFound("name.equals=" + DEFAULT_NAME);
+
+        // Get all the clubFamilyList where name equals to UPDATED_NAME
+        defaultClubFamilyShouldNotBeFound("name.equals=" + UPDATED_NAME);
+    }
+
+    @Test
+    @Transactional
+    void getAllClubFamiliesByNameIsNotEqualToSomething() throws Exception {
+        // Initialize the database
+        clubFamilyRepository.saveAndFlush(clubFamily);
+
+        // Get all the clubFamilyList where name not equals to DEFAULT_NAME
+        defaultClubFamilyShouldNotBeFound("name.notEquals=" + DEFAULT_NAME);
+
+        // Get all the clubFamilyList where name not equals to UPDATED_NAME
+        defaultClubFamilyShouldBeFound("name.notEquals=" + UPDATED_NAME);
+    }
+
+    @Test
+    @Transactional
+    void getAllClubFamiliesByNameIsInShouldWork() throws Exception {
+        // Initialize the database
+        clubFamilyRepository.saveAndFlush(clubFamily);
+
+        // Get all the clubFamilyList where name in DEFAULT_NAME or UPDATED_NAME
+        defaultClubFamilyShouldBeFound("name.in=" + DEFAULT_NAME + "," + UPDATED_NAME);
+
+        // Get all the clubFamilyList where name equals to UPDATED_NAME
+        defaultClubFamilyShouldNotBeFound("name.in=" + UPDATED_NAME);
+    }
+
+    @Test
+    @Transactional
+    void getAllClubFamiliesByNameIsNullOrNotNull() throws Exception {
+        // Initialize the database
+        clubFamilyRepository.saveAndFlush(clubFamily);
+
+        // Get all the clubFamilyList where name is not null
+        defaultClubFamilyShouldBeFound("name.specified=true");
+
+        // Get all the clubFamilyList where name is null
+        defaultClubFamilyShouldNotBeFound("name.specified=false");
+    }
+
+    @Test
+    @Transactional
+    void getAllClubFamiliesByNameContainsSomething() throws Exception {
+        // Initialize the database
+        clubFamilyRepository.saveAndFlush(clubFamily);
+
+        // Get all the clubFamilyList where name contains DEFAULT_NAME
+        defaultClubFamilyShouldBeFound("name.contains=" + DEFAULT_NAME);
+
+        // Get all the clubFamilyList where name contains UPDATED_NAME
+        defaultClubFamilyShouldNotBeFound("name.contains=" + UPDATED_NAME);
+    }
+
+    @Test
+    @Transactional
+    void getAllClubFamiliesByNameNotContainsSomething() throws Exception {
+        // Initialize the database
+        clubFamilyRepository.saveAndFlush(clubFamily);
+
+        // Get all the clubFamilyList where name does not contain DEFAULT_NAME
+        defaultClubFamilyShouldNotBeFound("name.doesNotContain=" + DEFAULT_NAME);
+
+        // Get all the clubFamilyList where name does not contain UPDATED_NAME
+        defaultClubFamilyShouldBeFound("name.doesNotContain=" + UPDATED_NAME);
+    }
+
+    /**
+     * Executes the search, and checks that the default entity is returned.
+     */
+    private void defaultClubFamilyShouldBeFound(String filter) throws Exception {
+        restClubFamilyMockMvc
+            .perform(get(ENTITY_API_URL + "?sort=id,desc&" + filter))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(jsonPath("$.[*].id").value(hasItem(clubFamily.getId().intValue())))
+            .andExpect(jsonPath("$.[*].name").value(hasItem(DEFAULT_NAME)))
+            .andExpect(jsonPath("$.[*].slogan").value(hasItem(DEFAULT_SLOGAN.toString())));
+
+        // Check, that the count call also returns 1
+        restClubFamilyMockMvc
+            .perform(get(ENTITY_API_URL + "/count?sort=id,desc&" + filter))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(content().string("1"));
+    }
+
+    /**
+     * Executes the search, and checks that the default entity is not returned.
+     */
+    private void defaultClubFamilyShouldNotBeFound(String filter) throws Exception {
+        restClubFamilyMockMvc
+            .perform(get(ENTITY_API_URL + "?sort=id,desc&" + filter))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(jsonPath("$").isArray())
+            .andExpect(jsonPath("$").isEmpty());
+
+        // Check, that the count call also returns 0
+        restClubFamilyMockMvc
+            .perform(get(ENTITY_API_URL + "/count?sort=id,desc&" + filter))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(content().string("0"));
     }
 
     @Test

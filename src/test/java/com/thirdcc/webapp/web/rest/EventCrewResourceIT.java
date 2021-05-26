@@ -43,6 +43,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import com.thirdcc.webapp.domain.enumeration.EventCrewRole;
+
 /**
  * Integration tests for the {@Link EventCrewResource} REST controller.
  */
@@ -51,10 +52,14 @@ import com.thirdcc.webapp.domain.enumeration.EventCrewRole;
 @InitYearSession
 public class EventCrewResourceIT {
 
+    private static final String ENTITY_API_URL = "/api/event-crews";
+
     private static final Long DEFAULT_USER_ID = 1L;
+    private static final Long SMALLER_USER_ID = DEFAULT_USER_ID - 1L;
     private static final Long UPDATED_USER_ID = 2L;
 
     private static final Long DEFAULT_EVENT_ID = 1L;
+    private static final Long SMALLER_EVENT_ID = DEFAULT_EVENT_ID - 1L;
     private static final Long UPDATED_EVENT_ID = 2L;
 
     private static final EventCrewRole DEFAULT_ROLE = EventCrewRole.HEAD;
@@ -100,7 +105,7 @@ public class EventCrewResourceIT {
 
     /**
      * Create an entity for this test.
-     *
+     * <p>
      * This is a static method, as tests for other entities might also need it,
      * if they test an entity which requires the current entity.
      */
@@ -134,7 +139,7 @@ public class EventCrewResourceIT {
 
     /**
      * Create an updated entity for this test.
-     *
+     * <p>
      * This is a static method, as tests for other entities might also need it,
      * if they test an entity which requires the current entity.
      */
@@ -240,6 +245,325 @@ public class EventCrewResourceIT {
 
     @Test
     @Transactional
+    void getEventCrewsByIdFiltering() throws Exception {
+        // Initialize the database
+        eventCrewRepository.saveAndFlush(eventCrew);
+
+        Long id = eventCrew.getId();
+
+        defaultEventCrewShouldBeFound("id.equals=" + id);
+        defaultEventCrewShouldNotBeFound("id.notEquals=" + id);
+
+        defaultEventCrewShouldBeFound("id.greaterThanOrEqual=" + id);
+        defaultEventCrewShouldNotBeFound("id.greaterThan=" + id);
+
+        defaultEventCrewShouldBeFound("id.lessThanOrEqual=" + id);
+        defaultEventCrewShouldNotBeFound("id.lessThan=" + id);
+    }
+
+    @Test
+    @Transactional
+    void getAllEventCrewsByUserIdIsEqualToSomething() throws Exception {
+        // Initialize the database
+        eventCrewRepository.saveAndFlush(eventCrew);
+
+        // Get all the eventCrewList where userId equals to DEFAULT_USER_ID
+        defaultEventCrewShouldBeFound("userId.equals=" + DEFAULT_USER_ID);
+
+        // Get all the eventCrewList where userId equals to UPDATED_USER_ID
+        defaultEventCrewShouldNotBeFound("userId.equals=" + UPDATED_USER_ID);
+    }
+
+    @Test
+    @Transactional
+    void getAllEventCrewsByUserIdIsNotEqualToSomething() throws Exception {
+        // Initialize the database
+        eventCrewRepository.saveAndFlush(eventCrew);
+
+        // Get all the eventCrewList where userId not equals to DEFAULT_USER_ID
+        defaultEventCrewShouldNotBeFound("userId.notEquals=" + DEFAULT_USER_ID);
+
+        // Get all the eventCrewList where userId not equals to UPDATED_USER_ID
+        defaultEventCrewShouldBeFound("userId.notEquals=" + UPDATED_USER_ID);
+    }
+
+    @Test
+    @Transactional
+    void getAllEventCrewsByUserIdIsInShouldWork() throws Exception {
+        // Initialize the database
+        eventCrewRepository.saveAndFlush(eventCrew);
+
+        // Get all the eventCrewList where userId in DEFAULT_USER_ID or UPDATED_USER_ID
+        defaultEventCrewShouldBeFound("userId.in=" + DEFAULT_USER_ID + "," + UPDATED_USER_ID);
+
+        // Get all the eventCrewList where userId equals to UPDATED_USER_ID
+        defaultEventCrewShouldNotBeFound("userId.in=" + UPDATED_USER_ID);
+    }
+
+    @Test
+    @Transactional
+    void getAllEventCrewsByUserIdIsNullOrNotNull() throws Exception {
+        // Initialize the database
+        eventCrewRepository.saveAndFlush(eventCrew);
+
+        // Get all the eventCrewList where userId is not null
+        defaultEventCrewShouldBeFound("userId.specified=true");
+
+        // Get all the eventCrewList where userId is null
+        defaultEventCrewShouldNotBeFound("userId.specified=false");
+    }
+
+    @Test
+    @Transactional
+    void getAllEventCrewsByUserIdIsGreaterThanOrEqualToSomething() throws Exception {
+        // Initialize the database
+        eventCrewRepository.saveAndFlush(eventCrew);
+
+        // Get all the eventCrewList where userId is greater than or equal to DEFAULT_USER_ID
+        defaultEventCrewShouldBeFound("userId.greaterThanOrEqual=" + DEFAULT_USER_ID);
+
+        // Get all the eventCrewList where userId is greater than or equal to UPDATED_USER_ID
+        defaultEventCrewShouldNotBeFound("userId.greaterThanOrEqual=" + UPDATED_USER_ID);
+    }
+
+    @Test
+    @Transactional
+    void getAllEventCrewsByUserIdIsLessThanOrEqualToSomething() throws Exception {
+        // Initialize the database
+        eventCrewRepository.saveAndFlush(eventCrew);
+
+        // Get all the eventCrewList where userId is less than or equal to DEFAULT_USER_ID
+        defaultEventCrewShouldBeFound("userId.lessThanOrEqual=" + DEFAULT_USER_ID);
+
+        // Get all the eventCrewList where userId is less than or equal to SMALLER_USER_ID
+        defaultEventCrewShouldNotBeFound("userId.lessThanOrEqual=" + SMALLER_USER_ID);
+    }
+
+    @Test
+    @Transactional
+    void getAllEventCrewsByUserIdIsLessThanSomething() throws Exception {
+        // Initialize the database
+        eventCrewRepository.saveAndFlush(eventCrew);
+
+        // Get all the eventCrewList where userId is less than DEFAULT_USER_ID
+        defaultEventCrewShouldNotBeFound("userId.lessThan=" + DEFAULT_USER_ID);
+
+        // Get all the eventCrewList where userId is less than UPDATED_USER_ID
+        defaultEventCrewShouldBeFound("userId.lessThan=" + UPDATED_USER_ID);
+    }
+
+    @Test
+    @Transactional
+    void getAllEventCrewsByUserIdIsGreaterThanSomething() throws Exception {
+        // Initialize the database
+        eventCrewRepository.saveAndFlush(eventCrew);
+
+        // Get all the eventCrewList where userId is greater than DEFAULT_USER_ID
+        defaultEventCrewShouldNotBeFound("userId.greaterThan=" + DEFAULT_USER_ID);
+
+        // Get all the eventCrewList where userId is greater than SMALLER_USER_ID
+        defaultEventCrewShouldBeFound("userId.greaterThan=" + SMALLER_USER_ID);
+    }
+
+    @Test
+    @Transactional
+    void getAllEventCrewsByEventIdIsEqualToSomething() throws Exception {
+        // Initialize the database
+        eventCrewRepository.saveAndFlush(eventCrew);
+
+        // Get all the eventCrewList where eventId equals to DEFAULT_EVENT_ID
+        defaultEventCrewShouldBeFound("eventId.equals=" + DEFAULT_EVENT_ID);
+
+        // Get all the eventCrewList where eventId equals to UPDATED_EVENT_ID
+        defaultEventCrewShouldNotBeFound("eventId.equals=" + UPDATED_EVENT_ID);
+    }
+
+    @Test
+    @Transactional
+    void getAllEventCrewsByEventIdIsNotEqualToSomething() throws Exception {
+        // Initialize the database
+        eventCrewRepository.saveAndFlush(eventCrew);
+
+        // Get all the eventCrewList where eventId not equals to DEFAULT_EVENT_ID
+        defaultEventCrewShouldNotBeFound("eventId.notEquals=" + DEFAULT_EVENT_ID);
+
+        // Get all the eventCrewList where eventId not equals to UPDATED_EVENT_ID
+        defaultEventCrewShouldBeFound("eventId.notEquals=" + UPDATED_EVENT_ID);
+    }
+
+    @Test
+    @Transactional
+    void getAllEventCrewsByEventIdIsInShouldWork() throws Exception {
+        // Initialize the database
+        eventCrewRepository.saveAndFlush(eventCrew);
+
+        // Get all the eventCrewList where eventId in DEFAULT_EVENT_ID or UPDATED_EVENT_ID
+        defaultEventCrewShouldBeFound("eventId.in=" + DEFAULT_EVENT_ID + "," + UPDATED_EVENT_ID);
+
+        // Get all the eventCrewList where eventId equals to UPDATED_EVENT_ID
+        defaultEventCrewShouldNotBeFound("eventId.in=" + UPDATED_EVENT_ID);
+    }
+
+    @Test
+    @Transactional
+    void getAllEventCrewsByEventIdIsNullOrNotNull() throws Exception {
+        // Initialize the database
+        eventCrewRepository.saveAndFlush(eventCrew);
+
+        // Get all the eventCrewList where eventId is not null
+        defaultEventCrewShouldBeFound("eventId.specified=true");
+
+        // Get all the eventCrewList where eventId is null
+        defaultEventCrewShouldNotBeFound("eventId.specified=false");
+    }
+
+    @Test
+    @Transactional
+    void getAllEventCrewsByEventIdIsGreaterThanOrEqualToSomething() throws Exception {
+        // Initialize the database
+        eventCrewRepository.saveAndFlush(eventCrew);
+
+        // Get all the eventCrewList where eventId is greater than or equal to DEFAULT_EVENT_ID
+        defaultEventCrewShouldBeFound("eventId.greaterThanOrEqual=" + DEFAULT_EVENT_ID);
+
+        // Get all the eventCrewList where eventId is greater than or equal to UPDATED_EVENT_ID
+        defaultEventCrewShouldNotBeFound("eventId.greaterThanOrEqual=" + UPDATED_EVENT_ID);
+    }
+
+    @Test
+    @Transactional
+    void getAllEventCrewsByEventIdIsLessThanOrEqualToSomething() throws Exception {
+        // Initialize the database
+        eventCrewRepository.saveAndFlush(eventCrew);
+
+        // Get all the eventCrewList where eventId is less than or equal to DEFAULT_EVENT_ID
+        defaultEventCrewShouldBeFound("eventId.lessThanOrEqual=" + DEFAULT_EVENT_ID);
+
+        // Get all the eventCrewList where eventId is less than or equal to SMALLER_EVENT_ID
+        defaultEventCrewShouldNotBeFound("eventId.lessThanOrEqual=" + SMALLER_EVENT_ID);
+    }
+
+    @Test
+    @Transactional
+    void getAllEventCrewsByEventIdIsLessThanSomething() throws Exception {
+        // Initialize the database
+        eventCrewRepository.saveAndFlush(eventCrew);
+
+        // Get all the eventCrewList where eventId is less than DEFAULT_EVENT_ID
+        defaultEventCrewShouldNotBeFound("eventId.lessThan=" + DEFAULT_EVENT_ID);
+
+        // Get all the eventCrewList where eventId is less than UPDATED_EVENT_ID
+        defaultEventCrewShouldBeFound("eventId.lessThan=" + UPDATED_EVENT_ID);
+    }
+
+    @Test
+    @Transactional
+    void getAllEventCrewsByEventIdIsGreaterThanSomething() throws Exception {
+        // Initialize the database
+        eventCrewRepository.saveAndFlush(eventCrew);
+
+        // Get all the eventCrewList where eventId is greater than DEFAULT_EVENT_ID
+        defaultEventCrewShouldNotBeFound("eventId.greaterThan=" + DEFAULT_EVENT_ID);
+
+        // Get all the eventCrewList where eventId is greater than SMALLER_EVENT_ID
+        defaultEventCrewShouldBeFound("eventId.greaterThan=" + SMALLER_EVENT_ID);
+    }
+
+    @Test
+    @Transactional
+    void getAllEventCrewsByRoleIsEqualToSomething() throws Exception {
+        // Initialize the database
+        eventCrewRepository.saveAndFlush(eventCrew);
+
+        // Get all the eventCrewList where role equals to DEFAULT_ROLE
+        defaultEventCrewShouldBeFound("role.equals=" + DEFAULT_ROLE);
+
+        // Get all the eventCrewList where role equals to UPDATED_ROLE
+        defaultEventCrewShouldNotBeFound("role.equals=" + UPDATED_ROLE);
+    }
+
+    @Test
+    @Transactional
+    void getAllEventCrewsByRoleIsNotEqualToSomething() throws Exception {
+        // Initialize the database
+        eventCrewRepository.saveAndFlush(eventCrew);
+
+        // Get all the eventCrewList where role not equals to DEFAULT_ROLE
+        defaultEventCrewShouldNotBeFound("role.notEquals=" + DEFAULT_ROLE);
+
+        // Get all the eventCrewList where role not equals to UPDATED_ROLE
+        defaultEventCrewShouldBeFound("role.notEquals=" + UPDATED_ROLE);
+    }
+
+    @Test
+    @Transactional
+    void getAllEventCrewsByRoleIsInShouldWork() throws Exception {
+        // Initialize the database
+        eventCrewRepository.saveAndFlush(eventCrew);
+
+        // Get all the eventCrewList where role in DEFAULT_ROLE or UPDATED_ROLE
+        defaultEventCrewShouldBeFound("role.in=" + DEFAULT_ROLE + "," + UPDATED_ROLE);
+
+        // Get all the eventCrewList where role equals to UPDATED_ROLE
+        defaultEventCrewShouldNotBeFound("role.in=" + UPDATED_ROLE);
+    }
+
+    @Test
+    @Transactional
+    void getAllEventCrewsByRoleIsNullOrNotNull() throws Exception {
+        // Initialize the database
+        eventCrewRepository.saveAndFlush(eventCrew);
+
+        // Get all the eventCrewList where role is not null
+        defaultEventCrewShouldBeFound("role.specified=true");
+
+        // Get all the eventCrewList where role is null
+        defaultEventCrewShouldNotBeFound("role.specified=false");
+    }
+
+    /**
+     * Executes the search, and checks that the default entity is returned.
+     */
+    private void defaultEventCrewShouldBeFound(String filter) throws Exception {
+        restEventCrewMockMvc
+            .perform(get(ENTITY_API_URL + "?sort=id,desc&" + filter))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(jsonPath("$.[*].id").value(hasItem(eventCrew.getId().intValue())))
+            .andExpect(jsonPath("$.[*].userId").value(hasItem(DEFAULT_USER_ID.intValue())))
+            .andExpect(jsonPath("$.[*].eventId").value(hasItem(DEFAULT_EVENT_ID.intValue())))
+            .andExpect(jsonPath("$.[*].role").value(hasItem(DEFAULT_ROLE.toString())));
+
+        // Check, that the count call also returns 1
+        restEventCrewMockMvc
+            .perform(get(ENTITY_API_URL + "/count?sort=id,desc&" + filter))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(content().string("1"));
+    }
+
+    /**
+     * Executes the search, and checks that the default entity is not returned.
+     */
+    private void defaultEventCrewShouldNotBeFound(String filter) throws Exception {
+        restEventCrewMockMvc
+            .perform(get(ENTITY_API_URL + "?sort=id,desc&" + filter))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(jsonPath("$").isArray())
+            .andExpect(jsonPath("$").isEmpty());
+
+        // Check, that the count call also returns 0
+        restEventCrewMockMvc
+            .perform(get(ENTITY_API_URL + "/count?sort=id,desc&" + filter))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(content().string("0"));
+    }
+
+
+    @Test
+    @Transactional
     @WithCurrentCCAdministrator
     public void getEventCrew() throws Exception {
         // Initialize the database
@@ -262,7 +586,7 @@ public class EventCrewResourceIT {
     @Transactional
     @WithCurrentCCAdministrator
     public void getEventCrew_WithNonExistingEventCrew_ShouldReturn404() throws Exception {
-         // Get the eventCrew
+        // Get the eventCrew
         restEventCrewMockMvc.perform(get("/api/event-crews/{id}?eventId={eventId}", Long.MAX_VALUE, DEFAULT_EVENT_ID))
             .andExpect(status().isNotFound());
     }
@@ -370,7 +694,7 @@ public class EventCrewResourceIT {
     @Test
     @Transactional
     @WithMockUser
-    public void updateEventCrew_AsMockUser_ShouldThrow403()  throws Exception {
+    public void updateEventCrew_AsMockUser_ShouldThrow403() throws Exception {
         // Initialize the database
         Event savedEvent = initEventDB(createEventEntity());
         EventCrew savedEventCrew = createEventCrewEntity();
@@ -498,7 +822,7 @@ public class EventCrewResourceIT {
         return eventCrewList.get(0);
     }
 
-    private EventCrew initEventCrewDB(EventCrew eventCrew){
+    private EventCrew initEventCrewDB(EventCrew eventCrew) {
         return eventCrewRepository.saveAndFlush(eventCrew);
     }
 }
