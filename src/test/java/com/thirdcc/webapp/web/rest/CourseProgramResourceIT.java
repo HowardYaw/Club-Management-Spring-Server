@@ -56,7 +56,6 @@ public class CourseProgramResourceIT {
     @AfterEach
     public void cleanUp() {
         facultyRepository.deleteAll();
-        courseProgramRepository.deleteAll();
     }
 
     private Faculty createFacultyEntity() {

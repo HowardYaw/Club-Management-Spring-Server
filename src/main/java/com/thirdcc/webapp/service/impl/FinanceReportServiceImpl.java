@@ -97,8 +97,8 @@ public class FinanceReportServiceImpl implements FinanceReportService {
 
         for (Transaction transaction : transactionList) {
             Month transactionMonth = transaction.getCreatedDate().atZone(zoneId).getMonth();
-            TransactionType transactionType = transaction.getType();
-            BigDecimal transactionAmount = transaction.getAmount();
+            TransactionType transactionType = transaction.getTransactionType();
+            BigDecimal transactionAmount = transaction.getTransactionAmount();
 
             BigDecimal currentValue = result.get(transactionType).get(transactionMonth);
             result.get(transactionType).put(transactionMonth, currentValue.add(transactionAmount));
@@ -114,9 +114,9 @@ public class FinanceReportServiceImpl implements FinanceReportService {
 
     private FinanceReportDTO mapTotalExpenses(FinanceReportDTO financeReportDTO) {
         BigDecimal totalExpenses = transactionRepository
-            .findAllByEventIdAndType(financeReportDTO.getEventDTO().getId(), TransactionType.EXPENSE)
+            .findAllByEventIdAndTransactionType(financeReportDTO.getEventDTO().getId(), TransactionType.EXPENSE)
             .stream()
-            .map(Transaction::getAmount)
+            .map(Transaction::getTransactionAmount)
             .reduce(BigDecimal.ZERO, BigDecimal::add);
         financeReportDTO.setTotalExpenses(totalExpenses);
         return financeReportDTO;
@@ -124,9 +124,9 @@ public class FinanceReportServiceImpl implements FinanceReportService {
 
     private FinanceReportDTO mapTotalIncome(FinanceReportDTO financeReportDTO) {
         BigDecimal totalIncome = transactionRepository
-            .findAllByEventIdAndType(financeReportDTO.getEventDTO().getId(), TransactionType.INCOME)
+            .findAllByEventIdAndTransactionType(financeReportDTO.getEventDTO().getId(), TransactionType.INCOME)
             .stream()
-            .map(Transaction::getAmount)
+            .map(Transaction::getTransactionAmount)
             .reduce(BigDecimal.ZERO, BigDecimal::add);
         financeReportDTO.setTotalIncome(totalIncome);
         return financeReportDTO;

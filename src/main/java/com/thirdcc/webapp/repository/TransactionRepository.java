@@ -19,7 +19,7 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long>,
 
     Page<Transaction> findAllByEventId(Long eventId, Pageable pageable);
 
-    List<Transaction> findAllByEventIdAndType(Long eventId, TransactionType type);
+    List<Transaction> findAllByEventIdAndTransactionType(Long eventId, TransactionType type);
 
     List<Transaction> findAllByCreatedDateGreaterThanEqualAndCreatedDateLessThan(Instant inclusiveFrom, Instant exclusiveTo);
 }
