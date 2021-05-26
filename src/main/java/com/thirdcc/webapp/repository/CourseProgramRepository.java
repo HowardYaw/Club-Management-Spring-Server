@@ -1,8 +1,6 @@
 package com.thirdcc.webapp.repository;
 
-import com.thirdcc.webapp.domain.Claim;
 import com.thirdcc.webapp.domain.CourseProgram;
-import com.thirdcc.webapp.domain.Receipt;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
