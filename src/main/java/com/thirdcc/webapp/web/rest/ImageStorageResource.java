@@ -1,8 +1,9 @@
 package com.thirdcc.webapp.web.rest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.cloud.storage.*;
+import com.thirdcc.webapp.service.ImageStorageQueryService;
 import com.thirdcc.webapp.service.ImageStorageService;
+import com.thirdcc.webapp.service.criteria.ImageStorageCriteria;
 import com.thirdcc.webapp.web.rest.errors.BadRequestAlertException;
 import com.thirdcc.webapp.service.dto.ImageStorageDTO;
 
@@ -17,13 +18,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.net.URI;
-import java.net.URISyntaxException;
 
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -46,8 +41,11 @@ public class ImageStorageResource {
 
     private final ImageStorageService imageStorageService;
 
-    public ImageStorageResource(ImageStorageService imageStorageService) {
+    private final ImageStorageQueryService imageStorageQueryService;
+
+    public ImageStorageResource(ImageStorageService imageStorageService, ImageStorageQueryService imageStorageQueryService) {
         this.imageStorageService = imageStorageService;
+        this.imageStorageQueryService = imageStorageQueryService;
     }
 
     /**
@@ -92,15 +90,23 @@ public class ImageStorageResource {
             .body(result);
     }
 
-    /**
-     * {@code GET  /image-storages} : get all the imageStorages.
-     *
-     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the list of imageStorages in body.
-     */
     @GetMapping("/image-storages")
-    public List<ImageStorageDTO> getAllImageStorages() {
-        log.debug("REST request to get all ImageStorages");
-        return imageStorageService.findAll();
+    public ResponseEntity<List<ImageStorageDTO>> getAllImageStorages(ImageStorageCriteria criteria) {
+        log.debug("REST request to get ImageStorages by criteria: {}", criteria);
+        List<ImageStorageDTO> entityList = imageStorageQueryService.findByCriteria(criteria);
+        return ResponseEntity.ok().body(entityList);
+    }
+
+    /**
+     * {@code GET  /image-storages/count} : count all the imageStorages.
+     *
+     * @param criteria the criteria which the requested entities should match.
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the count in body.
+     */
+    @GetMapping("/image-storages/count")
+    public ResponseEntity<Long> countImageStorages(ImageStorageCriteria criteria) {
+        log.debug("REST request to count ImageStorages by criteria: {}", criteria);
+        return ResponseEntity.ok().body(imageStorageQueryService.countByCriteria(criteria));
     }
 
     /**

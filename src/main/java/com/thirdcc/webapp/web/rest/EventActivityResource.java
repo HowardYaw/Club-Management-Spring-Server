@@ -1,26 +1,28 @@
 package com.thirdcc.webapp.web.rest;
 
 import com.thirdcc.webapp.exception.BadRequestException;
-import com.thirdcc.webapp.security.AuthoritiesConstants;
+import com.thirdcc.webapp.service.EventActivityQueryService;
 import com.thirdcc.webapp.service.EventActivityService;
+import com.thirdcc.webapp.service.criteria.EventActivityCriteria;
 import com.thirdcc.webapp.web.rest.errors.BadRequestAlertException;
 import com.thirdcc.webapp.service.dto.EventActivityDTO;
 
-import io.github.jhipster.web.util.HeaderUtil;
-import io.github.jhipster.web.util.PaginationUtil;
-import io.github.jhipster.web.util.ResponseUtil;
+import tech.jhipster.web.util.HeaderUtil;
+import tech.jhipster.web.util.PaginationUtil;
+import tech.jhipster.web.util.ResponseUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.util.MultiValueMap;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import tech.jhipster.web.util.PaginationUtil;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -43,9 +45,11 @@ public class EventActivityResource {
     private String applicationName;
 
     private final EventActivityService eventActivityService;
+    private final EventActivityQueryService eventActivityQueryService;
 
-    public EventActivityResource(EventActivityService eventActivityService) {
+    public EventActivityResource(EventActivityService eventActivityService, EventActivityQueryService eventActivityQueryService) {
         this.eventActivityService = eventActivityService;
+        this.eventActivityQueryService = eventActivityQueryService;
     }
 
     /**
@@ -92,20 +96,18 @@ public class EventActivityResource {
             .body(result);
     }
 
-    /**
-     * {@code GET  /event-activities} : get all the eventActivities.
-     *
-     * @param pageable the pagination information.
-     * @param queryParams a {@link MultiValueMap} query parameters.
-     * @param uriBuilder a {@link UriComponentsBuilder} URI builder.
-     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the list of eventActivities in body.
-     */
     @GetMapping("/event-activities")
-    public ResponseEntity<List<EventActivityDTO>> getAllEventActivities(Pageable pageable, @RequestParam MultiValueMap<String, String> queryParams, UriComponentsBuilder uriBuilder) {
-        log.debug("REST request to get a page of EventActivities");
-        Page<EventActivityDTO> page = eventActivityService.findAll(pageable);
-        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(uriBuilder.queryParams(queryParams), page);
+    public ResponseEntity<List<EventActivityDTO>> getAllEventActivities(EventActivityCriteria criteria, Pageable pageable) {
+        log.debug("REST request to get EventActivities by criteria: {}", criteria);
+        Page<EventActivityDTO> page = eventActivityQueryService.findByCriteria(criteria, pageable);
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(ServletUriComponentsBuilder.fromCurrentRequest(), page);
         return ResponseEntity.ok().headers(headers).body(page.getContent());
+    }
+
+    @GetMapping("/event-activities/count")
+    public ResponseEntity<Long> countEventActivities(EventActivityCriteria criteria) {
+        log.debug("REST request to count EventActivities by criteria: {}", criteria);
+        return ResponseEntity.ok().body(eventActivityQueryService.countByCriteria(criteria));
     }
 
     @GetMapping("/event-activities/event/{eventId}")

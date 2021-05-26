@@ -1,11 +1,13 @@
 package com.thirdcc.webapp.web.rest;
 
 import com.thirdcc.webapp.domain.YearSession;
+import com.thirdcc.webapp.service.YearSessionQueryService;
 import com.thirdcc.webapp.service.YearSessionService;
+import com.thirdcc.webapp.service.criteria.YearSessionCriteria;
 import com.thirdcc.webapp.web.rest.errors.BadRequestAlertException;
 
-import io.github.jhipster.web.util.HeaderUtil;
-import io.github.jhipster.web.util.ResponseUtil;
+import tech.jhipster.web.util.HeaderUtil;
+import tech.jhipster.web.util.ResponseUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -34,8 +36,11 @@ public class YearSessionResource {
 
     private final YearSessionService yearSessionService;
 
-    public YearSessionResource(YearSessionService yearSessionService) {
+    private final YearSessionQueryService yearSessionQueryService;
+
+    public YearSessionResource(YearSessionService yearSessionService, YearSessionQueryService yearSessionQueryService) {
         this.yearSessionService = yearSessionService;
+        this.yearSessionQueryService = yearSessionQueryService;
     }
 
     /**
@@ -78,15 +83,17 @@ public class YearSessionResource {
             .body(result);
     }
 
-    /**
-     * {@code GET  /year-sessions} : get all the yearSessions.
-     *
-     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the list of yearSessions in body.
-     */
     @GetMapping("/year-sessions")
-    public List<YearSession> getAllYearSessions() {
-        log.debug("REST request to get all YearSessions");
-        return yearSessionService.findAll();
+    public ResponseEntity<List<YearSession>> getAllYearSessions(YearSessionCriteria criteria) {
+        log.debug("REST request to get YearSessions by criteria: {}", criteria);
+        List<YearSession> entityList = yearSessionQueryService.findByCriteria(criteria);
+        return ResponseEntity.ok().body(entityList);
+    }
+
+    @GetMapping("/year-sessions/count")
+    public ResponseEntity<Long> countYearSessions(YearSessionCriteria criteria) {
+        log.debug("REST request to count YearSessions by criteria: {}", criteria);
+        return ResponseEntity.ok().body(yearSessionQueryService.countByCriteria(criteria));
     }
 
     /**

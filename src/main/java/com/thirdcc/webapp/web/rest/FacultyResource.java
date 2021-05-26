@@ -1,11 +1,13 @@
 package com.thirdcc.webapp.web.rest;
 
 import com.thirdcc.webapp.domain.Faculty;
+import com.thirdcc.webapp.service.FacultyQueryService;
 import com.thirdcc.webapp.service.FacultyService;
+import com.thirdcc.webapp.service.criteria.FacultyCriteria;
 import com.thirdcc.webapp.web.rest.errors.BadRequestAlertException;
 
-import io.github.jhipster.web.util.HeaderUtil;
-import io.github.jhipster.web.util.ResponseUtil;
+import tech.jhipster.web.util.HeaderUtil;
+import tech.jhipster.web.util.ResponseUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -34,8 +36,11 @@ public class FacultyResource {
 
     private final FacultyService facultyService;
 
-    public FacultyResource(FacultyService facultyService) {
+    private final FacultyQueryService facultyQueryService;
+
+    public FacultyResource(FacultyService facultyService, FacultyQueryService facultyQueryService) {
         this.facultyService = facultyService;
+        this.facultyQueryService = facultyQueryService;
     }
 
     /**
@@ -78,15 +83,17 @@ public class FacultyResource {
             .body(result);
     }
 
-    /**
-     * {@code GET  /faculties} : get all the faculties.
-     *
-     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the list of faculties in body.
-     */
     @GetMapping("/faculties")
-    public List<Faculty> getAllFaculties() {
-        log.debug("REST request to get all Faculties");
-        return facultyService.findAll();
+    public ResponseEntity<List<Faculty>> getAllFaculties(FacultyCriteria criteria) {
+        log.debug("REST request to get Faculties by criteria: {}", criteria);
+        List<Faculty> entityList = facultyQueryService.findByCriteria(criteria);
+        return ResponseEntity.ok().body(entityList);
+    }
+
+    @GetMapping("/faculties/count")
+    public ResponseEntity<Long> countFaculties(FacultyCriteria criteria) {
+        log.debug("REST request to count Faculties by criteria: {}", criteria);
+        return ResponseEntity.ok().body(facultyQueryService.countByCriteria(criteria));
     }
 
     /**

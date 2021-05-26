@@ -4,8 +4,8 @@ import com.thirdcc.webapp.domain.enumeration.ClaimStatus;
 import com.thirdcc.webapp.service.ClaimService;
 import com.thirdcc.webapp.service.dto.ClaimDTO;
 
-import io.github.jhipster.web.util.HeaderUtil;
-import io.github.jhipster.web.util.PaginationUtil;
+import tech.jhipster.web.util.HeaderUtil;
+import tech.jhipster.web.util.PaginationUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -58,7 +58,7 @@ public class ClaimResource {
             .headers(HeaderUtil.createEntityUpdateAlert(applicationName, true, ENTITY_NAME, id.toString()))
             .body(result);
     }
-    
+
     /**
      * {@code GET  /claims} : get all the claims with Open ClaimStatus.
      *

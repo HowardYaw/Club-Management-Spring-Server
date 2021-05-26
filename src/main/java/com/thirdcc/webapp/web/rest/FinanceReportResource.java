@@ -5,8 +5,8 @@ import com.thirdcc.webapp.service.FinanceReportService;
 import com.thirdcc.webapp.service.YearSessionService;
 import com.thirdcc.webapp.service.dto.FinanceReportDTO;
 import com.thirdcc.webapp.utils.YearSessionUtils;
-import io.github.jhipster.web.util.PaginationUtil;
-import io.github.jhipster.web.util.ResponseUtil;
+import tech.jhipster.web.util.PaginationUtil;
+import tech.jhipster.web.util.ResponseUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -74,6 +74,6 @@ public class FinanceReportResource {
             yearSession = yearSessionService.getYearSessionStringById(yearSessionId);
         }
         Map<TransactionType, Map<Month, BigDecimal>> result = financeReportService.getFinanceReportByYearSession(yearSession);
-        return ResponseEntity.ok().headers(null).body(result);
+        return ResponseEntity.ok().headers((HttpHeaders) null).body(result);
     }
 }

@@ -1,13 +1,14 @@
 package com.thirdcc.webapp.web.rest;
 
-import com.thirdcc.webapp.domain.EventAttendee;
+import com.thirdcc.webapp.service.EventAttendeeQueryService;
 import com.thirdcc.webapp.service.EventAttendeeService;
+import com.thirdcc.webapp.service.criteria.EventAttendeeCriteria;
 import com.thirdcc.webapp.web.rest.errors.BadRequestAlertException;
 import com.thirdcc.webapp.service.dto.EventAttendeeDTO;
 
-import io.github.jhipster.web.util.HeaderUtil;
-import io.github.jhipster.web.util.PaginationUtil;
-import io.github.jhipster.web.util.ResponseUtil;
+import tech.jhipster.web.util.HeaderUtil;
+import tech.jhipster.web.util.PaginationUtil;
+import tech.jhipster.web.util.ResponseUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -16,6 +17,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.util.MultiValueMap;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -42,8 +44,11 @@ public class EventAttendeeResource {
 
     private final EventAttendeeService eventAttendeeService;
 
-    public EventAttendeeResource(EventAttendeeService eventAttendeeService) {
+    private final EventAttendeeQueryService eventAttendeeQueryService;
+
+    public EventAttendeeResource(EventAttendeeService eventAttendeeService, EventAttendeeQueryService eventAttendeeQueryService) {
         this.eventAttendeeService = eventAttendeeService;
+        this.eventAttendeeQueryService = eventAttendeeQueryService;
     }
 
     /**
@@ -86,20 +91,18 @@ public class EventAttendeeResource {
             .body(result);
     }
 
-    /**
-     * {@code GET  /event-attendees} : get all the eventAttendees.
-     *
-     * @param pageable the pagination information.
-     * @param queryParams a {@link MultiValueMap} query parameters.
-     * @param uriBuilder a {@link UriComponentsBuilder} URI builder.
-     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the list of eventAttendees in body.
-     */
     @GetMapping("/event-attendees")
-    public ResponseEntity<List<EventAttendeeDTO>> getAllEventAttendees(Pageable pageable, @RequestParam MultiValueMap<String, String> queryParams, UriComponentsBuilder uriBuilder) {
-        log.debug("REST request to get a page of EventAttendees");
-        Page<EventAttendeeDTO> page = eventAttendeeService.findAll(pageable);
-        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(uriBuilder.queryParams(queryParams), page);
+    public ResponseEntity<List<EventAttendeeDTO>> getAllEventAttendees(EventAttendeeCriteria criteria, Pageable pageable) {
+        log.debug("REST request to get EventAttendees by criteria: {}", criteria);
+        Page<EventAttendeeDTO> page = eventAttendeeQueryService.findByCriteria(criteria, pageable);
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(ServletUriComponentsBuilder.fromCurrentRequest(), page);
         return ResponseEntity.ok().headers(headers).body(page.getContent());
+    }
+
+    @GetMapping("/event-attendees/count")
+    public ResponseEntity<Long> countEventAttendees(EventAttendeeCriteria criteria) {
+        log.debug("REST request to count EventAttendees by criteria: {}", criteria);
+        return ResponseEntity.ok().body(eventAttendeeQueryService.countByCriteria(criteria));
     }
 
     /**

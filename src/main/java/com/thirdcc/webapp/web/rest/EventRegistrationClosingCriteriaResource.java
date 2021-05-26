@@ -1,11 +1,13 @@
 package com.thirdcc.webapp.web.rest;
 
+import com.thirdcc.webapp.service.EventRegistrationClosingCriteriaQueryService;
 import com.thirdcc.webapp.service.EventRegistrationClosingCriteriaService;
+import com.thirdcc.webapp.service.criteria.EventRegistrationClosingCriteriaCriteria;
 import com.thirdcc.webapp.web.rest.errors.BadRequestAlertException;
 import com.thirdcc.webapp.service.dto.EventRegistrationClosingCriteriaDTO;
 
-import io.github.jhipster.web.util.HeaderUtil;
-import io.github.jhipster.web.util.ResponseUtil;
+import tech.jhipster.web.util.HeaderUtil;
+import tech.jhipster.web.util.ResponseUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -34,8 +36,11 @@ public class EventRegistrationClosingCriteriaResource {
 
     private final EventRegistrationClosingCriteriaService eventRegistrationClosingCriteriaService;
 
-    public EventRegistrationClosingCriteriaResource(EventRegistrationClosingCriteriaService eventRegistrationClosingCriteriaService) {
+    private final EventRegistrationClosingCriteriaQueryService eventRegistrationClosingCriteriaQueryService;
+
+    public EventRegistrationClosingCriteriaResource(EventRegistrationClosingCriteriaService eventRegistrationClosingCriteriaService, EventRegistrationClosingCriteriaQueryService eventRegistrationClosingCriteriaQueryService) {
         this.eventRegistrationClosingCriteriaService = eventRegistrationClosingCriteriaService;
+        this.eventRegistrationClosingCriteriaQueryService = eventRegistrationClosingCriteriaQueryService;
     }
 
     /**
@@ -78,15 +83,19 @@ public class EventRegistrationClosingCriteriaResource {
             .body(result);
     }
 
-    /**
-     * {@code GET  /event-registration-closing-criteria} : get all the eventRegistrationClosingCriteria.
-     *
-     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the list of eventRegistrationClosingCriteria in body.
-     */
     @GetMapping("/event-registration-closing-criteria")
-    public List<EventRegistrationClosingCriteriaDTO> getAllEventRegistrationClosingCriteria() {
-        log.debug("REST request to get all EventRegistrationClosingCriteria");
-        return eventRegistrationClosingCriteriaService.findAll();
+    public ResponseEntity<List<EventRegistrationClosingCriteriaDTO>> getAllEventRegistrationClosingCriteria(
+        EventRegistrationClosingCriteriaCriteria criteria
+    ) {
+        log.debug("REST request to get EventRegistrationClosingCriteria by criteria: {}", criteria);
+        List<EventRegistrationClosingCriteriaDTO> entityList = eventRegistrationClosingCriteriaQueryService.findByCriteria(criteria);
+        return ResponseEntity.ok().body(entityList);
+    }
+
+    @GetMapping("/event-registration-closing-criteria/count")
+    public ResponseEntity<Long> countEventRegistrationClosingCriteria(EventRegistrationClosingCriteriaCriteria criteria) {
+        log.debug("REST request to count EventRegistrationClosingCriteria by criteria: {}", criteria);
+        return ResponseEntity.ok().body(eventRegistrationClosingCriteriaQueryService.countByCriteria(criteria));
     }
 
     /**
