@@ -1,8 +1,10 @@
 package com.thirdcc.webapp.service.criteria;
 
 import com.thirdcc.webapp.domain.enumeration.UserUniStatus;
+
 import java.io.Serializable;
 import java.util.Objects;
+
 import tech.jhipster.service.Criteria;
 import tech.jhipster.service.filter.BigDecimalFilter;
 import tech.jhipster.service.filter.BooleanFilter;
@@ -24,235 +26,195 @@ import tech.jhipster.service.filter.StringFilter;
  */
 public class UserUniInfoCriteria implements Serializable, Criteria {
 
-  /**
-   * Class for filtering UserUniStatus
-   */
-  public static class UserUniStatusFilter extends Filter<UserUniStatus> {
+    /**
+     * Class for filtering UserUniStatus
+     */
+    public static class UserUniStatusFilter extends Filter<UserUniStatus> {
 
-    public UserUniStatusFilter() {}
+        public UserUniStatusFilter() {
+        }
 
-    public UserUniStatusFilter(UserUniStatusFilter filter) {
-      super(filter);
+        public UserUniStatusFilter(UserUniStatusFilter filter) {
+            super(filter);
+        }
+
+        @Override
+        public UserUniStatusFilter copy() {
+            return new UserUniStatusFilter(this);
+        }
+    }
+
+    private static final long serialVersionUID = 1L;
+
+    private LongFilter id;
+
+    private LongFilter userId;
+
+    private LongFilter courseProgramId;
+
+    private StringFilter yearSession;
+
+    private IntegerFilter intakeSemester;
+
+    private StringFilter stayIn;
+
+    private UserUniStatusFilter status;
+
+    public UserUniInfoCriteria() {
+    }
+
+    public UserUniInfoCriteria(UserUniInfoCriteria other) {
+        this.id = other.id == null ? null : other.id.copy();
+        this.userId = other.userId == null ? null : other.userId.copy();
+        this.courseProgramId = other.courseProgramId == null ? null : other.courseProgramId.copy();
+        this.yearSession = other.yearSession == null ? null : other.yearSession.copy();
+        this.intakeSemester = other.intakeSemester == null ? null : other.intakeSemester.copy();
+        this.stayIn = other.stayIn == null ? null : other.stayIn.copy();
+        this.status = other.status == null ? null : other.status.copy();
     }
 
     @Override
-    public UserUniStatusFilter copy() {
-      return new UserUniStatusFilter(this);
+    public UserUniInfoCriteria copy() {
+        return new UserUniInfoCriteria(this);
     }
-  }
 
-  private static final long serialVersionUID = 1L;
-
-  private LongFilter id;
-
-  private LongFilter userId;
-
-  private StringFilter faculty;
-
-  private StringFilter program;
-
-  private StringFilter yearSession;
-
-  private IntegerFilter intakeSemester;
-
-  private BigDecimalFilter yearOfStudy;
-
-  private StringFilter stayIn;
-
-  private UserUniStatusFilter status;
-
-  public UserUniInfoCriteria() {}
-
-  public UserUniInfoCriteria(UserUniInfoCriteria other) {
-    this.id = other.id == null ? null : other.id.copy();
-    this.userId = other.userId == null ? null : other.userId.copy();
-    this.faculty = other.faculty == null ? null : other.faculty.copy();
-    this.program = other.program == null ? null : other.program.copy();
-    this.yearSession = other.yearSession == null ? null : other.yearSession.copy();
-    this.intakeSemester = other.intakeSemester == null ? null : other.intakeSemester.copy();
-    this.yearOfStudy = other.yearOfStudy == null ? null : other.yearOfStudy.copy();
-    this.stayIn = other.stayIn == null ? null : other.stayIn.copy();
-    this.status = other.status == null ? null : other.status.copy();
-  }
-
-  @Override
-  public UserUniInfoCriteria copy() {
-    return new UserUniInfoCriteria(this);
-  }
-
-  public LongFilter getId() {
-    return id;
-  }
-
-  public LongFilter id() {
-    if (id == null) {
-      id = new LongFilter();
+    public LongFilter getId() {
+        return id;
     }
-    return id;
-  }
 
-  public void setId(LongFilter id) {
-    this.id = id;
-  }
-
-  public LongFilter getUserId() {
-    return userId;
-  }
-
-  public LongFilter userId() {
-    if (userId == null) {
-      userId = new LongFilter();
+    public LongFilter id() {
+        if (id == null) {
+            id = new LongFilter();
+        }
+        return id;
     }
-    return userId;
-  }
 
-  public void setUserId(LongFilter userId) {
-    this.userId = userId;
-  }
-
-  public StringFilter getFaculty() {
-    return faculty;
-  }
-
-  public StringFilter faculty() {
-    if (faculty == null) {
-      faculty = new StringFilter();
+    public void setId(LongFilter id) {
+        this.id = id;
     }
-    return faculty;
-  }
 
-  public void setFaculty(StringFilter faculty) {
-    this.faculty = faculty;
-  }
-
-  public StringFilter getProgram() {
-    return program;
-  }
-
-  public StringFilter program() {
-    if (program == null) {
-      program = new StringFilter();
+    public LongFilter getUserId() {
+        return userId;
     }
-    return program;
-  }
 
-  public void setProgram(StringFilter program) {
-    this.program = program;
-  }
-
-  public StringFilter getYearSession() {
-    return yearSession;
-  }
-
-  public StringFilter yearSession() {
-    if (yearSession == null) {
-      yearSession = new StringFilter();
+    public LongFilter userId() {
+        if (userId == null) {
+            userId = new LongFilter();
+        }
+        return userId;
     }
-    return yearSession;
-  }
 
-  public void setYearSession(StringFilter yearSession) {
-    this.yearSession = yearSession;
-  }
-
-  public IntegerFilter getIntakeSemester() {
-    return intakeSemester;
-  }
-
-  public IntegerFilter intakeSemester() {
-    if (intakeSemester == null) {
-      intakeSemester = new IntegerFilter();
+    public void setUserId(LongFilter userId) {
+        this.userId = userId;
     }
-    return intakeSemester;
-  }
 
-  public void setIntakeSemester(IntegerFilter intakeSemester) {
-    this.intakeSemester = intakeSemester;
-  }
-
-  public BigDecimalFilter getYearOfStudy() {
-    return yearOfStudy;
-  }
-
-  public BigDecimalFilter yearOfStudy() {
-    if (yearOfStudy == null) {
-      yearOfStudy = new BigDecimalFilter();
+    public LongFilter getCourseProgramId() {
+        return courseProgramId;
     }
-    return yearOfStudy;
-  }
 
-  public void setYearOfStudy(BigDecimalFilter yearOfStudy) {
-    this.yearOfStudy = yearOfStudy;
-  }
-
-  public StringFilter getStayIn() {
-    return stayIn;
-  }
-
-  public StringFilter stayIn() {
-    if (stayIn == null) {
-      stayIn = new StringFilter();
+    public LongFilter courseProgramId() {
+        if (courseProgramId == null) {
+            courseProgramId = new LongFilter();
+        }
+        return courseProgramId;
     }
-    return stayIn;
-  }
 
-  public void setStayIn(StringFilter stayIn) {
-    this.stayIn = stayIn;
-  }
-
-  public UserUniStatusFilter getStatus() {
-    return status;
-  }
-
-  public UserUniStatusFilter status() {
-    if (status == null) {
-      status = new UserUniStatusFilter();
+    public void setCourseProgramId(LongFilter courseProgramId) {
+        this.courseProgramId = courseProgramId;
     }
-    return status;
-  }
 
-  public void setStatus(UserUniStatusFilter status) {
-    this.status = status;
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) {
-      return true;
+    public StringFilter getYearSession() {
+        return yearSession;
     }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
+
+    public StringFilter yearSession() {
+        if (yearSession == null) {
+            yearSession = new StringFilter();
+        }
+        return yearSession;
     }
-    final UserUniInfoCriteria that = (UserUniInfoCriteria) o;
-    return (
-      Objects.equals(id, that.id) &&
-      Objects.equals(userId, that.userId) &&
-      Objects.equals(faculty, that.faculty) &&
-      Objects.equals(program, that.program) &&
-      Objects.equals(yearSession, that.yearSession) &&
-      Objects.equals(intakeSemester, that.intakeSemester) &&
-      Objects.equals(yearOfStudy, that.yearOfStudy) &&
-      Objects.equals(stayIn, that.stayIn) &&
-      Objects.equals(status, that.status)
-    );
-  }
 
-  @Override
-  public int hashCode() {
-    return Objects.hash(id, userId, faculty, program, yearSession, intakeSemester, yearOfStudy, stayIn, status);
-  }
+    public void setYearSession(StringFilter yearSession) {
+        this.yearSession = yearSession;
+    }
 
-  // prettier-ignore
+    public IntegerFilter getIntakeSemester() {
+        return intakeSemester;
+    }
+
+    public IntegerFilter intakeSemester() {
+        if (intakeSemester == null) {
+            intakeSemester = new IntegerFilter();
+        }
+        return intakeSemester;
+    }
+
+    public void setIntakeSemester(IntegerFilter intakeSemester) {
+        this.intakeSemester = intakeSemester;
+    }
+
+    public StringFilter getStayIn() {
+        return stayIn;
+    }
+
+    public StringFilter stayIn() {
+        if (stayIn == null) {
+            stayIn = new StringFilter();
+        }
+        return stayIn;
+    }
+
+    public void setStayIn(StringFilter stayIn) {
+        this.stayIn = stayIn;
+    }
+
+    public UserUniStatusFilter getStatus() {
+        return status;
+    }
+
+    public UserUniStatusFilter status() {
+        if (status == null) {
+            status = new UserUniStatusFilter();
+        }
+        return status;
+    }
+
+    public void setStatus(UserUniStatusFilter status) {
+        this.status = status;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        final UserUniInfoCriteria that = (UserUniInfoCriteria) o;
+        return (
+            Objects.equals(id, that.id) &&
+                Objects.equals(userId, that.userId) &&
+                Objects.equals(yearSession, that.yearSession) &&
+                Objects.equals(intakeSemester, that.intakeSemester) &&
+                Objects.equals(stayIn, that.stayIn) &&
+                Objects.equals(status, that.status)
+        );
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, userId, courseProgramId, yearSession, intakeSemester, stayIn, status);
+    }
+
+    // prettier-ignore
     @Override
     public String toString() {
         return "UserUniInfoCriteria{" +
             (id != null ? "id=" + id + ", " : "") +
             (userId != null ? "userId=" + userId + ", " : "") +
-            (faculty != null ? "faculty=" + faculty + ", " : "") +
-            (program != null ? "program=" + program + ", " : "") +
             (yearSession != null ? "yearSession=" + yearSession + ", " : "") +
             (intakeSemester != null ? "intakeSemester=" + intakeSemester + ", " : "") +
-            (yearOfStudy != null ? "yearOfStudy=" + yearOfStudy + ", " : "") +
             (stayIn != null ? "stayIn=" + stayIn + ", " : "") +
             (status != null ? "status=" + status + ", " : "") +
             "}";

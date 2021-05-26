@@ -89,20 +89,14 @@ public class UserUniInfoQueryService extends QueryService<UserUniInfo> {
       if (criteria.getUserId() != null) {
         specification = specification.and(buildRangeSpecification(criteria.getUserId(), UserUniInfo_.userId));
       }
-      if (criteria.getFaculty() != null) {
-        specification = specification.and(buildStringSpecification(criteria.getFaculty(), UserUniInfo_.faculty));
-      }
-      if (criteria.getProgram() != null) {
-        specification = specification.and(buildStringSpecification(criteria.getProgram(), UserUniInfo_.program));
+      if (criteria.getCourseProgramId() != null) {
+        specification = specification.and(buildRangeSpecification(criteria.getCourseProgramId(), UserUniInfo_.courseProgramId));
       }
       if (criteria.getYearSession() != null) {
         specification = specification.and(buildStringSpecification(criteria.getYearSession(), UserUniInfo_.yearSession));
       }
       if (criteria.getIntakeSemester() != null) {
         specification = specification.and(buildRangeSpecification(criteria.getIntakeSemester(), UserUniInfo_.intakeSemester));
-      }
-      if (criteria.getYearOfStudy() != null) {
-        specification = specification.and(buildRangeSpecification(criteria.getYearOfStudy(), UserUniInfo_.yearOfStudy));
       }
       if (criteria.getStayIn() != null) {
         specification = specification.and(buildStringSpecification(criteria.getStayIn(), UserUniInfo_.stayIn));
