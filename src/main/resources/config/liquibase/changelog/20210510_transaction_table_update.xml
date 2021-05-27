@@ -11,7 +11,7 @@
     </changeSet>
     <changeSet id="20210510_2" author="LUXIANZE">
         <addColumn tableName="transaction">
-            <column name="title" type="varchar(50)" defaultValue="transaction title generated for older records before changeSet 20210510_2">
+            <column name="title" type="varchar(255)" defaultValue="transaction title generated for older records before changeSet 20210510_2">
                 <constraints nullable="false"/>
             </column>
             <column name="image_link" type="varchar(255)">
