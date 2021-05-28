@@ -1,10 +1,10 @@
 package com.thirdcc.webapp.service.criteria;
 
-import tech.jhipster.service.Criteria;
-import tech.jhipster.service.filter.Filter;
-import tech.jhipster.service.filter.IntegerFilter;
-import tech.jhipster.service.filter.LongFilter;
-import tech.jhipster.service.filter.StringFilter;
+import io.github.jhipster.service.Criteria;
+import io.github.jhipster.service.filter.Filter;
+import io.github.jhipster.service.filter.IntegerFilter;
+import io.github.jhipster.service.filter.LongFilter;
+import io.github.jhipster.service.filter.StringFilter;
 
 import java.io.Serializable;
 import java.util.Objects;

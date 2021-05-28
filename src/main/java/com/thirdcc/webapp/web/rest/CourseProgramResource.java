@@ -2,7 +2,7 @@ package com.thirdcc.webapp.web.rest;
 
 import com.thirdcc.webapp.domain.CourseProgram;
 import com.thirdcc.webapp.service.CourseProgramService;
-import tech.jhipster.web.util.PaginationUtil;
+import io.github.jhipster.web.util.PaginationUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;

@@ -17,7 +17,7 @@ logging:
   level:
     ROOT: INFO
     com.thirdcc.webapp: INFO
-    tech.jhipster: INFO
+    io.github.jhipster: INFO
 
 eureka:
   instance:

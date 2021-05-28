@@ -4,7 +4,7 @@ import com.thirdcc.webapp.config.Constants;
 
 import com.thirdcc.webapp.ClubmanagementApp;
 import com.thirdcc.webapp.domain.User;
-import tech.jhipster.config.JHipsterProperties;
+import io.github.jhipster.config.JHipsterProperties;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;

@@ -1,6 +1,6 @@
 package com.thirdcc.webapp.config;
 
-import tech.jhipster.config.locale.AngularCookieLocaleResolver;
+import io.github.jhipster.config.locale.AngularCookieLocaleResolver;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

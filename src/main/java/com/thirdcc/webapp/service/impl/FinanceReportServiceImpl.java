@@ -10,7 +10,7 @@ import com.thirdcc.webapp.service.FinanceReportService;
 import com.thirdcc.webapp.service.dto.EventDTO;
 import com.thirdcc.webapp.service.dto.FinanceReportDTO;
 import com.thirdcc.webapp.utils.YearSessionUtils;
-import tech.jhipster.web.util.PageUtil;
+import io.github.jhipster.web.util.PageUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;

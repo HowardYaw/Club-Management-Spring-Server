@@ -3,8 +3,8 @@ package com.thirdcc.webapp.service.criteria;
 import com.thirdcc.webapp.domain.enumeration.EventChecklistStatus;
 import com.thirdcc.webapp.domain.enumeration.EventChecklistType;
 import com.thirdcc.webapp.domain.enumeration.EventStatus;
-import tech.jhipster.service.Criteria;
-import tech.jhipster.service.filter.*;
+import io.github.jhipster.service.Criteria;
+import io.github.jhipster.service.filter.*;
 
 import java.io.Serializable;
 import java.util.Objects;

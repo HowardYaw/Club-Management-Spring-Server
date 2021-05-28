@@ -16,7 +16,7 @@
 logging:
   level:
     ROOT: DEBUG
-    tech.jhipster: DEBUG
+    io.github.jhipster: DEBUG
     com.thirdcc.webapp: DEBUG
 
 eureka:

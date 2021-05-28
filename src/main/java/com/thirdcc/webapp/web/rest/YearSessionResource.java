@@ -6,8 +6,8 @@ import com.thirdcc.webapp.service.YearSessionService;
 import com.thirdcc.webapp.service.criteria.YearSessionCriteria;
 import com.thirdcc.webapp.web.rest.errors.BadRequestAlertException;
 
-import tech.jhipster.web.util.HeaderUtil;
-import tech.jhipster.web.util.ResponseUtil;
+import io.github.jhipster.web.util.HeaderUtil;
+import io.github.jhipster.web.util.ResponseUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;

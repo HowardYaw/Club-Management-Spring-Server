@@ -1,6 +1,6 @@
 package com.thirdcc.webapp.config;
 
-import tech.jhipster.config.JHipsterProperties;
+import io.github.jhipster.config.JHipsterProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.web.server.*;

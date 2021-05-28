@@ -13,7 +13,7 @@ import com.thirdcc.webapp.repository.EventAttendeeRepository;
 import com.thirdcc.webapp.service.EventService;
 import com.thirdcc.webapp.service.dto.EventAttendeeDTO;
 import com.thirdcc.webapp.service.mapper.EventAttendeeMapper;
-import tech.jhipster.web.util.PageUtil;
+import io.github.jhipster.web.util.PageUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

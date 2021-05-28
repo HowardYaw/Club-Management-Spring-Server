@@ -2,7 +2,7 @@ package com.thirdcc.webapp.service;
 
 import com.thirdcc.webapp.domain.User;
 
-import tech.jhipster.config.JHipsterProperties;
+import io.github.jhipster.config.JHipsterProperties;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Locale;

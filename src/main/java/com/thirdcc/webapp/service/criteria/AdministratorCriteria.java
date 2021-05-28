@@ -4,14 +4,14 @@ import com.thirdcc.webapp.domain.enumeration.AdministratorRole;
 import com.thirdcc.webapp.domain.enumeration.AdministratorStatus;
 import java.io.Serializable;
 import java.util.Objects;
-import tech.jhipster.service.Criteria;
-import tech.jhipster.service.filter.BooleanFilter;
-import tech.jhipster.service.filter.DoubleFilter;
-import tech.jhipster.service.filter.Filter;
-import tech.jhipster.service.filter.FloatFilter;
-import tech.jhipster.service.filter.IntegerFilter;
-import tech.jhipster.service.filter.LongFilter;
-import tech.jhipster.service.filter.StringFilter;
+import io.github.jhipster.service.Criteria;
+import io.github.jhipster.service.filter.BooleanFilter;
+import io.github.jhipster.service.filter.DoubleFilter;
+import io.github.jhipster.service.filter.Filter;
+import io.github.jhipster.service.filter.FloatFilter;
+import io.github.jhipster.service.filter.IntegerFilter;
+import io.github.jhipster.service.filter.LongFilter;
+import io.github.jhipster.service.filter.StringFilter;
 
 /**
  * Criteria class for the {@link com.thirdcc.webapp.domain.Administrator} entity. This class is used

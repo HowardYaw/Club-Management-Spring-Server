@@ -1,6 +1,6 @@
 package com.thirdcc.webapp.config;
 
-import tech.jhipster.config.JHipsterConstants;
+import io.github.jhipster.config.JHipsterConstants;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

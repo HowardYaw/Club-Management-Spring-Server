@@ -1,7 +1,7 @@
 package com.thirdcc.webapp.security.jwt;
 
 import com.thirdcc.webapp.config.ApplicationProperties;
-import tech.jhipster.config.JHipsterProperties;
+import io.github.jhipster.config.JHipsterProperties;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
