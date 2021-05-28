@@ -4,6 +4,7 @@ import com.thirdcc.webapp.ClubmanagementApp;
 import com.thirdcc.webapp.annotations.authorization.WithCurrentCCAdministrator;
 import com.thirdcc.webapp.annotations.authorization.WithEventCrew;
 import com.thirdcc.webapp.annotations.authorization.WithEventHead;
+import com.thirdcc.webapp.annotations.authorization.WithNormalUser;
 import com.thirdcc.webapp.annotations.init.InitYearSession;
 import com.thirdcc.webapp.domain.Budget;
 import com.thirdcc.webapp.domain.Event;
@@ -50,6 +51,7 @@ import org.springframework.transaction.annotation.Transactional;
 @SpringBootTest(classes = ClubmanagementApp.class)
 @AutoConfigureMockMvc
 @InitYearSession
+@WithNormalUser
 public class BudgetResourceIT {
 
     private static final String ENTITY_API_URL = "/api/event-budget";

@@ -47,6 +47,7 @@ import com.thirdcc.webapp.domain.enumeration.UserUniStatus;
 @SpringBootTest(classes = ClubmanagementApp.class)
 @AutoConfigureMockMvc
 @InitYearSession
+@WithNormalUser
 public class UserUniInfoResourceIT {
 
     private static final String ENTITY_API_URL = "/api/user-uni-infos";
