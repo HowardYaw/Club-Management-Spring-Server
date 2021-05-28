@@ -947,7 +947,7 @@ public class EventResourceIT {
         restEventMockMvc
             .perform(get(ENTITY_API_URL + "?sort=id,desc&" + filter))
             .andExpect(status().isOk())
-            .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(content().contentType(TestUtil.APPLICATION_JSON_UTF8))
             .andExpect(jsonPath("$.[*].id").value(hasItem(event.getId().intValue())))
             .andExpect(jsonPath("$.[*].name").value(hasItem(DEFAULT_NAME)))
             .andExpect(jsonPath("$.[*].description").value(hasItem(DEFAULT_DESCRIPTION.toString())))
@@ -963,7 +963,7 @@ public class EventResourceIT {
         restEventMockMvc
             .perform(get(ENTITY_API_URL + "/count?sort=id,desc&" + filter))
             .andExpect(status().isOk())
-            .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(content().contentType(TestUtil.APPLICATION_JSON_UTF8))
             .andExpect(content().string("1"));
     }
 
@@ -974,7 +974,7 @@ public class EventResourceIT {
         restEventMockMvc
             .perform(get(ENTITY_API_URL + "?sort=id,desc&" + filter))
             .andExpect(status().isOk())
-            .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(content().contentType(TestUtil.APPLICATION_JSON_UTF8))
             .andExpect(jsonPath("$").isArray())
             .andExpect(jsonPath("$").isEmpty());
 
@@ -982,7 +982,7 @@ public class EventResourceIT {
         restEventMockMvc
             .perform(get(ENTITY_API_URL + "/count?sort=id,desc&" + filter))
             .andExpect(status().isOk())
-            .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(content().contentType(TestUtil.APPLICATION_JSON_UTF8))
             .andExpect(content().string("0"));
     }
 

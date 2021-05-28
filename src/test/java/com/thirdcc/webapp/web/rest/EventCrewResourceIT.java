@@ -528,7 +528,7 @@ public class EventCrewResourceIT {
         restEventCrewMockMvc
             .perform(get(ENTITY_API_URL + "?sort=id,desc&" + filter))
             .andExpect(status().isOk())
-            .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(content().contentType(TestUtil.APPLICATION_JSON_UTF8))
             .andExpect(jsonPath("$.[*].id").value(hasItem(eventCrew.getId().intValue())))
             .andExpect(jsonPath("$.[*].userId").value(hasItem(DEFAULT_USER_ID.intValue())))
             .andExpect(jsonPath("$.[*].eventId").value(hasItem(DEFAULT_EVENT_ID.intValue())))
@@ -538,7 +538,7 @@ public class EventCrewResourceIT {
         restEventCrewMockMvc
             .perform(get(ENTITY_API_URL + "/count?sort=id,desc&" + filter))
             .andExpect(status().isOk())
-            .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(content().contentType(TestUtil.APPLICATION_JSON_UTF8))
             .andExpect(content().string("1"));
     }
 
@@ -549,7 +549,7 @@ public class EventCrewResourceIT {
         restEventCrewMockMvc
             .perform(get(ENTITY_API_URL + "?sort=id,desc&" + filter))
             .andExpect(status().isOk())
-            .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(content().contentType(TestUtil.APPLICATION_JSON_UTF8))
             .andExpect(jsonPath("$").isArray())
             .andExpect(jsonPath("$").isEmpty());
 
@@ -557,7 +557,7 @@ public class EventCrewResourceIT {
         restEventCrewMockMvc
             .perform(get(ENTITY_API_URL + "/count?sort=id,desc&" + filter))
             .andExpect(status().isOk())
-            .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(content().contentType(TestUtil.APPLICATION_JSON_UTF8))
             .andExpect(content().string("0"));
     }
 
