@@ -62,6 +62,12 @@ public class TransactionResourceIT {
     private static final TransactionType DEFAULT_TYPE = TransactionType.INCOME;
     private static final TransactionType UPDATED_TYPE = TransactionType.EXPENSE;
 
+    private static final String DEFAULT_TITLE = "DEFAULT_TITLE";
+    private static final String UPDATED_TITLE = "UPDATED_TITLE";
+
+    private static final Instant DEFAULT_TRANSACTION_DATE = Instant.ofEpochMilli(4545);
+    private static final Instant UPDATED_TRANSACTION_DATE = Instant.ofEpochMilli(8745);
+
     private static final BigDecimal DEFAULT_AMOUNT = new BigDecimal(1);
     private static final BigDecimal SMALLER_AMOUNT = DEFAULT_AMOUNT.subtract(BigDecimal.ONE);
     private static final BigDecimal UPDATED_AMOUNT = new BigDecimal(2);
@@ -150,7 +156,11 @@ public class TransactionResourceIT {
      */
     public static Transaction createTransactionEntity() {
         return new Transaction()
+            .title(DEFAULT_TITLE)
+            .transactionDate(DEFAULT_TRANSACTION_DATE)
             .transactionType(DEFAULT_TYPE)
+            .transactionStatus(DEFAULT_TRANSACTION_STATUS)
+            .eventId(DEFAULT_EVENT_ID)
             .transactionAmount(DEFAULT_AMOUNT)
             .description(DEFAULT_DETAILS);
     }
@@ -975,7 +985,7 @@ public class TransactionResourceIT {
             .transactionType(UPDATED_TYPE)
             .transactionAmount(UPDATED_AMOUNT)
             .description(UPDATED_DETAILS)
-            .status(TransactionStatus.CANCELLED);
+            .transactionStatus(TransactionStatus.CANCELLED);
         TransactionDTO transactionDTO = transactionMapper.toDto(updatedTransaction);
 
         restTransactionMockMvc.perform(put("/api/transactions")
@@ -1037,7 +1047,7 @@ public class TransactionResourceIT {
             .transactionType(UPDATED_TYPE)
             .transactionAmount(UPDATED_AMOUNT)
             .description(UPDATED_DETAILS)
-            .status(TransactionStatus.SUCCESS);
+            .transactionStatus(TransactionStatus.SUCCESS);
         TransactionDTO transactionDTO = transactionMapper.toDto(updatedTransaction);
 
         restTransactionMockMvc.perform(put("/api/transactions")

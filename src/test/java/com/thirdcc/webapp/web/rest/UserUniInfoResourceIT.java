@@ -19,6 +19,7 @@ import com.thirdcc.webapp.service.UserUniInfoService;
 import com.thirdcc.webapp.service.dto.UserUniInfoDTO;
 import com.thirdcc.webapp.service.mapper.UserUniInfoMapper;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockitoAnnotations;
@@ -53,7 +54,7 @@ public class UserUniInfoResourceIT {
     private static final String ENTITY_API_URL = "/api/user-uni-infos";
 
     private static final Long DEFAULT_USER_ID = 1L;
-    private static final Long SMALLER_USER_ID = 1L;
+    private static final Long SMALLER_USER_ID = DEFAULT_USER_ID - 1L;
     private static final Long UPDATED_USER_ID = 2L;
 
     private static final Long DEFAULT_COURSE_PROGRAM_ID = 1L;
@@ -112,6 +113,11 @@ public class UserUniInfoResourceIT {
         MockitoAnnotations.initMocks(this);
     }
 
+    @AfterEach
+    public void cleanUp() {
+        userUniInfoRepository.deleteAll();
+    }
+
     /**
      * Create an entity for this test.
      *
@@ -159,7 +165,6 @@ public class UserUniInfoResourceIT {
     }
 
     @Test
-    @Transactional
     @WithNormalUser
     public void createUserUniInfo() throws Exception {
         User currentUser = getCurrentUser();
@@ -185,7 +190,6 @@ public class UserUniInfoResourceIT {
     }
 
     @Test
-    @Transactional
     @WithNormalUser
     public void createUserUniInfoWithExistingId() throws Exception {
         int databaseSizeBeforeCreate = userUniInfoRepository.findAll().size();
@@ -207,7 +211,6 @@ public class UserUniInfoResourceIT {
 
 
     @Test
-    @Transactional
     @WithNormalUser
     public void getAllUserUniInfos() throws Exception {
         // Initialize the database
@@ -228,7 +231,6 @@ public class UserUniInfoResourceIT {
 
 
     @Test
-    @Transactional
     void getUserUniInfosByIdFiltering() throws Exception {
         // Initialize the database
         userUniInfoRepository.saveAndFlush(userUniInfo);
@@ -246,7 +248,6 @@ public class UserUniInfoResourceIT {
     }
 
     @Test
-    @Transactional
     void getAllUserUniInfosByUserIdIsEqualToSomething() throws Exception {
         // Initialize the database
         userUniInfoRepository.saveAndFlush(userUniInfo);
@@ -259,7 +260,6 @@ public class UserUniInfoResourceIT {
     }
 
     @Test
-    @Transactional
     void getAllUserUniInfosByUserIdIsNotEqualToSomething() throws Exception {
         // Initialize the database
         userUniInfoRepository.saveAndFlush(userUniInfo);
@@ -272,7 +272,6 @@ public class UserUniInfoResourceIT {
     }
 
     @Test
-    @Transactional
     void getAllUserUniInfosByUserIdIsInShouldWork() throws Exception {
         // Initialize the database
         userUniInfoRepository.saveAndFlush(userUniInfo);
@@ -285,7 +284,6 @@ public class UserUniInfoResourceIT {
     }
 
     @Test
-    @Transactional
     void getAllUserUniInfosByUserIdIsNullOrNotNull() throws Exception {
         // Initialize the database
         userUniInfoRepository.saveAndFlush(userUniInfo);
@@ -298,7 +296,6 @@ public class UserUniInfoResourceIT {
     }
 
     @Test
-    @Transactional
     void getAllUserUniInfosByUserIdIsGreaterThanOrEqualToSomething() throws Exception {
         // Initialize the database
         userUniInfoRepository.saveAndFlush(userUniInfo);
@@ -311,7 +308,6 @@ public class UserUniInfoResourceIT {
     }
 
     @Test
-    @Transactional
     void getAllUserUniInfosByUserIdIsLessThanOrEqualToSomething() throws Exception {
         // Initialize the database
         userUniInfoRepository.saveAndFlush(userUniInfo);
@@ -324,7 +320,6 @@ public class UserUniInfoResourceIT {
     }
 
     @Test
-    @Transactional
     void getAllUserUniInfosByUserIdIsLessThanSomething() throws Exception {
         // Initialize the database
         userUniInfoRepository.saveAndFlush(userUniInfo);
@@ -337,7 +332,6 @@ public class UserUniInfoResourceIT {
     }
 
     @Test
-    @Transactional
     void getAllUserUniInfosByUserIdIsGreaterThanSomething() throws Exception {
         // Initialize the database
         userUniInfoRepository.saveAndFlush(userUniInfo);
@@ -350,85 +344,6 @@ public class UserUniInfoResourceIT {
     }
 
     @Test
-    @Transactional
-    void getAllUserUniInfosByProgramIsEqualToSomething() throws Exception {
-        // Initialize the database
-        userUniInfoRepository.saveAndFlush(userUniInfo);
-
-        // Get all the userUniInfoList where program equals to DEFAULT_PROGRAM
-        defaultUserUniInfoShouldBeFound("program.equals=" + DEFAULT_PROGRAM);
-
-        // Get all the userUniInfoList where program equals to UPDATED_PROGRAM
-        defaultUserUniInfoShouldNotBeFound("program.equals=" + UPDATED_PROGRAM);
-    }
-
-    @Test
-    @Transactional
-    void getAllUserUniInfosByProgramIsNotEqualToSomething() throws Exception {
-        // Initialize the database
-        userUniInfoRepository.saveAndFlush(userUniInfo);
-
-        // Get all the userUniInfoList where program not equals to DEFAULT_PROGRAM
-        defaultUserUniInfoShouldNotBeFound("program.notEquals=" + DEFAULT_PROGRAM);
-
-        // Get all the userUniInfoList where program not equals to UPDATED_PROGRAM
-        defaultUserUniInfoShouldBeFound("program.notEquals=" + UPDATED_PROGRAM);
-    }
-
-    @Test
-    @Transactional
-    void getAllUserUniInfosByProgramIsInShouldWork() throws Exception {
-        // Initialize the database
-        userUniInfoRepository.saveAndFlush(userUniInfo);
-
-        // Get all the userUniInfoList where program in DEFAULT_PROGRAM or UPDATED_PROGRAM
-        defaultUserUniInfoShouldBeFound("program.in=" + DEFAULT_PROGRAM + "," + UPDATED_PROGRAM);
-
-        // Get all the userUniInfoList where program equals to UPDATED_PROGRAM
-        defaultUserUniInfoShouldNotBeFound("program.in=" + UPDATED_PROGRAM);
-    }
-
-    @Test
-    @Transactional
-    void getAllUserUniInfosByProgramIsNullOrNotNull() throws Exception {
-        // Initialize the database
-        userUniInfoRepository.saveAndFlush(userUniInfo);
-
-        // Get all the userUniInfoList where program is not null
-        defaultUserUniInfoShouldBeFound("program.specified=true");
-
-        // Get all the userUniInfoList where program is null
-        defaultUserUniInfoShouldNotBeFound("program.specified=false");
-    }
-
-    @Test
-    @Transactional
-    void getAllUserUniInfosByProgramContainsSomething() throws Exception {
-        // Initialize the database
-        userUniInfoRepository.saveAndFlush(userUniInfo);
-
-        // Get all the userUniInfoList where program contains DEFAULT_PROGRAM
-        defaultUserUniInfoShouldBeFound("program.contains=" + DEFAULT_PROGRAM);
-
-        // Get all the userUniInfoList where program contains UPDATED_PROGRAM
-        defaultUserUniInfoShouldNotBeFound("program.contains=" + UPDATED_PROGRAM);
-    }
-
-    @Test
-    @Transactional
-    void getAllUserUniInfosByProgramNotContainsSomething() throws Exception {
-        // Initialize the database
-        userUniInfoRepository.saveAndFlush(userUniInfo);
-
-        // Get all the userUniInfoList where program does not contain DEFAULT_PROGRAM
-        defaultUserUniInfoShouldNotBeFound("program.doesNotContain=" + DEFAULT_PROGRAM);
-
-        // Get all the userUniInfoList where program does not contain UPDATED_PROGRAM
-        defaultUserUniInfoShouldBeFound("program.doesNotContain=" + UPDATED_PROGRAM);
-    }
-
-    @Test
-    @Transactional
     void getAllUserUniInfosByYearSessionIsEqualToSomething() throws Exception {
         // Initialize the database
         userUniInfoRepository.saveAndFlush(userUniInfo);
@@ -441,7 +356,6 @@ public class UserUniInfoResourceIT {
     }
 
     @Test
-    @Transactional
     void getAllUserUniInfosByYearSessionIsNotEqualToSomething() throws Exception {
         // Initialize the database
         userUniInfoRepository.saveAndFlush(userUniInfo);
@@ -454,7 +368,6 @@ public class UserUniInfoResourceIT {
     }
 
     @Test
-    @Transactional
     void getAllUserUniInfosByYearSessionIsInShouldWork() throws Exception {
         // Initialize the database
         userUniInfoRepository.saveAndFlush(userUniInfo);
@@ -467,7 +380,6 @@ public class UserUniInfoResourceIT {
     }
 
     @Test
-    @Transactional
     void getAllUserUniInfosByYearSessionIsNullOrNotNull() throws Exception {
         // Initialize the database
         userUniInfoRepository.saveAndFlush(userUniInfo);
@@ -480,7 +392,6 @@ public class UserUniInfoResourceIT {
     }
 
     @Test
-    @Transactional
     void getAllUserUniInfosByYearSessionContainsSomething() throws Exception {
         // Initialize the database
         userUniInfoRepository.saveAndFlush(userUniInfo);
@@ -493,7 +404,6 @@ public class UserUniInfoResourceIT {
     }
 
     @Test
-    @Transactional
     void getAllUserUniInfosByYearSessionNotContainsSomething() throws Exception {
         // Initialize the database
         userUniInfoRepository.saveAndFlush(userUniInfo);
@@ -506,7 +416,6 @@ public class UserUniInfoResourceIT {
     }
 
     @Test
-    @Transactional
     void getAllUserUniInfosByIntakeSemesterIsEqualToSomething() throws Exception {
         // Initialize the database
         userUniInfoRepository.saveAndFlush(userUniInfo);
@@ -519,7 +428,6 @@ public class UserUniInfoResourceIT {
     }
 
     @Test
-    @Transactional
     void getAllUserUniInfosByIntakeSemesterIsNotEqualToSomething() throws Exception {
         // Initialize the database
         userUniInfoRepository.saveAndFlush(userUniInfo);
@@ -532,7 +440,6 @@ public class UserUniInfoResourceIT {
     }
 
     @Test
-    @Transactional
     void getAllUserUniInfosByIntakeSemesterIsInShouldWork() throws Exception {
         // Initialize the database
         userUniInfoRepository.saveAndFlush(userUniInfo);
@@ -545,7 +452,6 @@ public class UserUniInfoResourceIT {
     }
 
     @Test
-    @Transactional
     void getAllUserUniInfosByIntakeSemesterIsNullOrNotNull() throws Exception {
         // Initialize the database
         userUniInfoRepository.saveAndFlush(userUniInfo);
@@ -558,7 +464,6 @@ public class UserUniInfoResourceIT {
     }
 
     @Test
-    @Transactional
     void getAllUserUniInfosByIntakeSemesterIsGreaterThanOrEqualToSomething() throws Exception {
         // Initialize the database
         userUniInfoRepository.saveAndFlush(userUniInfo);
@@ -571,7 +476,6 @@ public class UserUniInfoResourceIT {
     }
 
     @Test
-    @Transactional
     void getAllUserUniInfosByIntakeSemesterIsLessThanOrEqualToSomething() throws Exception {
         // Initialize the database
         userUniInfoRepository.saveAndFlush(userUniInfo);
@@ -584,7 +488,6 @@ public class UserUniInfoResourceIT {
     }
 
     @Test
-    @Transactional
     void getAllUserUniInfosByIntakeSemesterIsLessThanSomething() throws Exception {
         // Initialize the database
         userUniInfoRepository.saveAndFlush(userUniInfo);
@@ -597,7 +500,6 @@ public class UserUniInfoResourceIT {
     }
 
     @Test
-    @Transactional
     void getAllUserUniInfosByIntakeSemesterIsGreaterThanSomething() throws Exception {
         // Initialize the database
         userUniInfoRepository.saveAndFlush(userUniInfo);
@@ -610,111 +512,6 @@ public class UserUniInfoResourceIT {
     }
 
     @Test
-    @Transactional
-    void getAllUserUniInfosByYearOfStudyIsEqualToSomething() throws Exception {
-        // Initialize the database
-        userUniInfoRepository.saveAndFlush(userUniInfo);
-
-        // Get all the userUniInfoList where yearOfStudy equals to DEFAULT_YEAR_OF_STUDY
-        defaultUserUniInfoShouldBeFound("yearOfStudy.equals=" + DEFAULT_YEAR_OF_STUDY);
-
-        // Get all the userUniInfoList where yearOfStudy equals to UPDATED_YEAR_OF_STUDY
-        defaultUserUniInfoShouldNotBeFound("yearOfStudy.equals=" + UPDATED_YEAR_OF_STUDY);
-    }
-
-    @Test
-    @Transactional
-    void getAllUserUniInfosByYearOfStudyIsNotEqualToSomething() throws Exception {
-        // Initialize the database
-        userUniInfoRepository.saveAndFlush(userUniInfo);
-
-        // Get all the userUniInfoList where yearOfStudy not equals to DEFAULT_YEAR_OF_STUDY
-        defaultUserUniInfoShouldNotBeFound("yearOfStudy.notEquals=" + DEFAULT_YEAR_OF_STUDY);
-
-        // Get all the userUniInfoList where yearOfStudy not equals to UPDATED_YEAR_OF_STUDY
-        defaultUserUniInfoShouldBeFound("yearOfStudy.notEquals=" + UPDATED_YEAR_OF_STUDY);
-    }
-
-    @Test
-    @Transactional
-    void getAllUserUniInfosByYearOfStudyIsInShouldWork() throws Exception {
-        // Initialize the database
-        userUniInfoRepository.saveAndFlush(userUniInfo);
-
-        // Get all the userUniInfoList where yearOfStudy in DEFAULT_YEAR_OF_STUDY or UPDATED_YEAR_OF_STUDY
-        defaultUserUniInfoShouldBeFound("yearOfStudy.in=" + DEFAULT_YEAR_OF_STUDY + "," + UPDATED_YEAR_OF_STUDY);
-
-        // Get all the userUniInfoList where yearOfStudy equals to UPDATED_YEAR_OF_STUDY
-        defaultUserUniInfoShouldNotBeFound("yearOfStudy.in=" + UPDATED_YEAR_OF_STUDY);
-    }
-
-    @Test
-    @Transactional
-    void getAllUserUniInfosByYearOfStudyIsNullOrNotNull() throws Exception {
-        // Initialize the database
-        userUniInfoRepository.saveAndFlush(userUniInfo);
-
-        // Get all the userUniInfoList where yearOfStudy is not null
-        defaultUserUniInfoShouldBeFound("yearOfStudy.specified=true");
-
-        // Get all the userUniInfoList where yearOfStudy is null
-        defaultUserUniInfoShouldNotBeFound("yearOfStudy.specified=false");
-    }
-
-    @Test
-    @Transactional
-    void getAllUserUniInfosByYearOfStudyIsGreaterThanOrEqualToSomething() throws Exception {
-        // Initialize the database
-        userUniInfoRepository.saveAndFlush(userUniInfo);
-
-        // Get all the userUniInfoList where yearOfStudy is greater than or equal to DEFAULT_YEAR_OF_STUDY
-        defaultUserUniInfoShouldBeFound("yearOfStudy.greaterThanOrEqual=" + DEFAULT_YEAR_OF_STUDY);
-
-        // Get all the userUniInfoList where yearOfStudy is greater than or equal to UPDATED_YEAR_OF_STUDY
-        defaultUserUniInfoShouldNotBeFound("yearOfStudy.greaterThanOrEqual=" + UPDATED_YEAR_OF_STUDY);
-    }
-
-    @Test
-    @Transactional
-    void getAllUserUniInfosByYearOfStudyIsLessThanOrEqualToSomething() throws Exception {
-        // Initialize the database
-        userUniInfoRepository.saveAndFlush(userUniInfo);
-
-        // Get all the userUniInfoList where yearOfStudy is less than or equal to DEFAULT_YEAR_OF_STUDY
-        defaultUserUniInfoShouldBeFound("yearOfStudy.lessThanOrEqual=" + DEFAULT_YEAR_OF_STUDY);
-
-        // Get all the userUniInfoList where yearOfStudy is less than or equal to SMALLER_YEAR_OF_STUDY
-        defaultUserUniInfoShouldNotBeFound("yearOfStudy.lessThanOrEqual=" + SMALLER_YEAR_OF_STUDY);
-    }
-
-    @Test
-    @Transactional
-    void getAllUserUniInfosByYearOfStudyIsLessThanSomething() throws Exception {
-        // Initialize the database
-        userUniInfoRepository.saveAndFlush(userUniInfo);
-
-        // Get all the userUniInfoList where yearOfStudy is less than DEFAULT_YEAR_OF_STUDY
-        defaultUserUniInfoShouldNotBeFound("yearOfStudy.lessThan=" + DEFAULT_YEAR_OF_STUDY);
-
-        // Get all the userUniInfoList where yearOfStudy is less than UPDATED_YEAR_OF_STUDY
-        defaultUserUniInfoShouldBeFound("yearOfStudy.lessThan=" + UPDATED_YEAR_OF_STUDY);
-    }
-
-    @Test
-    @Transactional
-    void getAllUserUniInfosByYearOfStudyIsGreaterThanSomething() throws Exception {
-        // Initialize the database
-        userUniInfoRepository.saveAndFlush(userUniInfo);
-
-        // Get all the userUniInfoList where yearOfStudy is greater than DEFAULT_YEAR_OF_STUDY
-        defaultUserUniInfoShouldNotBeFound("yearOfStudy.greaterThan=" + DEFAULT_YEAR_OF_STUDY);
-
-        // Get all the userUniInfoList where yearOfStudy is greater than SMALLER_YEAR_OF_STUDY
-        defaultUserUniInfoShouldBeFound("yearOfStudy.greaterThan=" + SMALLER_YEAR_OF_STUDY);
-    }
-
-    @Test
-    @Transactional
     void getAllUserUniInfosByStayInIsEqualToSomething() throws Exception {
         // Initialize the database
         userUniInfoRepository.saveAndFlush(userUniInfo);
@@ -727,7 +524,6 @@ public class UserUniInfoResourceIT {
     }
 
     @Test
-    @Transactional
     void getAllUserUniInfosByStayInIsNotEqualToSomething() throws Exception {
         // Initialize the database
         userUniInfoRepository.saveAndFlush(userUniInfo);
@@ -740,7 +536,6 @@ public class UserUniInfoResourceIT {
     }
 
     @Test
-    @Transactional
     void getAllUserUniInfosByStayInIsInShouldWork() throws Exception {
         // Initialize the database
         userUniInfoRepository.saveAndFlush(userUniInfo);
@@ -753,7 +548,6 @@ public class UserUniInfoResourceIT {
     }
 
     @Test
-    @Transactional
     void getAllUserUniInfosByStayInIsNullOrNotNull() throws Exception {
         // Initialize the database
         userUniInfoRepository.saveAndFlush(userUniInfo);
@@ -766,7 +560,6 @@ public class UserUniInfoResourceIT {
     }
 
     @Test
-    @Transactional
     void getAllUserUniInfosByStayInContainsSomething() throws Exception {
         // Initialize the database
         userUniInfoRepository.saveAndFlush(userUniInfo);
@@ -779,7 +572,6 @@ public class UserUniInfoResourceIT {
     }
 
     @Test
-    @Transactional
     void getAllUserUniInfosByStayInNotContainsSomething() throws Exception {
         // Initialize the database
         userUniInfoRepository.saveAndFlush(userUniInfo);
@@ -792,7 +584,6 @@ public class UserUniInfoResourceIT {
     }
 
     @Test
-    @Transactional
     void getAllUserUniInfosByStatusIsEqualToSomething() throws Exception {
         // Initialize the database
         userUniInfoRepository.saveAndFlush(userUniInfo);
@@ -805,7 +596,6 @@ public class UserUniInfoResourceIT {
     }
 
     @Test
-    @Transactional
     void getAllUserUniInfosByStatusIsNotEqualToSomething() throws Exception {
         // Initialize the database
         userUniInfoRepository.saveAndFlush(userUniInfo);
@@ -818,7 +608,6 @@ public class UserUniInfoResourceIT {
     }
 
     @Test
-    @Transactional
     void getAllUserUniInfosByStatusIsInShouldWork() throws Exception {
         // Initialize the database
         userUniInfoRepository.saveAndFlush(userUniInfo);
@@ -831,7 +620,6 @@ public class UserUniInfoResourceIT {
     }
 
     @Test
-    @Transactional
     void getAllUserUniInfosByStatusIsNullOrNotNull() throws Exception {
         // Initialize the database
         userUniInfoRepository.saveAndFlush(userUniInfo);
@@ -853,10 +641,9 @@ public class UserUniInfoResourceIT {
             .andExpect(content().contentType(TestUtil.APPLICATION_JSON_UTF8))
             .andExpect(jsonPath("$.[*].id").value(hasItem(userUniInfo.getId().intValue())))
             .andExpect(jsonPath("$.[*].userId").value(hasItem(DEFAULT_USER_ID.intValue())))
-            .andExpect(jsonPath("$.[*].program").value(hasItem(DEFAULT_PROGRAM)))
+            .andExpect(jsonPath("$.[*].courseProgramId").value(hasItem(DEFAULT_COURSE_PROGRAM_ID.intValue())))
             .andExpect(jsonPath("$.[*].yearSession").value(hasItem(DEFAULT_YEAR_SESSION)))
             .andExpect(jsonPath("$.[*].intakeSemester").value(hasItem(DEFAULT_INTAKE_SEMESTER)))
-            .andExpect(jsonPath("$.[*].yearOfStudy").value(hasItem(sameNumber(DEFAULT_YEAR_OF_STUDY))))
             .andExpect(jsonPath("$.[*].stayIn").value(hasItem(DEFAULT_STAY_IN)))
             .andExpect(jsonPath("$.[*].status").value(hasItem(DEFAULT_STATUS.toString())));
 
@@ -889,7 +676,6 @@ public class UserUniInfoResourceIT {
 
 
     @Test
-    @Transactional
     @WithNormalUser
     public void getUserUniInfo() throws Exception {
         // Initialize the database
@@ -909,7 +695,6 @@ public class UserUniInfoResourceIT {
     }
 
     @Test
-    @Transactional
     @WithNormalUser
     public void getNonExistingUserUniInfo() throws Exception {
         // Get the userUniInfo
@@ -918,7 +703,6 @@ public class UserUniInfoResourceIT {
     }
 
     @Test
-    @Transactional
     @WithNormalUser
     public void getCurrentUserDetailsWithUniInfo() throws Exception {
         User user = getCurrentUser();
@@ -956,7 +740,6 @@ public class UserUniInfoResourceIT {
     }
 
     @Test
-    @Transactional
     @WithNormalUser
     public void getCurrentUserDetailsWithUniInfo_UserUniInfoNotExist() throws Exception {
         User user = getCurrentUser();
@@ -975,7 +758,6 @@ public class UserUniInfoResourceIT {
     }
 
     @Test
-    @Transactional
     @WithNormalUser
     public void updateUserUniInfo() throws Exception {
         User currentUser = getCurrentUser();
@@ -1013,7 +795,6 @@ public class UserUniInfoResourceIT {
     }
 
     @Test
-    @Transactional
     @WithNormalUser
     public void updateNonExistingUserUniInfo() throws Exception {
         int databaseSizeBeforeUpdate = userUniInfoRepository.findAll().size();
@@ -1033,7 +814,6 @@ public class UserUniInfoResourceIT {
     }
 
     @Test
-    @Transactional
     @WithNormalUser
     public void deleteUserUniInfo() throws Exception {
         // Initialize the database
@@ -1052,7 +832,6 @@ public class UserUniInfoResourceIT {
     }
 
     @Test
-    @Transactional
     public void equalsVerifier() throws Exception {
         TestUtil.equalsVerifier(UserUniInfo.class);
         UserUniInfo userUniInfo1 = new UserUniInfo();
@@ -1067,7 +846,6 @@ public class UserUniInfoResourceIT {
     }
 
     @Test
-    @Transactional
     public void dtoEqualsVerifier() throws Exception {
         TestUtil.equalsVerifier(UserUniInfoDTO.class);
         UserUniInfoDTO userUniInfoDTO1 = new UserUniInfoDTO();
@@ -1083,7 +861,6 @@ public class UserUniInfoResourceIT {
     }
 
     @Test
-    @Transactional
     public void testEntityFromId() {
         assertThat(userUniInfoMapper.fromId(42L).getId()).isEqualTo(42);
         assertThat(userUniInfoMapper.fromId(null)).isNull();

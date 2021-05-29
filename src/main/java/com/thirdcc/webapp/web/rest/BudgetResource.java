@@ -76,14 +76,14 @@ public class BudgetResource {
             .body(result);
     }
 
-    @GetMapping("/budgets")
+    @GetMapping("/event-budget")
     public ResponseEntity<List<BudgetDTO>> getAllBudgets(BudgetCriteria criteria) {
         log.debug("REST request to get Budgets by criteria: {}", criteria);
         List<BudgetDTO> entityList = budgetQueryService.findByCriteria(criteria);
         return ResponseEntity.ok().body(entityList);
     }
 
-    @GetMapping("/budgets/count")
+    @GetMapping("/event-budget/count")
     public ResponseEntity<Long> countBudgets(BudgetCriteria criteria) {
         log.debug("REST request to count Budgets by criteria: {}", criteria);
         return ResponseEntity.ok().body(budgetQueryService.countByCriteria(criteria));

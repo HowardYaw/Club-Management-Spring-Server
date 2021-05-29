@@ -7,6 +7,7 @@ import com.thirdcc.webapp.service.ReceiptService;
 import com.thirdcc.webapp.service.dto.ReceiptDTO;
 import com.thirdcc.webapp.service.mapper.ReceiptMapper;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockitoAnnotations;
@@ -67,6 +68,11 @@ public class ReceiptResourceIT {
         MockitoAnnotations.initMocks(this);
     }
 
+    @AfterEach
+    public void cleanUp() {
+        receiptRepository.deleteAll();
+    }
+
     /**
      * Create an entity for this test.
      *
@@ -100,7 +106,6 @@ public class ReceiptResourceIT {
     }
 
     @Test
-    @Transactional
     public void createReceipt() throws Exception {
         int databaseSizeBeforeCreate = receiptRepository.findAll().size();
 
@@ -121,7 +126,6 @@ public class ReceiptResourceIT {
     }
 
     @Test
-    @Transactional
     public void createReceiptWithExistingId() throws Exception {
         int databaseSizeBeforeCreate = receiptRepository.findAll().size();
 
@@ -142,7 +146,6 @@ public class ReceiptResourceIT {
 
 
     @Test
-    @Transactional
     void getReceiptsByIdFiltering() throws Exception {
         // Initialize the database
         receiptRepository.saveAndFlush(receipt);
@@ -160,7 +163,6 @@ public class ReceiptResourceIT {
     }
 
     @Test
-    @Transactional
     void getAllReceiptsByReceiptUrlIsEqualToSomething() throws Exception {
         // Initialize the database
         receiptRepository.saveAndFlush(receipt);
@@ -173,7 +175,6 @@ public class ReceiptResourceIT {
     }
 
     @Test
-    @Transactional
     void getAllReceiptsByReceiptUrlIsNotEqualToSomething() throws Exception {
         // Initialize the database
         receiptRepository.saveAndFlush(receipt);
@@ -186,7 +187,6 @@ public class ReceiptResourceIT {
     }
 
     @Test
-    @Transactional
     void getAllReceiptsByReceiptUrlIsInShouldWork() throws Exception {
         // Initialize the database
         receiptRepository.saveAndFlush(receipt);
@@ -199,7 +199,6 @@ public class ReceiptResourceIT {
     }
 
     @Test
-    @Transactional
     void getAllReceiptsByReceiptUrlIsNullOrNotNull() throws Exception {
         // Initialize the database
         receiptRepository.saveAndFlush(receipt);
@@ -212,7 +211,6 @@ public class ReceiptResourceIT {
     }
 
     @Test
-    @Transactional
     void getAllReceiptsByReceiptUrlContainsSomething() throws Exception {
         // Initialize the database
         receiptRepository.saveAndFlush(receipt);
@@ -225,7 +223,6 @@ public class ReceiptResourceIT {
     }
 
     @Test
-    @Transactional
     void getAllReceiptsByReceiptUrlNotContainsSomething() throws Exception {
         // Initialize the database
         receiptRepository.saveAndFlush(receipt);
@@ -238,7 +235,6 @@ public class ReceiptResourceIT {
     }
 
     @Test
-    @Transactional
     void getAllReceiptsByFileNameIsEqualToSomething() throws Exception {
         // Initialize the database
         receiptRepository.saveAndFlush(receipt);
@@ -251,7 +247,6 @@ public class ReceiptResourceIT {
     }
 
     @Test
-    @Transactional
     void getAllReceiptsByFileNameIsNotEqualToSomething() throws Exception {
         // Initialize the database
         receiptRepository.saveAndFlush(receipt);
@@ -264,7 +259,6 @@ public class ReceiptResourceIT {
     }
 
     @Test
-    @Transactional
     void getAllReceiptsByFileNameIsInShouldWork() throws Exception {
         // Initialize the database
         receiptRepository.saveAndFlush(receipt);
@@ -277,7 +271,6 @@ public class ReceiptResourceIT {
     }
 
     @Test
-    @Transactional
     void getAllReceiptsByFileNameIsNullOrNotNull() throws Exception {
         // Initialize the database
         receiptRepository.saveAndFlush(receipt);
@@ -290,7 +283,6 @@ public class ReceiptResourceIT {
     }
 
     @Test
-    @Transactional
     void getAllReceiptsByFileNameContainsSomething() throws Exception {
         // Initialize the database
         receiptRepository.saveAndFlush(receipt);
@@ -303,7 +295,6 @@ public class ReceiptResourceIT {
     }
 
     @Test
-    @Transactional
     void getAllReceiptsByFileNameNotContainsSomething() throws Exception {
         // Initialize the database
         receiptRepository.saveAndFlush(receipt);
@@ -316,7 +307,6 @@ public class ReceiptResourceIT {
     }
 
     @Test
-    @Transactional
     void getAllReceiptsByFileTypeIsEqualToSomething() throws Exception {
         // Initialize the database
         receiptRepository.saveAndFlush(receipt);
@@ -329,7 +319,6 @@ public class ReceiptResourceIT {
     }
 
     @Test
-    @Transactional
     void getAllReceiptsByFileTypeIsNotEqualToSomething() throws Exception {
         // Initialize the database
         receiptRepository.saveAndFlush(receipt);
@@ -342,7 +331,6 @@ public class ReceiptResourceIT {
     }
 
     @Test
-    @Transactional
     void getAllReceiptsByFileTypeIsInShouldWork() throws Exception {
         // Initialize the database
         receiptRepository.saveAndFlush(receipt);
@@ -355,7 +343,6 @@ public class ReceiptResourceIT {
     }
 
     @Test
-    @Transactional
     void getAllReceiptsByFileTypeIsNullOrNotNull() throws Exception {
         // Initialize the database
         receiptRepository.saveAndFlush(receipt);
@@ -368,7 +355,6 @@ public class ReceiptResourceIT {
     }
 
     @Test
-    @Transactional
     void getAllReceiptsByFileTypeContainsSomething() throws Exception {
         // Initialize the database
         receiptRepository.saveAndFlush(receipt);
@@ -381,7 +367,6 @@ public class ReceiptResourceIT {
     }
 
     @Test
-    @Transactional
     void getAllReceiptsByFileTypeNotContainsSomething() throws Exception {
         // Initialize the database
         receiptRepository.saveAndFlush(receipt);
@@ -434,7 +419,6 @@ public class ReceiptResourceIT {
     }
 
     @Test
-    @Transactional
     public void getReceipt() throws Exception {
         // Initialize the database
         receiptRepository.saveAndFlush(receipt);
@@ -450,7 +434,6 @@ public class ReceiptResourceIT {
     }
 
     @Test
-    @Transactional
     public void getNonExistingReceipt() throws Exception {
         // Get the receipt
         restReceiptMockMvc.perform(get("/api/receipts/{id}", Long.MAX_VALUE))
@@ -458,7 +441,6 @@ public class ReceiptResourceIT {
     }
 
     @Test
-    @Transactional
     public void updateReceipt() throws Exception {
         // Initialize the database
         receiptRepository.saveAndFlush(receipt);
@@ -490,7 +472,6 @@ public class ReceiptResourceIT {
     }
 
     @Test
-    @Transactional
     public void updateNonExistingReceipt() throws Exception {
         int databaseSizeBeforeUpdate = receiptRepository.findAll().size();
 
@@ -509,7 +490,6 @@ public class ReceiptResourceIT {
     }
 
     @Test
-    @Transactional
     public void deleteReceipt() throws Exception {
         // Initialize the database
         receiptRepository.saveAndFlush(receipt);
@@ -527,7 +507,6 @@ public class ReceiptResourceIT {
     }
 
     @Test
-    @Transactional
     public void equalsVerifier() throws Exception {
         TestUtil.equalsVerifier(Receipt.class);
         Receipt receipt1 = new Receipt();
@@ -542,7 +521,6 @@ public class ReceiptResourceIT {
     }
 
     @Test
-    @Transactional
     public void dtoEqualsVerifier() throws Exception {
         TestUtil.equalsVerifier(ReceiptDTO.class);
         ReceiptDTO receiptDTO1 = new ReceiptDTO();
@@ -558,7 +536,6 @@ public class ReceiptResourceIT {
     }
 
     @Test
-    @Transactional
     public void testEntityFromId() {
         assertThat(receiptMapper.fromId(42L).getId()).isEqualTo(42);
         assertThat(receiptMapper.fromId(null)).isNull();

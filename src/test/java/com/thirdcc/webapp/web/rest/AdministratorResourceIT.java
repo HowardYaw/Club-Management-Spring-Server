@@ -8,6 +8,7 @@ import com.thirdcc.webapp.service.AdministratorService;
 import com.thirdcc.webapp.service.dto.AdministratorDTO;
 import com.thirdcc.webapp.service.mapper.AdministratorMapper;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockitoAnnotations;
@@ -79,6 +80,11 @@ public class AdministratorResourceIT {
         final AdministratorResource administratorResource = new AdministratorResource(administratorService, administratorQueryService);
     }
 
+    @AfterEach
+    public void cleanUp() {
+        administratorRepository.deleteAll();
+    }
+
     /**
      * Create an entity for this test.
      * <p>
@@ -115,7 +121,6 @@ public class AdministratorResourceIT {
     }
 
     @Test
-    @Transactional
     public void createAdministrator() throws Exception {
         int databaseSizeBeforeCreate = administratorRepository.findAll().size();
 
@@ -137,7 +142,6 @@ public class AdministratorResourceIT {
     }
 
     @Test
-    @Transactional
     public void createAdministratorWithExistingId() throws Exception {
         int databaseSizeBeforeCreate = administratorRepository.findAll().size();
 
@@ -158,7 +162,6 @@ public class AdministratorResourceIT {
 
 
     @Test
-    @Transactional
     void getAdministratorsByIdFiltering() throws Exception {
         // Initialize the database
         administratorRepository.saveAndFlush(administrator);
@@ -176,7 +179,6 @@ public class AdministratorResourceIT {
     }
 
     @Test
-    @Transactional
     void getAllAdministratorsByUserIdIsEqualToSomething() throws Exception {
         // Initialize the database
         administratorRepository.saveAndFlush(administrator);
@@ -189,7 +191,6 @@ public class AdministratorResourceIT {
     }
 
     @Test
-    @Transactional
     void getAllAdministratorsByUserIdIsNotEqualToSomething() throws Exception {
         // Initialize the database
         administratorRepository.saveAndFlush(administrator);
@@ -202,7 +203,6 @@ public class AdministratorResourceIT {
     }
 
     @Test
-    @Transactional
     void getAllAdministratorsByUserIdIsInShouldWork() throws Exception {
         // Initialize the database
         administratorRepository.saveAndFlush(administrator);
@@ -215,7 +215,6 @@ public class AdministratorResourceIT {
     }
 
     @Test
-    @Transactional
     void getAllAdministratorsByUserIdIsNullOrNotNull() throws Exception {
         // Initialize the database
         administratorRepository.saveAndFlush(administrator);
@@ -228,7 +227,6 @@ public class AdministratorResourceIT {
     }
 
     @Test
-    @Transactional
     void getAllAdministratorsByUserIdIsGreaterThanOrEqualToSomething() throws Exception {
         // Initialize the database
         administratorRepository.saveAndFlush(administrator);
@@ -241,7 +239,6 @@ public class AdministratorResourceIT {
     }
 
     @Test
-    @Transactional
     void getAllAdministratorsByUserIdIsLessThanOrEqualToSomething() throws Exception {
         // Initialize the database
         administratorRepository.saveAndFlush(administrator);
@@ -254,7 +251,6 @@ public class AdministratorResourceIT {
     }
 
     @Test
-    @Transactional
     void getAllAdministratorsByUserIdIsLessThanSomething() throws Exception {
         // Initialize the database
         administratorRepository.saveAndFlush(administrator);
@@ -267,7 +263,6 @@ public class AdministratorResourceIT {
     }
 
     @Test
-    @Transactional
     void getAllAdministratorsByUserIdIsGreaterThanSomething() throws Exception {
         // Initialize the database
         administratorRepository.saveAndFlush(administrator);
@@ -280,7 +275,6 @@ public class AdministratorResourceIT {
     }
 
     @Test
-    @Transactional
     void getAllAdministratorsByYearSessionIsEqualToSomething() throws Exception {
         // Initialize the database
         administratorRepository.saveAndFlush(administrator);
@@ -293,7 +287,6 @@ public class AdministratorResourceIT {
     }
 
     @Test
-    @Transactional
     void getAllAdministratorsByYearSessionIsNotEqualToSomething() throws Exception {
         // Initialize the database
         administratorRepository.saveAndFlush(administrator);
@@ -306,7 +299,6 @@ public class AdministratorResourceIT {
     }
 
     @Test
-    @Transactional
     void getAllAdministratorsByYearSessionIsInShouldWork() throws Exception {
         // Initialize the database
         administratorRepository.saveAndFlush(administrator);
@@ -319,7 +311,6 @@ public class AdministratorResourceIT {
     }
 
     @Test
-    @Transactional
     void getAllAdministratorsByYearSessionIsNullOrNotNull() throws Exception {
         // Initialize the database
         administratorRepository.saveAndFlush(administrator);
@@ -332,7 +323,6 @@ public class AdministratorResourceIT {
     }
 
     @Test
-    @Transactional
     void getAllAdministratorsByYearSessionContainsSomething() throws Exception {
         // Initialize the database
         administratorRepository.saveAndFlush(administrator);
@@ -345,7 +335,6 @@ public class AdministratorResourceIT {
     }
 
     @Test
-    @Transactional
     void getAllAdministratorsByYearSessionNotContainsSomething() throws Exception {
         // Initialize the database
         administratorRepository.saveAndFlush(administrator);
@@ -358,7 +347,6 @@ public class AdministratorResourceIT {
     }
 
     @Test
-    @Transactional
     void getAllAdministratorsByRoleIsEqualToSomething() throws Exception {
         // Initialize the database
         administratorRepository.saveAndFlush(administrator);
@@ -371,7 +359,6 @@ public class AdministratorResourceIT {
     }
 
     @Test
-    @Transactional
     void getAllAdministratorsByRoleIsNotEqualToSomething() throws Exception {
         // Initialize the database
         administratorRepository.saveAndFlush(administrator);
@@ -384,7 +371,6 @@ public class AdministratorResourceIT {
     }
 
     @Test
-    @Transactional
     void getAllAdministratorsByRoleIsInShouldWork() throws Exception {
         // Initialize the database
         administratorRepository.saveAndFlush(administrator);
@@ -397,7 +383,6 @@ public class AdministratorResourceIT {
     }
 
     @Test
-    @Transactional
     void getAllAdministratorsByRoleIsNullOrNotNull() throws Exception {
         // Initialize the database
         administratorRepository.saveAndFlush(administrator);
@@ -410,7 +395,6 @@ public class AdministratorResourceIT {
     }
 
     @Test
-    @Transactional
     void getAllAdministratorsByStatusIsEqualToSomething() throws Exception {
         // Initialize the database
         administratorRepository.saveAndFlush(administrator);
@@ -423,7 +407,6 @@ public class AdministratorResourceIT {
     }
 
     @Test
-    @Transactional
     void getAllAdministratorsByStatusIsNotEqualToSomething() throws Exception {
         // Initialize the database
         administratorRepository.saveAndFlush(administrator);
@@ -436,7 +419,6 @@ public class AdministratorResourceIT {
     }
 
     @Test
-    @Transactional
     void getAllAdministratorsByStatusIsInShouldWork() throws Exception {
         // Initialize the database
         administratorRepository.saveAndFlush(administrator);
@@ -449,7 +431,6 @@ public class AdministratorResourceIT {
     }
 
     @Test
-    @Transactional
     void getAllAdministratorsByStatusIsNullOrNotNull() throws Exception {
         // Initialize the database
         administratorRepository.saveAndFlush(administrator);
@@ -504,7 +485,6 @@ public class AdministratorResourceIT {
 
 
     @Test
-    @Transactional
     public void getAdministrator() throws Exception {
         // Initialize the database
         administratorRepository.saveAndFlush(administrator);
@@ -521,7 +501,6 @@ public class AdministratorResourceIT {
     }
 
     @Test
-    @Transactional
     public void getNonExistingAdministrator() throws Exception {
         // Get the administrator
         restAdministratorMockMvc.perform(get("/api/administrators/{id}", Long.MAX_VALUE))
@@ -529,7 +508,6 @@ public class AdministratorResourceIT {
     }
 
     @Test
-    @Transactional
     public void updateAdministrator() throws Exception {
         // Initialize the database
         administratorRepository.saveAndFlush(administrator);
@@ -563,7 +541,6 @@ public class AdministratorResourceIT {
     }
 
     @Test
-    @Transactional
     public void updateNonExistingAdministrator() throws Exception {
         int databaseSizeBeforeUpdate = administratorRepository.findAll().size();
 
@@ -582,7 +559,6 @@ public class AdministratorResourceIT {
     }
 
     @Test
-    @Transactional
     public void deleteAdministrator() throws Exception {
         // Initialize the database
         administratorRepository.saveAndFlush(administrator);
@@ -600,7 +576,6 @@ public class AdministratorResourceIT {
     }
 
     @Test
-    @Transactional
     public void equalsVerifier() throws Exception {
         TestUtil.equalsVerifier(Administrator.class);
         Administrator administrator1 = new Administrator();
@@ -615,7 +590,6 @@ public class AdministratorResourceIT {
     }
 
     @Test
-    @Transactional
     public void dtoEqualsVerifier() throws Exception {
         TestUtil.equalsVerifier(AdministratorDTO.class);
         AdministratorDTO administratorDTO1 = new AdministratorDTO();
@@ -631,7 +605,6 @@ public class AdministratorResourceIT {
     }
 
     @Test
-    @Transactional
     public void testEntityFromId() {
         assertThat(administratorMapper.fromId(42L).getId()).isEqualTo(42);
         assertThat(administratorMapper.fromId(null)).isNull();

@@ -8,6 +8,7 @@ import com.thirdcc.webapp.service.ClubFamilyService;
 import com.thirdcc.webapp.service.dto.ClubFamilyDTO;
 import com.thirdcc.webapp.service.mapper.ClubFamilyMapper;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockitoAnnotations;
@@ -100,7 +101,6 @@ public class ClubFamilyResourceIT {
     }
 
     @Test
-    @Transactional
     public void createClubFamily() throws Exception {
         int databaseSizeBeforeCreate = clubFamilyRepository.findAll().size();
 
@@ -120,7 +120,6 @@ public class ClubFamilyResourceIT {
     }
 
     @Test
-    @Transactional
     public void createClubFamilyWithExistingId() throws Exception {
         int databaseSizeBeforeCreate = clubFamilyRepository.findAll().size();
 
@@ -141,7 +140,6 @@ public class ClubFamilyResourceIT {
 
 
     @Test
-    @Transactional
     void getAllClubFamilies() throws Exception {
         // Initialize the database
         clubFamilyRepository.saveAndFlush(clubFamily);
@@ -157,7 +155,6 @@ public class ClubFamilyResourceIT {
     }
 
     @Test
-    @Transactional
     void getClubFamiliesByIdFiltering() throws Exception {
         // Initialize the database
         clubFamilyRepository.saveAndFlush(clubFamily);
@@ -175,10 +172,8 @@ public class ClubFamilyResourceIT {
     }
 
     @Test
-    @Transactional
     void getAllClubFamiliesByNameIsEqualToSomething() throws Exception {
         // Initialize the database
-        clubFamilyRepository.saveAndFlush(clubFamily);
 
         // Get all the clubFamilyList where name equals to DEFAULT_NAME
         defaultClubFamilyShouldBeFound("name.equals=" + DEFAULT_NAME);
@@ -188,10 +183,8 @@ public class ClubFamilyResourceIT {
     }
 
     @Test
-    @Transactional
     void getAllClubFamiliesByNameIsNotEqualToSomething() throws Exception {
         // Initialize the database
-        clubFamilyRepository.saveAndFlush(clubFamily);
 
         // Get all the clubFamilyList where name not equals to DEFAULT_NAME
         defaultClubFamilyShouldNotBeFound("name.notEquals=" + DEFAULT_NAME);
@@ -201,10 +194,8 @@ public class ClubFamilyResourceIT {
     }
 
     @Test
-    @Transactional
     void getAllClubFamiliesByNameIsInShouldWork() throws Exception {
         // Initialize the database
-        clubFamilyRepository.saveAndFlush(clubFamily);
 
         // Get all the clubFamilyList where name in DEFAULT_NAME or UPDATED_NAME
         defaultClubFamilyShouldBeFound("name.in=" + DEFAULT_NAME + "," + UPDATED_NAME);
@@ -214,10 +205,8 @@ public class ClubFamilyResourceIT {
     }
 
     @Test
-    @Transactional
     void getAllClubFamiliesByNameIsNullOrNotNull() throws Exception {
         // Initialize the database
-        clubFamilyRepository.saveAndFlush(clubFamily);
 
         // Get all the clubFamilyList where name is not null
         defaultClubFamilyShouldBeFound("name.specified=true");
@@ -227,10 +216,8 @@ public class ClubFamilyResourceIT {
     }
 
     @Test
-    @Transactional
     void getAllClubFamiliesByNameContainsSomething() throws Exception {
         // Initialize the database
-        clubFamilyRepository.saveAndFlush(clubFamily);
 
         // Get all the clubFamilyList where name contains DEFAULT_NAME
         defaultClubFamilyShouldBeFound("name.contains=" + DEFAULT_NAME);
@@ -240,10 +227,8 @@ public class ClubFamilyResourceIT {
     }
 
     @Test
-    @Transactional
     void getAllClubFamiliesByNameNotContainsSomething() throws Exception {
         // Initialize the database
-        clubFamilyRepository.saveAndFlush(clubFamily);
 
         // Get all the clubFamilyList where name does not contain DEFAULT_NAME
         defaultClubFamilyShouldNotBeFound("name.doesNotContain=" + DEFAULT_NAME);
@@ -292,10 +277,8 @@ public class ClubFamilyResourceIT {
     }
 
     @Test
-    @Transactional
     public void getClubFamily() throws Exception {
         // Initialize the database
-        clubFamilyRepository.saveAndFlush(clubFamily);
 
         // Get the clubFamily
         restClubFamilyMockMvc.perform(get("/api/club-families/{id}", clubFamily.getId()))
@@ -307,7 +290,6 @@ public class ClubFamilyResourceIT {
     }
 
     @Test
-    @Transactional
     public void getNonExistingClubFamily() throws Exception {
         // Get the clubFamily
         restClubFamilyMockMvc.perform(get("/api/club-families/{id}", Long.MAX_VALUE))
@@ -315,10 +297,8 @@ public class ClubFamilyResourceIT {
     }
 
     @Test
-    @Transactional
     public void updateClubFamily() throws Exception {
         // Initialize the database
-        clubFamilyRepository.saveAndFlush(clubFamily);
 
         int databaseSizeBeforeUpdate = clubFamilyRepository.findAll().size();
 
@@ -345,7 +325,6 @@ public class ClubFamilyResourceIT {
     }
 
     @Test
-    @Transactional
     public void updateNonExistingClubFamily() throws Exception {
         int databaseSizeBeforeUpdate = clubFamilyRepository.findAll().size();
 
@@ -364,10 +343,8 @@ public class ClubFamilyResourceIT {
     }
 
     @Test
-    @Transactional
     public void deleteClubFamily() throws Exception {
         // Initialize the database
-        clubFamilyRepository.saveAndFlush(clubFamily);
 
         int databaseSizeBeforeDelete = clubFamilyRepository.findAll().size();
 
@@ -382,7 +359,6 @@ public class ClubFamilyResourceIT {
     }
 
     @Test
-    @Transactional
     public void equalsVerifier() throws Exception {
         TestUtil.equalsVerifier(ClubFamily.class);
         ClubFamily clubFamily1 = new ClubFamily();
@@ -397,7 +373,6 @@ public class ClubFamilyResourceIT {
     }
 
     @Test
-    @Transactional
     public void dtoEqualsVerifier() throws Exception {
         TestUtil.equalsVerifier(ClubFamilyDTO.class);
         ClubFamilyDTO clubFamilyDTO1 = new ClubFamilyDTO();
@@ -413,7 +388,6 @@ public class ClubFamilyResourceIT {
     }
 
     @Test
-    @Transactional
     public void testEntityFromId() {
         assertThat(clubFamilyMapper.fromId(42L).getId()).isEqualTo(42);
         assertThat(clubFamilyMapper.fromId(null)).isNull();

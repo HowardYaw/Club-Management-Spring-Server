@@ -1,10 +1,7 @@
 package com.thirdcc.webapp.web.rest;
 
 import com.thirdcc.webapp.ClubmanagementApp;
-import com.thirdcc.webapp.annotations.authorization.WithCurrentCCAdministrator;
-import com.thirdcc.webapp.annotations.authorization.WithCurrentCCHead;
-import com.thirdcc.webapp.annotations.authorization.WithEventCrew;
-import com.thirdcc.webapp.annotations.authorization.WithEventHead;
+import com.thirdcc.webapp.annotations.authorization.*;
 import com.thirdcc.webapp.annotations.init.InitYearSession;
 import com.thirdcc.webapp.domain.Event;
 import com.thirdcc.webapp.domain.EventCrew;
@@ -50,6 +47,7 @@ import com.thirdcc.webapp.domain.enumeration.EventCrewRole;
 @SpringBootTest(classes = ClubmanagementApp.class)
 @AutoConfigureMockMvc
 @InitYearSession
+@WithNormalUser
 public class EventCrewResourceIT {
 
     private static final String ENTITY_API_URL = "/api/event-crews";
@@ -63,7 +61,7 @@ public class EventCrewResourceIT {
     private static final Long UPDATED_EVENT_ID = 2L;
 
     private static final EventCrewRole DEFAULT_ROLE = EventCrewRole.HEAD;
-    private static final EventCrewRole UPDATED_ROLE = EventCrewRole.HEAD;
+    private static final EventCrewRole UPDATED_ROLE = EventCrewRole.MEMBER;
 
     private static final String DEFAULT_EVENT_NAME = "DEFAULT_EVENT_NAME";
     private static final String DEFAULT_EVENT_DESCRIPTION = "DEFAULT_EVENT_DESCRIPTION";
@@ -101,6 +99,11 @@ public class EventCrewResourceIT {
     @BeforeEach
     public void setup() {
         MockitoAnnotations.initMocks(this);
+    }
+
+    @BeforeEach
+    public void initTest() {
+        eventCrew = createEventCrewEntity();
     }
 
     /**
