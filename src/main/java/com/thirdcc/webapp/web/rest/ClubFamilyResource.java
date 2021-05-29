@@ -77,7 +77,7 @@ public class ClubFamilyResource {
         if (clubFamilyDTO.getId() == null) {
             throw new BadRequestAlertException("Invalid id", ENTITY_NAME, "idnull");
         }
-        ClubFamilyDTO result = clubFamilyService.save(clubFamilyDTO);
+        ClubFamilyDTO result = clubFamilyService.update(clubFamilyDTO);
         return ResponseEntity.ok()
             .headers(HeaderUtil.createEntityUpdateAlert(applicationName, true, ENTITY_NAME, clubFamilyDTO.getId().toString()))
             .body(result);
