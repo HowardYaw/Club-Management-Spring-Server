@@ -101,7 +101,7 @@ public class ReceiptQueryService extends QueryService<Receipt> {
             if (criteria.getFileType() != null) {
                 specification = specification.and(buildStringSpecification(criteria.getFileType(), Receipt_.fileType));
             }
-            if (criteria.getReceiptUrl() != null) {
+            if (criteria.getReceiptUniqueId() != null) {
                 specification = specification.and(buildStringSpecification(criteria.getReceiptUrl(), Receipt_.receiptUniqueId));
             }
         }
