@@ -73,7 +73,7 @@ public class TransactionServiceImpl implements TransactionService {
     public TransactionDTO save(TransactionDTO transactionDTO) {
         log.debug("Request to save Transaction : {}", transactionDTO);
         eventService.findEventByIdAndNotCancelledStatus(transactionDTO.getEventId());
-        if (transactionDTO.getType() == TransactionType.EXPENSE && transactionDTO.getReceiptDTO() == null) {
+        if (transactionDTO.getTransactionType() == TransactionType.EXPENSE && transactionDTO.getReceiptDTO() == null) {
             throw new BadRequestException("Expense transaction required an receipt image as proof ");
         }
         if (transactionDTO.getReceiptDTO() != null) {
@@ -83,7 +83,7 @@ public class TransactionServiceImpl implements TransactionService {
         Transaction transaction = transactionMapper.toEntity(transactionDTO);
         transaction.setTransactionStatus(TransactionStatus.SUCCESS);
         transaction = transactionRepository.save(transaction);
-        if (transactionDTO.getType() == TransactionType.EXPENSE) {
+        if (transactionDTO.getTransactionType() == TransactionType.EXPENSE) {
 //            createClaimRecord(transaction);
         }
         return transactionMapper.toDto(transaction);
@@ -98,8 +98,8 @@ public class TransactionServiceImpl implements TransactionService {
         if (transaction.getTransactionStatus() == TransactionStatus.CANCELLED) {
             throw new BadRequestException("Cannot update transaction that is cancelled");
         }
-        transaction.setDescription(transactionDTO.getDetails());
-        transaction.setTransactionStatus(transactionDTO.getStatus());
+        transaction.setDescription(transactionDTO.getDescription());
+        transaction.setTransactionStatus(transactionDTO.getTransactionStatus());
         transaction = transactionRepository.save(transaction);
         return transactionMapper.toDto(transaction);
     }
