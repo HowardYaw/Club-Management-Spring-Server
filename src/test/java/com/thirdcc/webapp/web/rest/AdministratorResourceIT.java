@@ -315,9 +315,6 @@ public class AdministratorResourceIT {
         // Initialize the database
         administratorRepository.saveAndFlush(administrator);
 
-        // Get all the administratorList where yearSession is not null
-        defaultAdministratorShouldBeFound("yearSession.specified=true");
-
         // Get all the administratorList where yearSession is null
         defaultAdministratorShouldNotBeFound("yearSession.specified=false");
     }

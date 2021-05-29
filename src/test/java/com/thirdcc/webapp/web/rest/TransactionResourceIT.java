@@ -15,6 +15,7 @@ import com.thirdcc.webapp.service.dto.ReceiptDTO;
 import com.thirdcc.webapp.service.dto.TransactionDTO;
 import com.thirdcc.webapp.service.mapper.TransactionMapper;
 
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -45,10 +46,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  */
 @SpringBootTest(classes = ClubmanagementApp.class)
 @AutoConfigureMockMvc
-@WithMockUser(username = "admin", roles = "ADMIN")
+@WithMockUser(username = TransactionResourceIT.USERNAME, roles = "ADMIN")
 @InitYearSession
 public class TransactionResourceIT {
 
+    public static final String USERNAME = "admin";
     private static final String ENTITY_API_URL = "/api/transactions";
 
     private static final Long DEFAULT_EVENT_ID = 1L;
@@ -75,19 +77,25 @@ public class TransactionResourceIT {
     private static final String DEFAULT_DETAILS = "TRANSACTION_DETAILS";
     private static final String UPDATED_DETAILS = "TRANSACTION_UPDATED_DETAILS";
 
+    private static final String DEFAULT_IMAGE_LINK = "DEFAULT_IMAGE_LINK";
+    private static final String UPDATED_IMAGE_LINK = "UPDATED_IMAGE_LINK";
+
     private static final TransactionStatus DEFAULT_TRANSACTION_STATUS = TransactionStatus.SUCCESS;
 
-    private static final String DEFAULT_CREATED_BY = "DEFAULT_CREATED_BY";
+    private static final String DEFAULT_CLOSED_BY = USERNAME;
+    private static final String UPDATED_CLOSED_BY = "UPDATED_CLOSED_BY";
+
+    private static final String DEFAULT_CREATED_BY = USERNAME;
     private static final String UPDATED_CREATED_BY = "UPDATED_CREATED_BY";
 
-    private static final LocalDate DEFAULT_CREATED_DATE = LocalDate.ofEpochDay(123);
-    private static final LocalDate UPDATED_CREATED_DATE = LocalDate.ofEpochDay(657);
+    private static final Instant DEFAULT_CREATED_DATE = Instant.ofEpochSecond(53565);
+    private static final Instant UPDATED_CREATED_DATE = Instant.ofEpochSecond(63565);
 
-    private static final String DEFAULT_LAST_MODIFIED_BY = "DEFAULT_LAST_MODIFIED_BY";
+    private static final String DEFAULT_LAST_MODIFIED_BY = USERNAME;
     private static final String UPDATED_LAST_MODIFIED_BY = "UPDATED_LAST_MODIFIED_BY";
 
-    private static final LocalDate DEFAULT_LAST_MODIFIED_DATE = LocalDate.ofEpochDay(45123);
-    private static final LocalDate UPDATED_LAST_MODIFIED_DATE = LocalDate.ofEpochDay(5675657);
+    private static final Instant DEFAULT_LAST_MODIFIED_DATE = Instant.ofEpochSecond(753565);
+    private static final Instant UPDATED_LAST_MODIFIED_DATE = Instant.ofEpochSecond(953565);
 
     // Event Default data
     private static final String DEFAULT_EVENT_NAME = "DEFAULT_EVENT_NAME";
@@ -162,6 +170,8 @@ public class TransactionResourceIT {
             .transactionStatus(DEFAULT_TRANSACTION_STATUS)
             .eventId(DEFAULT_EVENT_ID)
             .transactionAmount(DEFAULT_AMOUNT)
+            .imageLink(DEFAULT_IMAGE_LINK)
+            .closedBy(DEFAULT_CLOSED_BY)
             .description(DEFAULT_DETAILS);
     }
 
@@ -741,58 +751,6 @@ public class TransactionResourceIT {
 
     @Test
     @Transactional
-    void getAllTransactionsByCreatedDateIsEqualToSomething() throws Exception {
-        // Initialize the database
-        transactionRepository.saveAndFlush(transaction);
-
-        // Get all the transactionList where createdDate equals to DEFAULT_CREATED_DATE
-        defaultTransactionShouldBeFound("createdDate.equals=" + DEFAULT_CREATED_DATE);
-
-        // Get all the transactionList where createdDate equals to UPDATED_CREATED_DATE
-        defaultTransactionShouldNotBeFound("createdDate.equals=" + UPDATED_CREATED_DATE);
-    }
-
-    @Test
-    @Transactional
-    void getAllTransactionsByCreatedDateIsNotEqualToSomething() throws Exception {
-        // Initialize the database
-        transactionRepository.saveAndFlush(transaction);
-
-        // Get all the transactionList where createdDate not equals to DEFAULT_CREATED_DATE
-        defaultTransactionShouldNotBeFound("createdDate.notEquals=" + DEFAULT_CREATED_DATE);
-
-        // Get all the transactionList where createdDate not equals to UPDATED_CREATED_DATE
-        defaultTransactionShouldBeFound("createdDate.notEquals=" + UPDATED_CREATED_DATE);
-    }
-
-    @Test
-    @Transactional
-    void getAllTransactionsByCreatedDateIsInShouldWork() throws Exception {
-        // Initialize the database
-        transactionRepository.saveAndFlush(transaction);
-
-        // Get all the transactionList where createdDate in DEFAULT_CREATED_DATE or UPDATED_CREATED_DATE
-        defaultTransactionShouldBeFound("createdDate.in=" + DEFAULT_CREATED_DATE + "," + UPDATED_CREATED_DATE);
-
-        // Get all the transactionList where createdDate equals to UPDATED_CREATED_DATE
-        defaultTransactionShouldNotBeFound("createdDate.in=" + UPDATED_CREATED_DATE);
-    }
-
-    @Test
-    @Transactional
-    void getAllTransactionsByCreatedDateIsNullOrNotNull() throws Exception {
-        // Initialize the database
-        transactionRepository.saveAndFlush(transaction);
-
-        // Get all the transactionList where createdDate is not null
-        defaultTransactionShouldBeFound("createdDate.specified=true");
-
-        // Get all the transactionList where createdDate is null
-        defaultTransactionShouldNotBeFound("createdDate.specified=false");
-    }
-
-    @Test
-    @Transactional
     void getAllTransactionsByLastModifiedByIsEqualToSomething() throws Exception {
         // Initialize the database
         transactionRepository.saveAndFlush(transaction);
@@ -869,58 +827,6 @@ public class TransactionResourceIT {
         defaultTransactionShouldBeFound("lastModifiedBy.doesNotContain=" + UPDATED_LAST_MODIFIED_BY);
     }
 
-    @Test
-    @Transactional
-    void getAllTransactionsByLastModifiedDateIsEqualToSomething() throws Exception {
-        // Initialize the database
-        transactionRepository.saveAndFlush(transaction);
-
-        // Get all the transactionList where lastModifiedDate equals to DEFAULT_LAST_MODIFIED_DATE
-        defaultTransactionShouldBeFound("lastModifiedDate.equals=" + DEFAULT_LAST_MODIFIED_DATE);
-
-        // Get all the transactionList where lastModifiedDate equals to UPDATED_LAST_MODIFIED_DATE
-        defaultTransactionShouldNotBeFound("lastModifiedDate.equals=" + UPDATED_LAST_MODIFIED_DATE);
-    }
-
-    @Test
-    @Transactional
-    void getAllTransactionsByLastModifiedDateIsNotEqualToSomething() throws Exception {
-        // Initialize the database
-        transactionRepository.saveAndFlush(transaction);
-
-        // Get all the transactionList where lastModifiedDate not equals to DEFAULT_LAST_MODIFIED_DATE
-        defaultTransactionShouldNotBeFound("lastModifiedDate.notEquals=" + DEFAULT_LAST_MODIFIED_DATE);
-
-        // Get all the transactionList where lastModifiedDate not equals to UPDATED_LAST_MODIFIED_DATE
-        defaultTransactionShouldBeFound("lastModifiedDate.notEquals=" + UPDATED_LAST_MODIFIED_DATE);
-    }
-
-    @Test
-    @Transactional
-    void getAllTransactionsByLastModifiedDateIsInShouldWork() throws Exception {
-        // Initialize the database
-        transactionRepository.saveAndFlush(transaction);
-
-        // Get all the transactionList where lastModifiedDate in DEFAULT_LAST_MODIFIED_DATE or UPDATED_LAST_MODIFIED_DATE
-        defaultTransactionShouldBeFound("lastModifiedDate.in=" + DEFAULT_LAST_MODIFIED_DATE + "," + UPDATED_LAST_MODIFIED_DATE);
-
-        // Get all the transactionList where lastModifiedDate equals to UPDATED_LAST_MODIFIED_DATE
-        defaultTransactionShouldNotBeFound("lastModifiedDate.in=" + UPDATED_LAST_MODIFIED_DATE);
-    }
-
-    @Test
-    @Transactional
-    void getAllTransactionsByLastModifiedDateIsNullOrNotNull() throws Exception {
-        // Initialize the database
-        transactionRepository.saveAndFlush(transaction);
-
-        // Get all the transactionList where lastModifiedDate is not null
-        defaultTransactionShouldBeFound("lastModifiedDate.specified=true");
-
-        // Get all the transactionList where lastModifiedDate is null
-        defaultTransactionShouldNotBeFound("lastModifiedDate.specified=false");
-    }
-
     /**
      * Executes the search, and checks that the default entity is returned.
      */
@@ -930,15 +836,18 @@ public class TransactionResourceIT {
             .andExpect(status().isOk())
             .andExpect(content().contentType(TestUtil.APPLICATION_JSON_UTF8))
             .andExpect(jsonPath("$.[*].id").value(hasItem(transaction.getId().intValue())))
+            .andExpect(jsonPath("$.[*].title").value(hasItem(DEFAULT_TITLE)))
+            .andExpect(jsonPath("$.[*].transactionDate").value(hasItem(DEFAULT_TRANSACTION_DATE.toString())))
+            .andExpect(jsonPath("$.[*].transactionType").value(hasItem(DEFAULT_TYPE.name())))
+            .andExpect(jsonPath("$.[*].transactionStatus").value(hasItem(DEFAULT_TRANSACTION_STATUS.name())))
             .andExpect(jsonPath("$.[*].eventId").value(hasItem(DEFAULT_EVENT_ID.intValue())))
-            .andExpect(jsonPath("$.[*].receiptId").value(hasItem(DEFAULT_RECEIPT_ID.intValue())))
-            .andExpect(jsonPath("$.[*].type").value(hasItem(DEFAULT_TYPE.toString())))
-            .andExpect(jsonPath("$.[*].amount").value(hasItem(sameNumber(DEFAULT_AMOUNT))))
-            .andExpect(jsonPath("$.[*].details").value(hasItem(DEFAULT_DETAILS)))
+            .andExpect(jsonPath("$.[*].transactionAmount").value(hasItem(sameNumber(DEFAULT_AMOUNT))))
+            .andExpect(jsonPath("$.[*].imageLink").value(hasItem(DEFAULT_IMAGE_LINK)))
+            .andExpect(jsonPath("$.[*].closedBy").value(hasItem(DEFAULT_CLOSED_BY)))
             .andExpect(jsonPath("$.[*].createdBy").value(hasItem(DEFAULT_CREATED_BY)))
-            .andExpect(jsonPath("$.[*].createdDate").value(hasItem(DEFAULT_CREATED_DATE.toString())))
+            .andExpect(jsonPath("$.[*].createdDate").value(Matchers.notNullValue()))
             .andExpect(jsonPath("$.[*].lastModifiedBy").value(hasItem(DEFAULT_LAST_MODIFIED_BY)))
-            .andExpect(jsonPath("$.[*].lastModifiedDate").value(hasItem(DEFAULT_LAST_MODIFIED_DATE.toString())));
+            .andExpect(jsonPath("$.[*].lastModifiedDate").value(Matchers.notNullValue()));
 
         // Check, that the count call also returns 1
         restTransactionMockMvc

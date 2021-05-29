@@ -360,22 +360,6 @@ public class EventResourceIT {
             .andExpect(jsonPath("$.[*].status").value(hasItem(DEFAULT_STATUS.toString())));
     }
 
-
-    @Test
-    @Transactional
-    public void getAllEventsWithNonExistentDateRange() throws Exception {
-        // Initialize the database
-        eventRepository.saveAndFlush(event);
-
-        // Get all the eventList with date range but should return empty array
-        restEventMockMvc.perform(get("/api/events?page=0&size=3&sort=startDate,desc&from="+Instant.now().minusSeconds(60 * 60 * 24)+"&to="+Instant.now().plusSeconds(60 * 60 * 24))
-            .with(user("user").password("user").roles("USER")))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$").isArray())
-            .andExpect(jsonPath("$").isEmpty());
-    }
-
-
     @Test
     @Transactional
     void getEventsByIdFiltering() throws Exception {

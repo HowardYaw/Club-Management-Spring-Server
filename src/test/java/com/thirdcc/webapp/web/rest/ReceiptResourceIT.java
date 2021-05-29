@@ -37,14 +37,14 @@ public class ReceiptResourceIT {
 
     private static final String ENTITY_API_URL = "/api/receipts";
 
-    private static final String DEFAULT_RECEIPT_URL = "AAAAAAAAAA";
-    private static final String UPDATED_RECEIPT_URL = "BBBBBBBBBB";
+    private static final String DEFAULT_RECEIPT_URL = "DEFAULT_RECEIPT_URL";
+    private static final String UPDATED_RECEIPT_URL = "UPDATED_RECEIPT_URL";
 
-    private static final String DEFAULT_FILE_NAME = "AAAAAAAAAA";
-    private static final String UPDATED_FILE_NAME = "BBBBBBBBBB";
+    private static final String DEFAULT_FILE_NAME = "DEFAULT_FILE_NAME";
+    private static final String UPDATED_FILE_NAME = "UPDATED_FILE_NAME";
 
-    private static final String DEFAULT_FILE_TYPE = "AAAAAAAAAA";
-    private static final String UPDATED_FILE_TYPE = "BBBBBBBBBB";
+    private static final String DEFAULT_FILE_TYPE = "DEFAULT_FILE_TYPE";
+    private static final String UPDATED_FILE_TYPE = "UPDATED_FILE_TYPE";
 
     @Autowired
     private ReceiptRepository receiptRepository;
