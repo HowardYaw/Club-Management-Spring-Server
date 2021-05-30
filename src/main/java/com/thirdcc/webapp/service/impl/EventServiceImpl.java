@@ -63,7 +63,7 @@ public class EventServiceImpl implements EventService {
             throw new BadRequestAlertException("Invalid Parameters", ENTITY_NAME, "noname");
         }
 
-        if (!multipartFile.isEmpty()) {
+        if (multipartFile != null && !multipartFile.isEmpty()) {
             ImageStorageDTO eventImageStorage = uploadEventImage(multipartFile, new ImageStorageDTO());
             eventDTO.setImageStorageId(eventImageStorage.getId());
         }
@@ -89,7 +89,7 @@ public class EventServiceImpl implements EventService {
             throw new BadRequestAlertException("Invalid Parameters", ENTITY_NAME, "noname");
         }
 
-        if (!multipartFile.isEmpty()) {
+        if (multipartFile != null && !multipartFile.isEmpty()) {
             ImageStorageDTO originalImageStorage = imageStorageService.findOne(existingEvent .getImageStorageId())
                 .orElse(new ImageStorageDTO());
             ImageStorageDTO eventImageStorage = uploadEventImage(multipartFile, originalImageStorage);
