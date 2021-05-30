@@ -216,6 +216,11 @@ public class Event implements Serializable {
             "}";
     }
 
+    public Event imageStorageId(Long imageStorageId) {
+        this.imageStorageId = imageStorageId;
+        return this;
+    }
+
     public Long getImageStorageId() {
         return imageStorageId;
     }

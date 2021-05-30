@@ -89,8 +89,8 @@ public class EventResource {
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
     @PutMapping("/events")
-    @PreAuthorize("@managementTeamSecurityExpression.isEventHead(#eventId) || " +
-        "@managementTeamSecurityExpression.isCurrentAdministrator()")
+    @PreAuthorize("@managementTeamSecurityExpression.isCurrentAdministrator() || " +
+        "@managementTeamSecurityExpression.isEventHead(#eventId)")
     public ResponseEntity<EventDTO> updateEvent(@RequestParam(value = "eventDTOString") String eventDTOString,
                                                 @RequestParam(value = "eventId") String eventId,
                                                 @RequestParam(value = "multipartFile", required = false) MultipartFile multipartFile
