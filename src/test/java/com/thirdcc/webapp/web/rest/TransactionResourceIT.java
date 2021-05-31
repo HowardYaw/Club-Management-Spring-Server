@@ -1,6 +1,5 @@
 package com.thirdcc.webapp.web.rest;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.thirdcc.webapp.ClubmanagementApp;
 import com.thirdcc.webapp.annotations.authorization.WithCurrentCCAdministrator;
 import com.thirdcc.webapp.annotations.authorization.WithEventCrew;
@@ -14,7 +13,6 @@ import com.thirdcc.webapp.security.SecurityUtils;
 import com.thirdcc.webapp.service.ImageStorageService;
 import com.thirdcc.webapp.service.UserService;
 import com.thirdcc.webapp.service.dto.ImageStorageDTO;
-import com.thirdcc.webapp.service.dto.ReceiptDTO;
 import com.thirdcc.webapp.service.dto.TransactionDTO;
 import com.thirdcc.webapp.service.mapper.TransactionMapper;
 
@@ -107,9 +105,6 @@ public class TransactionResourceIT {
 
     @Autowired
     private UserRepository userRepository;
-
-    @Autowired
-    ObjectMapper objectMapper;
 
     @Autowired
     private MockMvc restTransactionMockMvc;
@@ -333,7 +328,7 @@ public class TransactionResourceIT {
         // Validate the saved Transaction
         Transaction testTransaction = transactionList.get(transactionList.size() - 1);
         assertThat(testTransaction.getTitle()).isEqualTo(DEFAULT_TITLE);
-        assertThat(testTransaction.getEventId()).isEqualTo(DEFAULT_EVENT_ID);
+        assertThat(testTransaction.getEventId()).isEqualTo(savedEvent.getId());
         assertThat(testTransaction.getTransactionType()).isEqualTo(DEFAULT_TRANSACTION_TYPE);
         assertThat(testTransaction.getTransactionAmount()).isEqualTo(DEFAULT_AMOUNT.setScale(2, RoundingMode.HALF_UP));
         assertThat(testTransaction.getDescription()).isEqualTo(DEFAULT_DESCRIPTION);
