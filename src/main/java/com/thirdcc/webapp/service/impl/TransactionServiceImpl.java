@@ -88,7 +88,6 @@ public class TransactionServiceImpl implements TransactionService {
             throw new BadRequestException(
                 "Transaction must include fields " +
                     "transaction_amount, " +
-                    "created_by, " +
                     "transaction_status, " +
                     "title, " +
                     "image_link(expense) OR multipartFile(if no image_link)"
@@ -110,7 +109,6 @@ public class TransactionServiceImpl implements TransactionService {
 
         // Save the transaction
         Transaction transaction = transactionMapper.toEntity(transactionDTO);
-        transaction.setTransactionStatus(TransactionStatus.SUCCESS);
         transaction = transactionRepository.save(transaction);
         return transactionMapper.toDto(transaction);
     }
@@ -182,7 +180,6 @@ public class TransactionServiceImpl implements TransactionService {
      * Validate on fields:
      * - title
      * - transaction_amount
-     * - created_by
      * - transaction_status
      * - file
      *
@@ -193,7 +190,6 @@ public class TransactionServiceImpl implements TransactionService {
 
         boolean hasTitle = !transactionDTO.getTitle().isEmpty();
         boolean hasTransactionAmount = transactionDTO.getTransactionAmount() != null && transactionDTO.getTransactionAmount().intValue() >= 0;
-        boolean hasCreatedBy = transactionDTO.getCreatedBy() != null;
         boolean hasTransactionStatus = transactionDTO.getTransactionStatus() != null;
         boolean hasImageLink = (transactionDTO.getImageLink() != null && !transactionDTO.getImageLink().isEmpty());
 
@@ -202,10 +198,10 @@ public class TransactionServiceImpl implements TransactionService {
             if (!hasImageLink){
                 if (multipartFile == null || multipartFile.isEmpty()) return false;
             }
-            return (hasTitle && hasCreatedBy && hasImageLink && hasTransactionAmount && hasTransactionStatus);
+            return (hasTitle && hasImageLink && hasTransactionAmount && hasTransactionStatus);
         }else{
             // if this is INCOME (DEBT), then image link is not necessary, because treasurer doesn't have to audit this transaction with receipt image
-            return (hasTitle && hasCreatedBy && hasTransactionAmount && hasTransactionStatus);
+            return (hasTitle && hasTransactionAmount && hasTransactionStatus);
         }
     }
 }

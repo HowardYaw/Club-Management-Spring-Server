@@ -6,6 +6,7 @@ import java.util.Objects;
 
 import com.thirdcc.webapp.domain.enumeration.TransactionStatus;
 import com.thirdcc.webapp.domain.enumeration.TransactionType;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  * A DTO for the {@link com.thirdcc.webapp.domain.Transaction} entity.
@@ -14,9 +15,7 @@ public class TransactionDTO implements Serializable {
 
     private Long id;
 
-    private Long eventId;
-
-    private Long receiptId;
+    protected Long eventId;
 
     private TransactionType transactionType;
 
@@ -34,8 +33,6 @@ public class TransactionDTO implements Serializable {
 
     private Instant lastModifiedDate;
 
-    private ReceiptDTO receiptDTO;
-
     private String title;
 
     private String imageLink;
@@ -44,12 +41,13 @@ public class TransactionDTO implements Serializable {
 
     private String closedBy;
 
+    private MultipartFile multipartFile;
+
     @Override
     public String toString() {
         return "TransactionDTO{" +
             "id=" + id +
             ", eventId=" + eventId +
-            ", receiptId=" + receiptId +
             ", transactionType=" + transactionType +
             ", transactionAmount=" + transactionAmount +
             ", description='" + description + '\'' +
@@ -58,7 +56,6 @@ public class TransactionDTO implements Serializable {
             ", createdDate=" + createdDate +
             ", lastModifiedBy='" + lastModifiedBy + '\'' +
             ", lastModifiedDate=" + lastModifiedDate +
-            ", receiptDTO=" + receiptDTO +
             ", title='" + title + '\'' +
             ", imageLink='" + imageLink + '\'' +
             ", transactionDate=" + transactionDate +
@@ -80,14 +77,6 @@ public class TransactionDTO implements Serializable {
 
     public void setEventId(Long eventId) {
         this.eventId = eventId;
-    }
-
-    public Long getReceiptId() {
-        return receiptId;
-    }
-
-    public void setReceiptId(Long receiptId) {
-        this.receiptId = receiptId;
     }
 
     public TransactionType getTransactionType() {
@@ -146,6 +135,16 @@ public class TransactionDTO implements Serializable {
         this.lastModifiedDate = lastModifiedDate;
     }
 
+    public MultipartFile getMultipartFile() {
+        return multipartFile;
+    }
+
+    public void setMultipartFile(MultipartFile multipartFile) {
+        this.multipartFile = multipartFile;
+    }
+
+
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -165,14 +164,6 @@ public class TransactionDTO implements Serializable {
     @Override
     public int hashCode() {
         return Objects.hashCode(getId());
-    }
-
-    public ReceiptDTO getReceiptDTO() {
-        return receiptDTO;
-    }
-
-    public void setReceiptDTO(ReceiptDTO receiptDTO) {
-        this.receiptDTO = receiptDTO;
     }
 
     public TransactionStatus getTransactionStatus() {

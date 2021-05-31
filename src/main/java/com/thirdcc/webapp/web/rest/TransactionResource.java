@@ -1,10 +1,8 @@
 package com.thirdcc.webapp.web.rest;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.thirdcc.webapp.security.AuthoritiesConstants;
 import com.thirdcc.webapp.service.TransactionService;
 import com.thirdcc.webapp.service.dto.EventBudgetTotalDTO;
-import com.thirdcc.webapp.service.dto.ImageStorageDTO;
 import com.thirdcc.webapp.web.rest.errors.BadRequestAlertException;
 import com.thirdcc.webapp.service.dto.TransactionDTO;
 
@@ -18,7 +16,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.util.MultiValueMap;
-import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -45,12 +42,8 @@ public class TransactionResource {
 
     private final TransactionService transactionService;
 
-    private final ObjectMapper objectMapper;
-
-    public TransactionResource(TransactionService transactionService, ObjectMapper objectMapper) {
+    public TransactionResource(TransactionService transactionService) {
         this.transactionService = transactionService;
-        this.objectMapper = objectMapper;
-
     }
 
     /**
@@ -61,17 +54,14 @@ public class TransactionResource {
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
     @PostMapping("/transactions")
-    @PreAuthorize("hasRole(\"" + AuthoritiesConstants.ADMIN + "\") || @managementTeamSecurityExpression.isEventCrew(#transactionDTO.getEventId()) || @managementTeamSecurityExpression.isCurrentAdministrator()")
-    public ResponseEntity<TransactionDTO> createTransaction(@RequestParam String transactionDTO,
-                                                            @RequestParam MultipartFile multipartFile) throws URISyntaxException, IOException {
-
-        TransactionDTO transactionDTOObj = objectMapper.readValue(transactionDTO, TransactionDTO.class);
+    @PreAuthorize("hasRole(\"" + AuthoritiesConstants.ADMIN + "\") || @transactionSecurityExpression.transactionAccess(#transactionDTO.getEventId())")
+    public ResponseEntity<TransactionDTO> createTransaction(@ModelAttribute TransactionDTO transactionDTO) throws URISyntaxException, IOException {
 
         log.debug("REST request to save Transaction : {}", transactionDTO);
-        if (transactionDTOObj.getId() != null) {
+        if (transactionDTO.getId() != null) {
             throw new BadRequestAlertException("A new transaction cannot already have an ID", ENTITY_NAME, "idexists");
         }
-        TransactionDTO result = transactionService.save(multipartFile, transactionDTOObj);
+        TransactionDTO result = transactionService.save(transactionDTO.getMultipartFile(), transactionDTO);
         return ResponseEntity.created(new URI("/api/transactions/" + result.getId()))
             .headers(HeaderUtil.createEntityCreationAlert(applicationName, true, ENTITY_NAME, result.getId().toString()))
             .body(result);
@@ -87,19 +77,16 @@ public class TransactionResource {
      * @throws IOException if IO error occurs is incorrect.
      */
     @PutMapping("/transactions")
-    @PreAuthorize("hasRole(\"" + AuthoritiesConstants.ADMIN + "\") || @managementTeamSecurityExpression.isEventHead(#transactionDTO.getEventId()) || @managementTeamSecurityExpression.isCurrentAdministrator()")
-    public ResponseEntity<TransactionDTO> updateTransaction(@RequestParam String transactionDTO,
-                                                            @RequestParam MultipartFile multipartFile) throws IOException {
-
-        TransactionDTO transactionDTOObj = objectMapper.readValue(transactionDTO, TransactionDTO.class);
+    @PreAuthorize("hasRole(\"" + AuthoritiesConstants.ADMIN + "\") || @transactionSecurityExpression.transactionAccess(#transactionDTO.getEventId())")
+    public ResponseEntity<TransactionDTO> updateTransaction(@ModelAttribute TransactionDTO transactionDTO) throws IOException {
 
         log.debug("REST request to update Transaction: {}", transactionDTO);
-        if (transactionDTOObj.getId() == null) {
+        if (transactionDTO.getId() == null) {
             throw new BadRequestAlertException("Invalid id", ENTITY_NAME, "idnull");
         }
-        TransactionDTO result = transactionService.save(multipartFile, transactionDTOObj);
+        TransactionDTO result = transactionService.save(transactionDTO.getMultipartFile(), transactionDTO);
         return ResponseEntity.ok()
-            .headers(HeaderUtil.createEntityUpdateAlert(applicationName, true, ENTITY_NAME, transactionDTOObj.getId().toString()))
+            .headers(HeaderUtil.createEntityUpdateAlert(applicationName, true, ENTITY_NAME, transactionDTO.getId().toString()))
             .body(result);
     }
 
