@@ -56,22 +56,18 @@ public class EventResource {
     /**
      * {@code POST  /events} : Create a new event.
      *
-     * @param eventDTOString the eventDTO String to create.
-     * @param multipartFile Event Image File
+     * @param eventDTO the eventDTO to create.
      * @return the {@link ResponseEntity} with status {@code 201 (Created)} and with body the new eventDTO, or with status {@code 400 (Bad Request)} if the event has already an ID.
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
     @PostMapping("/events")
     @PreAuthorize("@managementTeamSecurityExpression.isCurrentAdministrator()")
-    public ResponseEntity<EventDTO> createEvent(@RequestParam(value = "eventDTOString") String eventDTOString,
-                                                @RequestParam(value = "multipartFile", required = false) MultipartFile multipartFile
-    ) throws URISyntaxException, IOException {
-        log.debug("REST request to save Event : {}", eventDTOString);
-        EventDTO eventDTO = objectMapper.readValue(eventDTOString, EventDTO.class);
+    public ResponseEntity<EventDTO> createEvent(@ModelAttribute EventDTO eventDTO) throws URISyntaxException, IOException {
+        log.debug("REST request to save Event : {}", eventDTO);
         if (eventDTO.getId() != null) {
             throw new BadRequestAlertException("A new event cannot already have an ID", ENTITY_NAME, "idexists");
         }
-        EventDTO result = eventService.save(eventDTO, multipartFile);
+        EventDTO result = eventService.save(eventDTO, eventDTO.getMultipartFile());
         return ResponseEntity.created(new URI("/api/events/" + result.getId()))
             .headers(HeaderUtil.createEntityCreationAlert(applicationName, true, ENTITY_NAME, result.getId().toString()))
             .body(result);
@@ -80,9 +76,7 @@ public class EventResource {
     /**
      * {@code PUT  /events} : Updates an existing event.
      *
-     * @param eventDTOString the eventDTO String to update.
-     * @param eventId EventId
-     * @param multipartFile Event Image File
+     * @param eventDTO the eventDTO to update.
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the updated eventDTO,
      * or with status {@code 400 (Bad Request)} if the eventDTO is not valid,
      * or with status {@code 500 (Internal Server Error)} if the eventDTO couldn't be updated.
@@ -90,18 +84,13 @@ public class EventResource {
      */
     @PutMapping("/events")
     @PreAuthorize("@managementTeamSecurityExpression.isCurrentAdministrator() || " +
-        "@managementTeamSecurityExpression.isEventHead(#eventId)")
-    public ResponseEntity<EventDTO> updateEvent(@RequestParam(value = "eventDTOString") String eventDTOString,
-                                                @RequestParam(value = "eventId") String eventId,
-                                                @RequestParam(value = "multipartFile", required = false) MultipartFile multipartFile
-    ) throws URISyntaxException, IOException {
-        log.debug("REST request to update Event : {}", eventDTOString);
-        EventDTO eventDTO = objectMapper.readValue(eventDTOString, EventDTO.class);
-        eventDTO.setId(Long.parseLong(eventId));
+        "@managementTeamSecurityExpression.isEventHead(#eventDTO.getId())")
+    public ResponseEntity<EventDTO> updateEvent(@ModelAttribute EventDTO eventDTO) throws URISyntaxException, IOException {
+        log.debug("REST request to update Event : {}", eventDTO);
         if (eventDTO.getId() == null) {
             throw new BadRequestAlertException("Invalid id", ENTITY_NAME, "idnull");
         }
-        EventDTO result = eventService.update(eventDTO, multipartFile);
+        EventDTO result = eventService.update(eventDTO, eventDTO.getMultipartFile());
         return ResponseEntity.ok()
             .headers(HeaderUtil.createEntityUpdateAlert(applicationName, true, ENTITY_NAME, eventDTO.getId().toString()))
             .body(result);
