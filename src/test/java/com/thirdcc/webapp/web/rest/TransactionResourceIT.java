@@ -26,6 +26,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.MockMultipartHttpServletRequestBuilder;
 
 import javax.persistence.EntityManager;
 import java.io.IOException;
@@ -67,6 +68,7 @@ public class TransactionResourceIT {
     private static final String UPDATED_DESCRIPTION = "TRANSACTION_UPDATED_DETAILS";
 
     private static final TransactionStatus DEFAULT_TRANSACTION_STATUS = TransactionStatus.PENDING;
+    private static final TransactionStatus UPDATED_TRANSACTION_STATUS = TransactionStatus.COMPLETED;
 
     // Event Default data
     private static final String DEFAULT_EVENT_NAME = "DEFAULT_EVENT_NAME";
@@ -109,12 +111,8 @@ public class TransactionResourceIT {
     @Autowired
     private MockMvc restTransactionMockMvc;
 
-    private Transaction transaction;
-
     @Autowired
     private EventRepository eventRepository;
-
-    private Event event;
 
     @Autowired
     private ReceiptRepository receiptRepository;
@@ -123,6 +121,15 @@ public class TransactionResourceIT {
     private EventCrewRepository eventCrewRepository;
 
     private EventCrew eventCrew;
+
+    private Transaction transaction;
+
+    private Event event;
+
+    private final MockMultipartHttpServletRequestBuilder putMultipartRequestBuilder = (MockMultipartHttpServletRequestBuilder) multipart("/api/transactions").with(request -> {
+        request.setMethod("PUT");
+        return request;
+    });
 
     @BeforeEach
     public void setup() {
@@ -139,9 +146,13 @@ public class TransactionResourceIT {
      */
     public static Transaction createTransactionEntity() {
         return new Transaction()
+            .title(DEFAULT_TITLE)
+            .eventId(null)
             .transactionType(DEFAULT_TRANSACTION_TYPE)
             .transactionAmount(DEFAULT_AMOUNT)
-            .description(DEFAULT_DESCRIPTION);
+            .description(DEFAULT_DESCRIPTION)
+            .transactionStatus(DEFAULT_TRANSACTION_STATUS)
+            .transactionDate(DEFAULT_TRANSACTION_DATE);
     }
 
     public static Event createEventEntity() {
@@ -364,7 +375,7 @@ public class TransactionResourceIT {
 
     @Test
     @WithEventCrew
-    public void createEventTransactionPendingIncome_UserIsEventCrew_ShouldThrow403() throws Exception { // TODO: [LU] throw other code to indicate disapproval
+    public void createEventTransactionPendingIncome_UserIsEventCrew_ShouldThrow403() throws Exception {
         // Initialise event
         Event savedEvent = initEventDB();
         // Initialize the database
@@ -385,6 +396,36 @@ public class TransactionResourceIT {
         // Validate the Transaction not in the database
         List<Transaction> transactionList = transactionRepository.findAll();
         assertThat(transactionList).hasSize(databaseSizeBeforeCreate);
+    }
+
+    @Test
+    public void updateNullEventTransactionPendingIncome_ToCompleted_UserIsAdmin_ShouldSuccess() throws Exception {
+        // Create Transaction
+        transactionRepository.saveAndFlush(transaction);
+        // Get Database size after creating transaction
+        int databaseSizeAfterCreate = transactionRepository.findAll().size();
+        // find created transaction
+        Transaction createdTransaction = transactionRepository.findById(transaction.getId()).get();
+
+        // Update the transaction
+        restTransactionMockMvc.perform(putMultipartRequestBuilder
+            .file(MOCK_MULTIPART_FILE)
+            .param("id", createdTransaction.getId().toString())
+            .param("title", createdTransaction.getTitle())
+            .param("eventId", "")
+            .param("transactionType", createdTransaction.getTransactionType().name())
+            .param("transactionAmount", createdTransaction.getTransactionAmount().toString())
+            .param("description", createdTransaction.getDescription())
+            .param("transactionStatus", UPDATED_TRANSACTION_STATUS.name())
+            .param("transactionDate", createdTransaction.getTransactionDate().toString())
+        ).andExpect(status().isOk());
+
+        List<Transaction> transactionList = transactionRepository.findAll();
+        Transaction updatedTransaction = transactionList.get(transactionList.size() - 1);
+
+        // Validate the Transaction count stays the same after creating 1 transaction
+        assertThat(transactionList).hasSize(databaseSizeAfterCreate);
+        assertThat(updatedTransaction.getTransactionStatus()).isEqualTo(UPDATED_TRANSACTION_STATUS);
     }
 
 
