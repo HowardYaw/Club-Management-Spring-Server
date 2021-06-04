@@ -24,6 +24,7 @@ import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.test.context.support.WithMockUser;
@@ -114,6 +115,9 @@ public class EventResourceIT {
 
     @Autowired
     private ImageStorageService imageStorageService;
+
+//    @MockBean
+//    private ImageStorageService imageStorageService;
 
     @Autowired
     private MockMvc restEventMockMvc;
@@ -244,6 +248,10 @@ public class EventResourceIT {
             .param("fee", DEFAULT_FEE.toString())
             .param("requiredTransport", DEFAULT_REQUIRED_TRANSPORT.toString())
             .param("status", DEFAULT_STATUS.toString())
+            .with(request -> {
+                request.setMethod("POST");
+                return request;
+            })
         ).andExpect(status().isCreated());
 
         // Validate the Event in the database
@@ -362,10 +370,8 @@ public class EventResourceIT {
         EventDTO eventDTO = eventMapper.toDto(testUpdateEvent);
         eventDTO.setMultipartFile(MOCK_MULTIPART_FILE);
 
-        restEventMockMvc.perform(put("/api/events")
-            .contentType(MediaType.MULTIPART_FORM_DATA)
-//            .content(TestUtil.convertObjectToJsonBytes(eventDTO))
-//            .file(MOCK_MULTIPART_FILE)
+        restEventMockMvc.perform(multipart("/api/events")
+            .file(MOCK_MULTIPART_FILE)
             .param("id", updatedEvent.getId().toString())
             .param("name", UPDATED_NAME)
             .param("description", UPDATED_DESCRIPTION)
@@ -376,7 +382,10 @@ public class EventResourceIT {
             .param("fee", UPDATED_FEE.toString())
             .param("requiredTransport", UPDATED_REQUIRED_TRANSPORT.toString())
             .param("status", UPDATED_STATUS.toString())
-            .requestAttr("multipartFile", MOCK_MULTIPART_FILE)
+            .with(request -> {
+                request.setMethod("PUT");
+                    return request;
+            })
         ).andExpect(status().isOk());
 
         // Validate the Event in the database
