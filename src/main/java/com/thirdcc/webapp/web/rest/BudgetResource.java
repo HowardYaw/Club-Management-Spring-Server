@@ -1,6 +1,8 @@
 package com.thirdcc.webapp.web.rest;
 
+import com.thirdcc.webapp.service.BudgetQueryService;
 import com.thirdcc.webapp.service.BudgetService;
+import com.thirdcc.webapp.service.criteria.BudgetCriteria;
 import com.thirdcc.webapp.service.dto.EventBudgetTotalDTO;
 import com.thirdcc.webapp.web.rest.errors.BadRequestAlertException;
 import com.thirdcc.webapp.service.dto.BudgetDTO;
@@ -41,9 +43,11 @@ public class BudgetResource {
     private String applicationName;
 
     private final BudgetService budgetService;
+    private final BudgetQueryService budgetQueryService;
 
-    public BudgetResource(BudgetService budgetService) {
+    public BudgetResource(BudgetService budgetService, BudgetQueryService budgetQueryService) {
         this.budgetService = budgetService;
+        this.budgetQueryService = budgetQueryService;
     }
 
     @PostMapping("/event-budget")
@@ -71,6 +75,20 @@ public class BudgetResource {
             .headers(HeaderUtil.createEntityUpdateAlert(applicationName, true, ENTITY_NAME, budgetDTO.getId().toString()))
             .body(result);
     }
+
+    @GetMapping("/event-budget")
+    public ResponseEntity<List<BudgetDTO>> getAllBudgets(BudgetCriteria criteria) {
+        log.debug("REST request to get Budgets by criteria: {}", criteria);
+        List<BudgetDTO> entityList = budgetQueryService.findByCriteria(criteria);
+        return ResponseEntity.ok().body(entityList);
+    }
+
+    @GetMapping("/event-budget/count")
+    public ResponseEntity<Long> countBudgets(BudgetCriteria criteria) {
+        log.debug("REST request to count Budgets by criteria: {}", criteria);
+        return ResponseEntity.ok().body(budgetQueryService.countByCriteria(criteria));
+    }
+
 
     @GetMapping("/event-budget/event/{eventId}")
     @PreAuthorize("@managementTeamSecurityExpression.isCurrentAdministrator() || @managementTeamSecurityExpression.isEventCrew(#eventId)")

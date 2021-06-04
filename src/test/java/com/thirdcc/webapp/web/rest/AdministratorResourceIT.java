@@ -3,10 +3,12 @@ package com.thirdcc.webapp.web.rest;
 import com.thirdcc.webapp.ClubmanagementApp;
 import com.thirdcc.webapp.domain.Administrator;
 import com.thirdcc.webapp.repository.AdministratorRepository;
+import com.thirdcc.webapp.service.AdministratorQueryService;
 import com.thirdcc.webapp.service.AdministratorService;
 import com.thirdcc.webapp.service.dto.AdministratorDTO;
 import com.thirdcc.webapp.service.mapper.AdministratorMapper;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockitoAnnotations;
@@ -28,6 +30,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.thirdcc.webapp.domain.enumeration.AdministratorRole;
 import com.thirdcc.webapp.domain.enumeration.AdministratorStatus;
+
 /**
  * Integration tests for the {@Link AdministratorResource} REST controller.
  */
@@ -36,7 +39,10 @@ import com.thirdcc.webapp.domain.enumeration.AdministratorStatus;
 @WithMockUser(value = "user")
 public class AdministratorResourceIT {
 
+    private static final String ENTITY_API_URL = "/api/administrators";
+
     private static final Long DEFAULT_USER_ID = 1L;
+    private static final Long SMALLER_USER_ID = DEFAULT_USER_ID - 1L;
     private static final Long UPDATED_USER_ID = 2L;
 
     private static final String DEFAULT_YEAR_SESSION = "AAAAAAAAAA";
@@ -58,6 +64,9 @@ public class AdministratorResourceIT {
     private AdministratorService administratorService;
 
     @Autowired
+    private AdministratorQueryService administratorQueryService;
+
+    @Autowired
     private EntityManager em;
 
     @Autowired
@@ -68,12 +77,17 @@ public class AdministratorResourceIT {
     @BeforeEach
     public void setup() {
         MockitoAnnotations.initMocks(this);
-        final AdministratorResource administratorResource = new AdministratorResource(administratorService);
+        final AdministratorResource administratorResource = new AdministratorResource(administratorService, administratorQueryService);
+    }
+
+    @AfterEach
+    public void cleanUp() {
+        administratorRepository.deleteAll();
     }
 
     /**
      * Create an entity for this test.
-     *
+     * <p>
      * This is a static method, as tests for other entities might also need it,
      * if they test an entity which requires the current entity.
      */
@@ -85,9 +99,10 @@ public class AdministratorResourceIT {
             .status(DEFAULT_STATUS);
         return administrator;
     }
+
     /**
      * Create an updated entity for this test.
-     *
+     * <p>
      * This is a static method, as tests for other entities might also need it,
      * if they test an entity which requires the current entity.
      */
@@ -106,7 +121,6 @@ public class AdministratorResourceIT {
     }
 
     @Test
-    @Transactional
     public void createAdministrator() throws Exception {
         int databaseSizeBeforeCreate = administratorRepository.findAll().size();
 
@@ -128,7 +142,6 @@ public class AdministratorResourceIT {
     }
 
     @Test
-    @Transactional
     public void createAdministratorWithExistingId() throws Exception {
         int databaseSizeBeforeCreate = administratorRepository.findAll().size();
 
@@ -149,24 +162,326 @@ public class AdministratorResourceIT {
 
 
     @Test
-    @Transactional
-    public void getAllAdministrators() throws Exception {
+    void getAdministratorsByIdFiltering() throws Exception {
         // Initialize the database
         administratorRepository.saveAndFlush(administrator);
 
-        // Get all the administratorList
-        restAdministratorMockMvc.perform(get("/api/administrators?sort=id,desc"))
-            .andExpect(status().isOk())
-            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
-            .andExpect(jsonPath("$.[*].id").value(hasItem(administrator.getId().intValue())))
-            .andExpect(jsonPath("$.[*].userId").value(hasItem(DEFAULT_USER_ID.intValue())))
-            .andExpect(jsonPath("$.[*].yearSession").value(hasItem(DEFAULT_YEAR_SESSION.toString())))
-            .andExpect(jsonPath("$.[*].role").value(hasItem(DEFAULT_ROLE.toString())))
-            .andExpect(jsonPath("$.[*].status").value(hasItem(DEFAULT_STATUS.toString())));
+        Long id = administrator.getId();
+
+        defaultAdministratorShouldBeFound("id.equals=" + id);
+        defaultAdministratorShouldNotBeFound("id.notEquals=" + id);
+
+        defaultAdministratorShouldBeFound("id.greaterThanOrEqual=" + id);
+        defaultAdministratorShouldNotBeFound("id.greaterThan=" + id);
+
+        defaultAdministratorShouldBeFound("id.lessThanOrEqual=" + id);
+        defaultAdministratorShouldNotBeFound("id.lessThan=" + id);
     }
 
     @Test
-    @Transactional
+    void getAllAdministratorsByUserIdIsEqualToSomething() throws Exception {
+        // Initialize the database
+        administratorRepository.saveAndFlush(administrator);
+
+        // Get all the administratorList where userId equals to DEFAULT_USER_ID
+        defaultAdministratorShouldBeFound("userId.equals=" + DEFAULT_USER_ID);
+
+        // Get all the administratorList where userId equals to UPDATED_USER_ID
+        defaultAdministratorShouldNotBeFound("userId.equals=" + UPDATED_USER_ID);
+    }
+
+    @Test
+    void getAllAdministratorsByUserIdIsNotEqualToSomething() throws Exception {
+        // Initialize the database
+        administratorRepository.saveAndFlush(administrator);
+
+        // Get all the administratorList where userId not equals to DEFAULT_USER_ID
+        defaultAdministratorShouldNotBeFound("userId.notEquals=" + DEFAULT_USER_ID);
+
+        // Get all the administratorList where userId not equals to UPDATED_USER_ID
+        defaultAdministratorShouldBeFound("userId.notEquals=" + UPDATED_USER_ID);
+    }
+
+    @Test
+    void getAllAdministratorsByUserIdIsInShouldWork() throws Exception {
+        // Initialize the database
+        administratorRepository.saveAndFlush(administrator);
+
+        // Get all the administratorList where userId in DEFAULT_USER_ID or UPDATED_USER_ID
+        defaultAdministratorShouldBeFound("userId.in=" + DEFAULT_USER_ID + "," + UPDATED_USER_ID);
+
+        // Get all the administratorList where userId equals to UPDATED_USER_ID
+        defaultAdministratorShouldNotBeFound("userId.in=" + UPDATED_USER_ID);
+    }
+
+    @Test
+    void getAllAdministratorsByUserIdIsNullOrNotNull() throws Exception {
+        // Initialize the database
+        administratorRepository.saveAndFlush(administrator);
+
+        // Get all the administratorList where userId is not null
+        defaultAdministratorShouldBeFound("userId.specified=true");
+
+        // Get all the administratorList where userId is null
+        defaultAdministratorShouldNotBeFound("userId.specified=false");
+    }
+
+    @Test
+    void getAllAdministratorsByUserIdIsGreaterThanOrEqualToSomething() throws Exception {
+        // Initialize the database
+        administratorRepository.saveAndFlush(administrator);
+
+        // Get all the administratorList where userId is greater than or equal to DEFAULT_USER_ID
+        defaultAdministratorShouldBeFound("userId.greaterThanOrEqual=" + DEFAULT_USER_ID);
+
+        // Get all the administratorList where userId is greater than or equal to UPDATED_USER_ID
+        defaultAdministratorShouldNotBeFound("userId.greaterThanOrEqual=" + UPDATED_USER_ID);
+    }
+
+    @Test
+    void getAllAdministratorsByUserIdIsLessThanOrEqualToSomething() throws Exception {
+        // Initialize the database
+        administratorRepository.saveAndFlush(administrator);
+
+        // Get all the administratorList where userId is less than or equal to DEFAULT_USER_ID
+        defaultAdministratorShouldBeFound("userId.lessThanOrEqual=" + DEFAULT_USER_ID);
+
+        // Get all the administratorList where userId is less than or equal to SMALLER_USER_ID
+        defaultAdministratorShouldNotBeFound("userId.lessThanOrEqual=" + SMALLER_USER_ID);
+    }
+
+    @Test
+    void getAllAdministratorsByUserIdIsLessThanSomething() throws Exception {
+        // Initialize the database
+        administratorRepository.saveAndFlush(administrator);
+
+        // Get all the administratorList where userId is less than DEFAULT_USER_ID
+        defaultAdministratorShouldNotBeFound("userId.lessThan=" + DEFAULT_USER_ID);
+
+        // Get all the administratorList where userId is less than UPDATED_USER_ID
+        defaultAdministratorShouldBeFound("userId.lessThan=" + UPDATED_USER_ID);
+    }
+
+    @Test
+    void getAllAdministratorsByUserIdIsGreaterThanSomething() throws Exception {
+        // Initialize the database
+        administratorRepository.saveAndFlush(administrator);
+
+        // Get all the administratorList where userId is greater than DEFAULT_USER_ID
+        defaultAdministratorShouldNotBeFound("userId.greaterThan=" + DEFAULT_USER_ID);
+
+        // Get all the administratorList where userId is greater than SMALLER_USER_ID
+        defaultAdministratorShouldBeFound("userId.greaterThan=" + SMALLER_USER_ID);
+    }
+
+    @Test
+    void getAllAdministratorsByYearSessionIsEqualToSomething() throws Exception {
+        // Initialize the database
+        administratorRepository.saveAndFlush(administrator);
+
+        // Get all the administratorList where yearSession equals to DEFAULT_YEAR_SESSION
+        defaultAdministratorShouldBeFound("yearSession.equals=" + DEFAULT_YEAR_SESSION);
+
+        // Get all the administratorList where yearSession equals to UPDATED_YEAR_SESSION
+        defaultAdministratorShouldNotBeFound("yearSession.equals=" + UPDATED_YEAR_SESSION);
+    }
+
+    @Test
+    void getAllAdministratorsByYearSessionIsNotEqualToSomething() throws Exception {
+        // Initialize the database
+        administratorRepository.saveAndFlush(administrator);
+
+        // Get all the administratorList where yearSession not equals to DEFAULT_YEAR_SESSION
+        defaultAdministratorShouldNotBeFound("yearSession.notEquals=" + DEFAULT_YEAR_SESSION);
+
+        // Get all the administratorList where yearSession not equals to UPDATED_YEAR_SESSION
+        defaultAdministratorShouldBeFound("yearSession.notEquals=" + UPDATED_YEAR_SESSION);
+    }
+
+    @Test
+    void getAllAdministratorsByYearSessionIsInShouldWork() throws Exception {
+        // Initialize the database
+        administratorRepository.saveAndFlush(administrator);
+
+        // Get all the administratorList where yearSession in DEFAULT_YEAR_SESSION or UPDATED_YEAR_SESSION
+        defaultAdministratorShouldBeFound("yearSession.in=" + DEFAULT_YEAR_SESSION + "," + UPDATED_YEAR_SESSION);
+
+        // Get all the administratorList where yearSession equals to UPDATED_YEAR_SESSION
+        defaultAdministratorShouldNotBeFound("yearSession.in=" + UPDATED_YEAR_SESSION);
+    }
+
+    @Test
+    void getAllAdministratorsByYearSessionIsNullOrNotNull() throws Exception {
+        // Initialize the database
+        administratorRepository.saveAndFlush(administrator);
+
+        // Get all the administratorList where yearSession is null
+        defaultAdministratorShouldNotBeFound("yearSession.specified=false");
+    }
+
+    @Test
+    void getAllAdministratorsByYearSessionContainsSomething() throws Exception {
+        // Initialize the database
+        administratorRepository.saveAndFlush(administrator);
+
+        // Get all the administratorList where yearSession contains DEFAULT_YEAR_SESSION
+        defaultAdministratorShouldBeFound("yearSession.contains=" + DEFAULT_YEAR_SESSION);
+
+        // Get all the administratorList where yearSession contains UPDATED_YEAR_SESSION
+        defaultAdministratorShouldNotBeFound("yearSession.contains=" + UPDATED_YEAR_SESSION);
+    }
+
+    @Test
+    void getAllAdministratorsByYearSessionNotContainsSomething() throws Exception {
+        // Initialize the database
+        administratorRepository.saveAndFlush(administrator);
+
+        // Get all the administratorList where yearSession does not contain DEFAULT_YEAR_SESSION
+        defaultAdministratorShouldNotBeFound("yearSession.doesNotContain=" + DEFAULT_YEAR_SESSION);
+
+        // Get all the administratorList where yearSession does not contain UPDATED_YEAR_SESSION
+        defaultAdministratorShouldBeFound("yearSession.doesNotContain=" + UPDATED_YEAR_SESSION);
+    }
+
+    @Test
+    void getAllAdministratorsByRoleIsEqualToSomething() throws Exception {
+        // Initialize the database
+        administratorRepository.saveAndFlush(administrator);
+
+        // Get all the administratorList where role equals to DEFAULT_ROLE
+        defaultAdministratorShouldBeFound("role.equals=" + DEFAULT_ROLE);
+
+        // Get all the administratorList where role equals to UPDATED_ROLE
+        defaultAdministratorShouldNotBeFound("role.equals=" + UPDATED_ROLE);
+    }
+
+    @Test
+    void getAllAdministratorsByRoleIsNotEqualToSomething() throws Exception {
+        // Initialize the database
+        administratorRepository.saveAndFlush(administrator);
+
+        // Get all the administratorList where role not equals to DEFAULT_ROLE
+        defaultAdministratorShouldNotBeFound("role.notEquals=" + DEFAULT_ROLE);
+
+        // Get all the administratorList where role not equals to UPDATED_ROLE
+        defaultAdministratorShouldBeFound("role.notEquals=" + UPDATED_ROLE);
+    }
+
+    @Test
+    void getAllAdministratorsByRoleIsInShouldWork() throws Exception {
+        // Initialize the database
+        administratorRepository.saveAndFlush(administrator);
+
+        // Get all the administratorList where role in DEFAULT_ROLE or UPDATED_ROLE
+        defaultAdministratorShouldBeFound("role.in=" + DEFAULT_ROLE + "," + UPDATED_ROLE);
+
+        // Get all the administratorList where role equals to UPDATED_ROLE
+        defaultAdministratorShouldNotBeFound("role.in=" + UPDATED_ROLE);
+    }
+
+    @Test
+    void getAllAdministratorsByRoleIsNullOrNotNull() throws Exception {
+        // Initialize the database
+        administratorRepository.saveAndFlush(administrator);
+
+        // Get all the administratorList where role is not null
+        defaultAdministratorShouldBeFound("role.specified=true");
+
+        // Get all the administratorList where role is null
+        defaultAdministratorShouldNotBeFound("role.specified=false");
+    }
+
+    @Test
+    void getAllAdministratorsByStatusIsEqualToSomething() throws Exception {
+        // Initialize the database
+        administratorRepository.saveAndFlush(administrator);
+
+        // Get all the administratorList where status equals to DEFAULT_STATUS
+        defaultAdministratorShouldBeFound("status.equals=" + DEFAULT_STATUS);
+
+        // Get all the administratorList where status equals to UPDATED_STATUS
+        defaultAdministratorShouldNotBeFound("status.equals=" + UPDATED_STATUS);
+    }
+
+    @Test
+    void getAllAdministratorsByStatusIsNotEqualToSomething() throws Exception {
+        // Initialize the database
+        administratorRepository.saveAndFlush(administrator);
+
+        // Get all the administratorList where status not equals to DEFAULT_STATUS
+        defaultAdministratorShouldNotBeFound("status.notEquals=" + DEFAULT_STATUS);
+
+        // Get all the administratorList where status not equals to UPDATED_STATUS
+        defaultAdministratorShouldBeFound("status.notEquals=" + UPDATED_STATUS);
+    }
+
+    @Test
+    void getAllAdministratorsByStatusIsInShouldWork() throws Exception {
+        // Initialize the database
+        administratorRepository.saveAndFlush(administrator);
+
+        // Get all the administratorList where status in DEFAULT_STATUS or UPDATED_STATUS
+        defaultAdministratorShouldBeFound("status.in=" + DEFAULT_STATUS + "," + UPDATED_STATUS);
+
+        // Get all the administratorList where status equals to UPDATED_STATUS
+        defaultAdministratorShouldNotBeFound("status.in=" + UPDATED_STATUS);
+    }
+
+    @Test
+    void getAllAdministratorsByStatusIsNullOrNotNull() throws Exception {
+        // Initialize the database
+        administratorRepository.saveAndFlush(administrator);
+
+        // Get all the administratorList where status is not null
+        defaultAdministratorShouldBeFound("status.specified=true");
+
+        // Get all the administratorList where status is null
+        defaultAdministratorShouldNotBeFound("status.specified=false");
+    }
+
+    /**
+     * Executes the search, and checks that the default entity is returned.
+     */
+    private void defaultAdministratorShouldBeFound(String filter) throws Exception {
+        restAdministratorMockMvc
+            .perform(get(ENTITY_API_URL + "?sort=id,desc&" + filter))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(TestUtil.APPLICATION_JSON_UTF8))
+            .andExpect(jsonPath("$.[*].id").value(hasItem(administrator.getId().intValue())))
+            .andExpect(jsonPath("$.[*].userId").value(hasItem(DEFAULT_USER_ID.intValue())))
+            .andExpect(jsonPath("$.[*].yearSession").value(hasItem(DEFAULT_YEAR_SESSION)))
+            .andExpect(jsonPath("$.[*].role").value(hasItem(DEFAULT_ROLE.toString())))
+            .andExpect(jsonPath("$.[*].status").value(hasItem(DEFAULT_STATUS.toString())));
+
+        // Check, that the count call also returns 1
+        restAdministratorMockMvc
+            .perform(get(ENTITY_API_URL + "/count?sort=id,desc&" + filter))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(TestUtil.APPLICATION_JSON_UTF8))
+            .andExpect(content().string("1"));
+    }
+
+    /**
+     * Executes the search, and checks that the default entity is not returned.
+     */
+    private void defaultAdministratorShouldNotBeFound(String filter) throws Exception {
+        restAdministratorMockMvc
+            .perform(get(ENTITY_API_URL + "?sort=id,desc&" + filter))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(TestUtil.APPLICATION_JSON_UTF8))
+            .andExpect(jsonPath("$").isArray())
+            .andExpect(jsonPath("$").isEmpty());
+
+        // Check, that the count call also returns 0
+        restAdministratorMockMvc
+            .perform(get(ENTITY_API_URL + "/count?sort=id,desc&" + filter))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(TestUtil.APPLICATION_JSON_UTF8))
+            .andExpect(content().string("0"));
+    }
+
+
+    @Test
     public void getAdministrator() throws Exception {
         // Initialize the database
         administratorRepository.saveAndFlush(administrator);
@@ -183,7 +498,6 @@ public class AdministratorResourceIT {
     }
 
     @Test
-    @Transactional
     public void getNonExistingAdministrator() throws Exception {
         // Get the administrator
         restAdministratorMockMvc.perform(get("/api/administrators/{id}", Long.MAX_VALUE))
@@ -191,7 +505,6 @@ public class AdministratorResourceIT {
     }
 
     @Test
-    @Transactional
     public void updateAdministrator() throws Exception {
         // Initialize the database
         administratorRepository.saveAndFlush(administrator);
@@ -225,7 +538,6 @@ public class AdministratorResourceIT {
     }
 
     @Test
-    @Transactional
     public void updateNonExistingAdministrator() throws Exception {
         int databaseSizeBeforeUpdate = administratorRepository.findAll().size();
 
@@ -244,7 +556,6 @@ public class AdministratorResourceIT {
     }
 
     @Test
-    @Transactional
     public void deleteAdministrator() throws Exception {
         // Initialize the database
         administratorRepository.saveAndFlush(administrator);
@@ -262,7 +573,6 @@ public class AdministratorResourceIT {
     }
 
     @Test
-    @Transactional
     public void equalsVerifier() throws Exception {
         TestUtil.equalsVerifier(Administrator.class);
         Administrator administrator1 = new Administrator();
@@ -277,7 +587,6 @@ public class AdministratorResourceIT {
     }
 
     @Test
-    @Transactional
     public void dtoEqualsVerifier() throws Exception {
         TestUtil.equalsVerifier(AdministratorDTO.class);
         AdministratorDTO administratorDTO1 = new AdministratorDTO();
@@ -293,7 +602,6 @@ public class AdministratorResourceIT {
     }
 
     @Test
-    @Transactional
     public void testEntityFromId() {
         assertThat(administratorMapper.fromId(42L).getId()).isEqualTo(42);
         assertThat(administratorMapper.fromId(null)).isNull();

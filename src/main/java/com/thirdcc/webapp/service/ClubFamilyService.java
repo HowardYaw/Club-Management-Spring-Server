@@ -18,6 +18,8 @@ public interface ClubFamilyService {
      */
     ClubFamilyDTO save(ClubFamilyDTO clubFamilyDTO);
 
+    ClubFamilyDTO update(ClubFamilyDTO clubFamilyDTO);
+
     /**
      * Get all the clubFamilies.
      *

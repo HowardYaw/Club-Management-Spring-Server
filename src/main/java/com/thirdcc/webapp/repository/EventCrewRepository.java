@@ -10,20 +10,19 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 import java.util.Optional;
 
-
 /**
- * Spring Data  repository for the EventCrew entity.
+ * Spring Data SQL repository for the EventCrew entity.
  */
 @SuppressWarnings("unused")
 @Repository
-public interface EventCrewRepository extends JpaRepository<EventCrew, Long> {
+public interface EventCrewRepository extends JpaRepository<EventCrew, Long>, JpaSpecificationExecutor<EventCrew> {
 
     List<EventCrew> findAllByUserId(Long userId);
 
     Page<EventCrew> findAllByUserId(Pageable pageable, Long userId);
 
     Page<EventCrew> findAllByEventId(Pageable pageable, Long eventId);
-  
+
     List<EventCrew> findAllByUserIdAndRole(Long userId, EventCrewRole role);
 
     Optional<EventCrew> findByUserIdAndAndEventId(Long userId, Long eventId);

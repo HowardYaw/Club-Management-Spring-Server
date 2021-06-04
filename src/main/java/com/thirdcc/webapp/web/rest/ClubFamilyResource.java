@@ -1,6 +1,8 @@
 package com.thirdcc.webapp.web.rest;
 
+import com.thirdcc.webapp.service.ClubFamilyQueryService;
 import com.thirdcc.webapp.service.ClubFamilyService;
+import com.thirdcc.webapp.service.criteria.ClubFamilyCriteria;
 import com.thirdcc.webapp.web.rest.errors.BadRequestAlertException;
 import com.thirdcc.webapp.service.dto.ClubFamilyDTO;
 
@@ -34,8 +36,11 @@ public class ClubFamilyResource {
 
     private final ClubFamilyService clubFamilyService;
 
-    public ClubFamilyResource(ClubFamilyService clubFamilyService) {
+    private final ClubFamilyQueryService clubFamilyQueryService;
+
+    public ClubFamilyResource(ClubFamilyService clubFamilyService, ClubFamilyQueryService clubFamilyQueryService) {
         this.clubFamilyService = clubFamilyService;
+        this.clubFamilyQueryService = clubFamilyQueryService;
     }
 
     /**
@@ -72,21 +77,23 @@ public class ClubFamilyResource {
         if (clubFamilyDTO.getId() == null) {
             throw new BadRequestAlertException("Invalid id", ENTITY_NAME, "idnull");
         }
-        ClubFamilyDTO result = clubFamilyService.save(clubFamilyDTO);
+        ClubFamilyDTO result = clubFamilyService.update(clubFamilyDTO);
         return ResponseEntity.ok()
             .headers(HeaderUtil.createEntityUpdateAlert(applicationName, true, ENTITY_NAME, clubFamilyDTO.getId().toString()))
             .body(result);
     }
 
-    /**
-     * {@code GET  /club-families} : get all the clubFamilies.
-     *
-     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the list of clubFamilies in body.
-     */
     @GetMapping("/club-families")
-    public List<ClubFamilyDTO> getAllClubFamilies() {
-        log.debug("REST request to get all ClubFamilies");
-        return clubFamilyService.findAll();
+    public ResponseEntity<List<ClubFamilyDTO>> getAllClubFamilies(ClubFamilyCriteria criteria) {
+        log.debug("REST request to get ClubFamilies by criteria: {}", criteria);
+        List<ClubFamilyDTO> entityList = clubFamilyQueryService.findByCriteria(criteria);
+        return ResponseEntity.ok().body(entityList);
+    }
+
+    @GetMapping("/club-families/count")
+    public ResponseEntity<Long> countClubFamilies(ClubFamilyCriteria criteria) {
+        log.debug("REST request to count ClubFamilies by criteria: {}", criteria);
+        return ResponseEntity.ok().body(clubFamilyQueryService.countByCriteria(criteria));
     }
 
     /**

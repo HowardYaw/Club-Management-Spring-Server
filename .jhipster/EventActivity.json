@@ -1,36 +1,42 @@
 {
-    "name": "EventActivity",
-    "fields": [
-        {
-            "fieldName": "eventId",
-            "fieldType": "Long"
-        },
-        {
-            "fieldName": "startDate",
-            "fieldType": "Instant"
-        },
-        {
-            "fieldName": "durationInDay",
-            "fieldType": "BigDecimal"
-        },
-        {
-            "fieldName": "name",
-            "fieldType": "String"
-        },
-        {
-            "fieldName": "description",
-            "fieldType": "byte[]",
-            "fieldTypeBlobContent": "text"
-        }
-    ],
-    "relationships": [],
-    "changelogDate": "20201028013335",
-    "entityTableName": "event_activity",
-    "dto": "mapstruct",
-    "pagination": "pagination",
-    "service": "serviceImpl",
-    "jpaMetamodelFiltering": false,
-    "fluentMethods": true,
-    "clientRootFolder": "",
-    "applications": "*"
+  "name": "EventActivity",
+  "fields": [
+    {
+      "fieldName": "id",
+      "fieldType": "Long"
+    },
+    {
+      "fieldName": "eventId",
+      "fieldType": "Long"
+    },
+    {
+      "fieldName": "startDate",
+      "fieldType": "Instant"
+    },
+    {
+      "fieldName": "durationInDay",
+      "fieldType": "BigDecimal"
+    },
+    {
+      "fieldName": "name",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "description",
+      "fieldType": "byte[]",
+      "fieldTypeBlobContent": "text"
+    }
+  ],
+  "relationships": [],
+  "changelogDate": "20201028013335",
+  "entityTableName": "event_activity",
+  "dto": "mapstruct",
+  "pagination": "pagination",
+  "service": "serviceImpl",
+  "jpaMetamodelFiltering": true,
+  "fluentMethods": true,
+  "clientRootFolder": "",
+  "applications": "*",
+  "readOnly": false,
+  "embedded": false
 }

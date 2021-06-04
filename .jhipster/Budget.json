@@ -1,37 +1,43 @@
 {
-    "name": "Budget",
-    "fields": [
-        {
-            "fieldName": "eventId",
-            "fieldType": "Long"
-        },
-        {
-            "fieldName": "amount",
-            "fieldType": "BigDecimal"
-        },
-        {
-            "fieldName": "type",
-            "fieldType": "TransactionType",
-            "fieldValues": "INCOME,EXPENSE"
-        },
-        {
-            "fieldName": "name",
-            "fieldType": "String"
-        },
-        {
-            "fieldName": "details",
-            "fieldType": "byte[]",
-            "fieldTypeBlobContent": "text"
-        }
-    ],
-    "relationships": [],
-    "changelogDate": "20201028013334",
-    "entityTableName": "budget",
-    "dto": "mapstruct",
-    "pagination": "no",
-    "service": "serviceImpl",
-    "jpaMetamodelFiltering": false,
-    "fluentMethods": true,
-    "clientRootFolder": "",
-    "applications": "*"
+  "name": "Budget",
+  "fields": [
+    {
+      "fieldName": "id",
+      "fieldType": "Long"
+    },
+    {
+      "fieldName": "eventId",
+      "fieldType": "Long"
+    },
+    {
+      "fieldName": "amount",
+      "fieldType": "BigDecimal"
+    },
+    {
+      "fieldName": "type",
+      "fieldType": "TransactionType",
+      "fieldValues": "INCOME,EXPENSE"
+    },
+    {
+      "fieldName": "name",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "details",
+      "fieldType": "byte[]",
+      "fieldTypeBlobContent": "text"
+    }
+  ],
+  "relationships": [],
+  "changelogDate": "20201028013334",
+  "entityTableName": "budget",
+  "dto": "mapstruct",
+  "pagination": "no",
+  "service": "serviceImpl",
+  "jpaMetamodelFiltering": true,
+  "fluentMethods": true,
+  "clientRootFolder": "",
+  "applications": "*",
+  "readOnly": false,
+  "embedded": false
 }

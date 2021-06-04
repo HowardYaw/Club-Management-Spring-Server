@@ -4,12 +4,9 @@ import com.thirdcc.webapp.domain.EventImage;
 import org.springframework.data.jpa.repository.*;
 import org.springframework.stereotype.Repository;
 
-
 /**
- * Spring Data  repository for the EventImage entity.
+ * Spring Data SQL repository for the EventImage entity.
  */
 @SuppressWarnings("unused")
 @Repository
-public interface EventImageRepository extends JpaRepository<EventImage, Long> {
-
-}
+public interface EventImageRepository extends JpaRepository<EventImage, Long>, JpaSpecificationExecutor<EventImage> {}

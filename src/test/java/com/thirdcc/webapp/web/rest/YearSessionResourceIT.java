@@ -32,6 +32,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WithMockUser(value = "user")
 public class YearSessionResourceIT {
 
+    private static final String ENTITY_API_URL = "/api/year-sessions";
+
     private static final String DEFAULT_VALUE = "AAAAAAAAAA";
     private static final String UPDATED_VALUE = "BBBBBBBBBB";
 
@@ -56,7 +58,7 @@ public class YearSessionResourceIT {
 
     /**
      * Create an entity for this test.
-     *
+     * <p>
      * This is a static method, as tests for other entities might also need it,
      * if they test an entity which requires the current entity.
      */
@@ -65,9 +67,10 @@ public class YearSessionResourceIT {
             .value(DEFAULT_VALUE);
         return yearSession;
     }
+
     /**
      * Create an updated entity for this test.
-     *
+     * <p>
      * This is a static method, as tests for other entities might also need it,
      * if they test an entity which requires the current entity.
      */
@@ -132,6 +135,141 @@ public class YearSessionResourceIT {
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
             .andExpect(jsonPath("$.[*].id").value(hasItem(yearSession.getId().intValue())))
             .andExpect(jsonPath("$.[*].value").value(hasItem(DEFAULT_VALUE.toString())));
+    }
+
+
+    @Test
+    @Transactional
+    void getYearSessionsByIdFiltering() throws Exception {
+        // Initialize the database
+        yearSessionRepository.saveAndFlush(yearSession);
+
+        Long id = yearSession.getId();
+
+        defaultYearSessionShouldBeFound("id.equals=" + id);
+        defaultYearSessionShouldNotBeFound("id.notEquals=" + id);
+
+        defaultYearSessionShouldBeFound("id.greaterThanOrEqual=" + id);
+        defaultYearSessionShouldNotBeFound("id.greaterThan=" + id);
+
+        defaultYearSessionShouldBeFound("id.lessThanOrEqual=" + id);
+        defaultYearSessionShouldNotBeFound("id.lessThan=" + id);
+    }
+
+    @Test
+    @Transactional
+    void getAllYearSessionsByValueIsEqualToSomething() throws Exception {
+        // Initialize the database
+        yearSessionRepository.saveAndFlush(yearSession);
+
+        // Get all the yearSessionList where value equals to DEFAULT_VALUE
+        defaultYearSessionShouldBeFound("value.equals=" + DEFAULT_VALUE);
+
+        // Get all the yearSessionList where value equals to UPDATED_VALUE
+        defaultYearSessionShouldNotBeFound("value.equals=" + UPDATED_VALUE);
+    }
+
+    @Test
+    @Transactional
+    void getAllYearSessionsByValueIsNotEqualToSomething() throws Exception {
+        // Initialize the database
+        yearSessionRepository.saveAndFlush(yearSession);
+
+        // Get all the yearSessionList where value not equals to DEFAULT_VALUE
+        defaultYearSessionShouldNotBeFound("value.notEquals=" + DEFAULT_VALUE);
+
+        // Get all the yearSessionList where value not equals to UPDATED_VALUE
+        defaultYearSessionShouldBeFound("value.notEquals=" + UPDATED_VALUE);
+    }
+
+    @Test
+    @Transactional
+    void getAllYearSessionsByValueIsInShouldWork() throws Exception {
+        // Initialize the database
+        yearSessionRepository.saveAndFlush(yearSession);
+
+        // Get all the yearSessionList where value in DEFAULT_VALUE or UPDATED_VALUE
+        defaultYearSessionShouldBeFound("value.in=" + DEFAULT_VALUE + "," + UPDATED_VALUE);
+
+        // Get all the yearSessionList where value equals to UPDATED_VALUE
+        defaultYearSessionShouldNotBeFound("value.in=" + UPDATED_VALUE);
+    }
+
+    @Test
+    @Transactional
+    void getAllYearSessionsByValueIsNullOrNotNull() throws Exception {
+        // Initialize the database
+        yearSessionRepository.saveAndFlush(yearSession);
+
+        // Get all the yearSessionList where value is not null
+        defaultYearSessionShouldBeFound("value.specified=true");
+
+        // Get all the yearSessionList where value is null
+        defaultYearSessionShouldNotBeFound("value.specified=false");
+    }
+
+    @Test
+    @Transactional
+    void getAllYearSessionsByValueContainsSomething() throws Exception {
+        // Initialize the database
+        yearSessionRepository.saveAndFlush(yearSession);
+
+        // Get all the yearSessionList where value contains DEFAULT_VALUE
+        defaultYearSessionShouldBeFound("value.contains=" + DEFAULT_VALUE);
+
+        // Get all the yearSessionList where value contains UPDATED_VALUE
+        defaultYearSessionShouldNotBeFound("value.contains=" + UPDATED_VALUE);
+    }
+
+    @Test
+    @Transactional
+    void getAllYearSessionsByValueNotContainsSomething() throws Exception {
+        // Initialize the database
+        yearSessionRepository.saveAndFlush(yearSession);
+
+        // Get all the yearSessionList where value does not contain DEFAULT_VALUE
+        defaultYearSessionShouldNotBeFound("value.doesNotContain=" + DEFAULT_VALUE);
+
+        // Get all the yearSessionList where value does not contain UPDATED_VALUE
+        defaultYearSessionShouldBeFound("value.doesNotContain=" + UPDATED_VALUE);
+    }
+
+    /**
+     * Executes the search, and checks that the default entity is returned.
+     */
+    private void defaultYearSessionShouldBeFound(String filter) throws Exception {
+        restYearSessionMockMvc
+            .perform(get(ENTITY_API_URL + "?sort=id,desc&" + filter))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(TestUtil.APPLICATION_JSON_UTF8))
+            .andExpect(jsonPath("$.[*].id").value(hasItem(yearSession.getId().intValue())))
+            .andExpect(jsonPath("$.[*].value").value(hasItem(DEFAULT_VALUE)));
+
+        // Check, that the count call also returns 1
+        restYearSessionMockMvc
+            .perform(get(ENTITY_API_URL + "/count?sort=id,desc&" + filter))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(TestUtil.APPLICATION_JSON_UTF8))
+            .andExpect(content().string("1"));
+    }
+
+    /**
+     * Executes the search, and checks that the default entity is not returned.
+     */
+    private void defaultYearSessionShouldNotBeFound(String filter) throws Exception {
+        restYearSessionMockMvc
+            .perform(get(ENTITY_API_URL + "?sort=id,desc&" + filter))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(TestUtil.APPLICATION_JSON_UTF8))
+            .andExpect(jsonPath("$").isArray())
+            .andExpect(jsonPath("$").isEmpty());
+
+        // Check, that the count call also returns 0
+        restYearSessionMockMvc
+            .perform(get(ENTITY_API_URL + "/count?sort=id,desc&" + filter))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(TestUtil.APPLICATION_JSON_UTF8))
+            .andExpect(content().string("0"));
     }
 
     @Test

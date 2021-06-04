@@ -10,18 +10,16 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 import java.util.Optional;
 
-
 /**
- * Spring Data  repository for the Budget entity.
+ * Spring Data SQL repository for the Budget entity.
  */
 @SuppressWarnings("unused")
 @Repository
-public interface BudgetRepository extends JpaRepository<Budget, Long> {
+public interface BudgetRepository extends JpaRepository<Budget, Long>, JpaSpecificationExecutor<Budget> {
 
     Optional<Budget> findOneByEventIdAndId(Long eventId, Long id);
 
     List<Budget> findAllByEventIdAndType(Long eventId, TransactionType type);
 
     Page<Budget> findAllByEventId(Pageable pageable, Long eventId);
-
 }
