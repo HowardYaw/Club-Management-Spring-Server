@@ -9,13 +9,12 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 import java.util.Optional;
 
-
 /**
- * Spring Data  repository for the Administrator entity.
+ * Spring Data SQL repository for the Administrator entity.
  */
 @SuppressWarnings("unused")
 @Repository
-public interface AdministratorRepository extends JpaRepository<Administrator, Long> {
+public interface AdministratorRepository extends JpaRepository<Administrator, Long>, JpaSpecificationExecutor<Administrator> {
 
     Optional<Administrator> findByUserIdAndYearSessionAndRoleAndStatus(Long userId, String yearSession, AdministratorRole administratorRole, AdministratorStatus status);
 

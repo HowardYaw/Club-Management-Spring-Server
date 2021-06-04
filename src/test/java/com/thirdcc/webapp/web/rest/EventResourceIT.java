@@ -38,6 +38,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
 
+import static com.thirdcc.webapp.web.rest.TestUtil.sameNumber;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.mockito.Mockito.when;
@@ -56,6 +57,8 @@ import org.springframework.web.multipart.MultipartFile;
 @InitYearSession
 @WithMockUser
 public class EventResourceIT {
+
+    private static final String ENTITY_API_URL = "/api/events";
 
     private static final String DEFAULT_NAME = "AAAAAAAAAA";
     private static final String UPDATED_NAME = "BBBBBBBBBB";
@@ -76,6 +79,7 @@ public class EventResourceIT {
     private static final Instant UPDATED_END_DATE = Instant.now().truncatedTo(ChronoUnit.MILLIS);
 
     private static final BigDecimal DEFAULT_FEE = new BigDecimal(1);
+    private static final BigDecimal SMALLER_FEE = DEFAULT_FEE.subtract(BigDecimal.ONE);
     private static final BigDecimal UPDATED_FEE = new BigDecimal(2);
 
     private static final Boolean DEFAULT_REQUIRED_TRANSPORT = false;
@@ -621,21 +625,615 @@ public class EventResourceIT {
             .andExpect(jsonPath("$.[*].status").value(hasItem(DEFAULT_STATUS.toString())));
     }
 
-
     @Test
     @Transactional
-    public void getAllEventsWithNonExistentDateRange() throws Exception {
+    void getEventsByIdFiltering() throws Exception {
         // Initialize the database
         eventRepository.saveAndFlush(event);
 
-        // Get all the eventList with date range but should return empty array
-        restEventMockMvc.perform(get("/api/events?page=0&size=3&sort=startDate,desc&from="+Instant.now().minusSeconds(60 * 60 * 24)+"&to="+Instant.now().plusSeconds(60 * 60 * 24))
-            .with(user("user").password("user").roles("USER")))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$").isArray())
-            .andExpect(jsonPath("$").isEmpty());
+        Long id = event.getId();
+
+        defaultEventShouldBeFound("id.equals=" + id);
+        defaultEventShouldNotBeFound("id.notEquals=" + id);
+
+        defaultEventShouldBeFound("id.greaterThanOrEqual=" + id);
+        defaultEventShouldNotBeFound("id.greaterThan=" + id);
+
+        defaultEventShouldBeFound("id.lessThanOrEqual=" + id);
+        defaultEventShouldNotBeFound("id.lessThan=" + id);
     }
 
+    @Test
+    @Transactional
+    void getAllEventsByNameIsEqualToSomething() throws Exception {
+        // Initialize the database
+        eventRepository.saveAndFlush(event);
+
+        // Get all the eventList where name equals to DEFAULT_NAME
+        defaultEventShouldBeFound("name.equals=" + DEFAULT_NAME);
+
+        // Get all the eventList where name equals to UPDATED_NAME
+        defaultEventShouldNotBeFound("name.equals=" + UPDATED_NAME);
+    }
+
+    @Test
+    @Transactional
+    void getAllEventsByNameIsNotEqualToSomething() throws Exception {
+        // Initialize the database
+        eventRepository.saveAndFlush(event);
+
+        // Get all the eventList where name not equals to DEFAULT_NAME
+        defaultEventShouldNotBeFound("name.notEquals=" + DEFAULT_NAME);
+
+        // Get all the eventList where name not equals to UPDATED_NAME
+        defaultEventShouldBeFound("name.notEquals=" + UPDATED_NAME);
+    }
+
+    @Test
+    @Transactional
+    void getAllEventsByNameIsInShouldWork() throws Exception {
+        // Initialize the database
+        eventRepository.saveAndFlush(event);
+
+        // Get all the eventList where name in DEFAULT_NAME or UPDATED_NAME
+        defaultEventShouldBeFound("name.in=" + DEFAULT_NAME + "," + UPDATED_NAME);
+
+        // Get all the eventList where name equals to UPDATED_NAME
+        defaultEventShouldNotBeFound("name.in=" + UPDATED_NAME);
+    }
+
+    @Test
+    @Transactional
+    void getAllEventsByNameIsNullOrNotNull() throws Exception {
+        // Initialize the database
+        eventRepository.saveAndFlush(event);
+
+        // Get all the eventList where name is not null
+        defaultEventShouldBeFound("name.specified=true");
+
+        // Get all the eventList where name is null
+        defaultEventShouldNotBeFound("name.specified=false");
+    }
+
+    @Test
+    @Transactional
+    void getAllEventsByNameContainsSomething() throws Exception {
+        // Initialize the database
+        eventRepository.saveAndFlush(event);
+
+        // Get all the eventList where name contains DEFAULT_NAME
+        defaultEventShouldBeFound("name.contains=" + DEFAULT_NAME);
+
+        // Get all the eventList where name contains UPDATED_NAME
+        defaultEventShouldNotBeFound("name.contains=" + UPDATED_NAME);
+    }
+
+    @Test
+    @Transactional
+    void getAllEventsByNameNotContainsSomething() throws Exception {
+        // Initialize the database
+        eventRepository.saveAndFlush(event);
+
+        // Get all the eventList where name does not contain DEFAULT_NAME
+        defaultEventShouldNotBeFound("name.doesNotContain=" + DEFAULT_NAME);
+
+        // Get all the eventList where name does not contain UPDATED_NAME
+        defaultEventShouldBeFound("name.doesNotContain=" + UPDATED_NAME);
+    }
+
+    @Test
+    @Transactional
+    void getAllEventsByRemarksIsEqualToSomething() throws Exception {
+        // Initialize the database
+        eventRepository.saveAndFlush(event);
+
+        // Get all the eventList where remarks equals to DEFAULT_REMARKS
+        defaultEventShouldBeFound("remarks.equals=" + DEFAULT_REMARKS);
+
+        // Get all the eventList where remarks equals to UPDATED_REMARKS
+        defaultEventShouldNotBeFound("remarks.equals=" + UPDATED_REMARKS);
+    }
+
+    @Test
+    @Transactional
+    void getAllEventsByRemarksIsNotEqualToSomething() throws Exception {
+        // Initialize the database
+        eventRepository.saveAndFlush(event);
+
+        // Get all the eventList where remarks not equals to DEFAULT_REMARKS
+        defaultEventShouldNotBeFound("remarks.notEquals=" + DEFAULT_REMARKS);
+
+        // Get all the eventList where remarks not equals to UPDATED_REMARKS
+        defaultEventShouldBeFound("remarks.notEquals=" + UPDATED_REMARKS);
+    }
+
+    @Test
+    @Transactional
+    void getAllEventsByRemarksIsInShouldWork() throws Exception {
+        // Initialize the database
+        eventRepository.saveAndFlush(event);
+
+        // Get all the eventList where remarks in DEFAULT_REMARKS or UPDATED_REMARKS
+        defaultEventShouldBeFound("remarks.in=" + DEFAULT_REMARKS + "," + UPDATED_REMARKS);
+
+        // Get all the eventList where remarks equals to UPDATED_REMARKS
+        defaultEventShouldNotBeFound("remarks.in=" + UPDATED_REMARKS);
+    }
+
+    @Test
+    @Transactional
+    void getAllEventsByRemarksIsNullOrNotNull() throws Exception {
+        // Initialize the database
+        eventRepository.saveAndFlush(event);
+
+        // Get all the eventList where remarks is not null
+        defaultEventShouldBeFound("remarks.specified=true");
+
+        // Get all the eventList where remarks is null
+        defaultEventShouldNotBeFound("remarks.specified=false");
+    }
+
+    @Test
+    @Transactional
+    void getAllEventsByRemarksContainsSomething() throws Exception {
+        // Initialize the database
+        eventRepository.saveAndFlush(event);
+
+        // Get all the eventList where remarks contains DEFAULT_REMARKS
+        defaultEventShouldBeFound("remarks.contains=" + DEFAULT_REMARKS);
+
+        // Get all the eventList where remarks contains UPDATED_REMARKS
+        defaultEventShouldNotBeFound("remarks.contains=" + UPDATED_REMARKS);
+    }
+
+    @Test
+    @Transactional
+    void getAllEventsByRemarksNotContainsSomething() throws Exception {
+        // Initialize the database
+        eventRepository.saveAndFlush(event);
+
+        // Get all the eventList where remarks does not contain DEFAULT_REMARKS
+        defaultEventShouldNotBeFound("remarks.doesNotContain=" + DEFAULT_REMARKS);
+
+        // Get all the eventList where remarks does not contain UPDATED_REMARKS
+        defaultEventShouldBeFound("remarks.doesNotContain=" + UPDATED_REMARKS);
+    }
+
+    @Test
+    @Transactional
+    void getAllEventsByVenueIsEqualToSomething() throws Exception {
+        // Initialize the database
+        eventRepository.saveAndFlush(event);
+
+        // Get all the eventList where venue equals to DEFAULT_VENUE
+        defaultEventShouldBeFound("venue.equals=" + DEFAULT_VENUE);
+
+        // Get all the eventList where venue equals to UPDATED_VENUE
+        defaultEventShouldNotBeFound("venue.equals=" + UPDATED_VENUE);
+    }
+
+    @Test
+    @Transactional
+    void getAllEventsByVenueIsNotEqualToSomething() throws Exception {
+        // Initialize the database
+        eventRepository.saveAndFlush(event);
+
+        // Get all the eventList where venue not equals to DEFAULT_VENUE
+        defaultEventShouldNotBeFound("venue.notEquals=" + DEFAULT_VENUE);
+
+        // Get all the eventList where venue not equals to UPDATED_VENUE
+        defaultEventShouldBeFound("venue.notEquals=" + UPDATED_VENUE);
+    }
+
+    @Test
+    @Transactional
+    void getAllEventsByVenueIsInShouldWork() throws Exception {
+        // Initialize the database
+        eventRepository.saveAndFlush(event);
+
+        // Get all the eventList where venue in DEFAULT_VENUE or UPDATED_VENUE
+        defaultEventShouldBeFound("venue.in=" + DEFAULT_VENUE + "," + UPDATED_VENUE);
+
+        // Get all the eventList where venue equals to UPDATED_VENUE
+        defaultEventShouldNotBeFound("venue.in=" + UPDATED_VENUE);
+    }
+
+    @Test
+    @Transactional
+    void getAllEventsByVenueIsNullOrNotNull() throws Exception {
+        // Initialize the database
+        eventRepository.saveAndFlush(event);
+
+        // Get all the eventList where venue is not null
+        defaultEventShouldBeFound("venue.specified=true");
+
+        // Get all the eventList where venue is null
+        defaultEventShouldNotBeFound("venue.specified=false");
+    }
+
+    @Test
+    @Transactional
+    void getAllEventsByVenueContainsSomething() throws Exception {
+        // Initialize the database
+        eventRepository.saveAndFlush(event);
+
+        // Get all the eventList where venue contains DEFAULT_VENUE
+        defaultEventShouldBeFound("venue.contains=" + DEFAULT_VENUE);
+
+        // Get all the eventList where venue contains UPDATED_VENUE
+        defaultEventShouldNotBeFound("venue.contains=" + UPDATED_VENUE);
+    }
+
+    @Test
+    @Transactional
+    void getAllEventsByVenueNotContainsSomething() throws Exception {
+        // Initialize the database
+        eventRepository.saveAndFlush(event);
+
+        // Get all the eventList where venue does not contain DEFAULT_VENUE
+        defaultEventShouldNotBeFound("venue.doesNotContain=" + DEFAULT_VENUE);
+
+        // Get all the eventList where venue does not contain UPDATED_VENUE
+        defaultEventShouldBeFound("venue.doesNotContain=" + UPDATED_VENUE);
+    }
+
+    @Test
+    @Transactional
+    void getAllEventsByStartDateIsEqualToSomething() throws Exception {
+        // Initialize the database
+        eventRepository.saveAndFlush(event);
+
+        // Get all the eventList where startDate equals to DEFAULT_START_DATE
+        defaultEventShouldBeFound("startDate.equals=" + DEFAULT_START_DATE);
+
+        // Get all the eventList where startDate equals to UPDATED_START_DATE
+        defaultEventShouldNotBeFound("startDate.equals=" + UPDATED_START_DATE);
+    }
+
+    @Test
+    @Transactional
+    void getAllEventsByStartDateIsNotEqualToSomething() throws Exception {
+        // Initialize the database
+        eventRepository.saveAndFlush(event);
+
+        // Get all the eventList where startDate not equals to DEFAULT_START_DATE
+        defaultEventShouldNotBeFound("startDate.notEquals=" + DEFAULT_START_DATE);
+
+        // Get all the eventList where startDate not equals to UPDATED_START_DATE
+        defaultEventShouldBeFound("startDate.notEquals=" + UPDATED_START_DATE);
+    }
+
+    @Test
+    @Transactional
+    void getAllEventsByStartDateIsInShouldWork() throws Exception {
+        // Initialize the database
+        eventRepository.saveAndFlush(event);
+
+        // Get all the eventList where startDate in DEFAULT_START_DATE or UPDATED_START_DATE
+        defaultEventShouldBeFound("startDate.in=" + DEFAULT_START_DATE + "," + UPDATED_START_DATE);
+
+        // Get all the eventList where startDate equals to UPDATED_START_DATE
+        defaultEventShouldNotBeFound("startDate.in=" + UPDATED_START_DATE);
+    }
+
+    @Test
+    @Transactional
+    void getAllEventsByStartDateIsNullOrNotNull() throws Exception {
+        // Initialize the database
+        eventRepository.saveAndFlush(event);
+
+        // Get all the eventList where startDate is not null
+        defaultEventShouldBeFound("startDate.specified=true");
+
+        // Get all the eventList where startDate is null
+        defaultEventShouldNotBeFound("startDate.specified=false");
+    }
+
+    @Test
+    @Transactional
+    void getAllEventsByEndDateIsEqualToSomething() throws Exception {
+        // Initialize the database
+        eventRepository.saveAndFlush(event);
+
+        // Get all the eventList where endDate equals to DEFAULT_END_DATE
+        defaultEventShouldBeFound("endDate.equals=" + DEFAULT_END_DATE);
+
+        // Get all the eventList where endDate equals to UPDATED_END_DATE
+        defaultEventShouldNotBeFound("endDate.equals=" + UPDATED_END_DATE);
+    }
+
+    @Test
+    @Transactional
+    void getAllEventsByEndDateIsNotEqualToSomething() throws Exception {
+        // Initialize the database
+        eventRepository.saveAndFlush(event);
+
+        // Get all the eventList where endDate not equals to DEFAULT_END_DATE
+        defaultEventShouldNotBeFound("endDate.notEquals=" + DEFAULT_END_DATE);
+
+        // Get all the eventList where endDate not equals to UPDATED_END_DATE
+        defaultEventShouldBeFound("endDate.notEquals=" + UPDATED_END_DATE);
+    }
+
+    @Test
+    @Transactional
+    void getAllEventsByEndDateIsInShouldWork() throws Exception {
+        // Initialize the database
+        eventRepository.saveAndFlush(event);
+
+        // Get all the eventList where endDate in DEFAULT_END_DATE or UPDATED_END_DATE
+        defaultEventShouldBeFound("endDate.in=" + DEFAULT_END_DATE + "," + UPDATED_END_DATE);
+
+        // Get all the eventList where endDate equals to UPDATED_END_DATE
+        defaultEventShouldNotBeFound("endDate.in=" + UPDATED_END_DATE);
+    }
+
+    @Test
+    @Transactional
+    void getAllEventsByEndDateIsNullOrNotNull() throws Exception {
+        // Initialize the database
+        eventRepository.saveAndFlush(event);
+
+        // Get all the eventList where endDate is not null
+        defaultEventShouldBeFound("endDate.specified=true");
+
+        // Get all the eventList where endDate is null
+        defaultEventShouldNotBeFound("endDate.specified=false");
+    }
+
+    @Test
+    @Transactional
+    void getAllEventsByFeeIsEqualToSomething() throws Exception {
+        // Initialize the database
+        eventRepository.saveAndFlush(event);
+
+        // Get all the eventList where fee equals to DEFAULT_FEE
+        defaultEventShouldBeFound("fee.equals=" + DEFAULT_FEE);
+
+        // Get all the eventList where fee equals to UPDATED_FEE
+        defaultEventShouldNotBeFound("fee.equals=" + UPDATED_FEE);
+    }
+
+    @Test
+    @Transactional
+    void getAllEventsByFeeIsNotEqualToSomething() throws Exception {
+        // Initialize the database
+        eventRepository.saveAndFlush(event);
+
+        // Get all the eventList where fee not equals to DEFAULT_FEE
+        defaultEventShouldNotBeFound("fee.notEquals=" + DEFAULT_FEE);
+
+        // Get all the eventList where fee not equals to UPDATED_FEE
+        defaultEventShouldBeFound("fee.notEquals=" + UPDATED_FEE);
+    }
+
+    @Test
+    @Transactional
+    void getAllEventsByFeeIsInShouldWork() throws Exception {
+        // Initialize the database
+        eventRepository.saveAndFlush(event);
+
+        // Get all the eventList where fee in DEFAULT_FEE or UPDATED_FEE
+        defaultEventShouldBeFound("fee.in=" + DEFAULT_FEE + "," + UPDATED_FEE);
+
+        // Get all the eventList where fee equals to UPDATED_FEE
+        defaultEventShouldNotBeFound("fee.in=" + UPDATED_FEE);
+    }
+
+    @Test
+    @Transactional
+    void getAllEventsByFeeIsNullOrNotNull() throws Exception {
+        // Initialize the database
+        eventRepository.saveAndFlush(event);
+
+        // Get all the eventList where fee is not null
+        defaultEventShouldBeFound("fee.specified=true");
+
+        // Get all the eventList where fee is null
+        defaultEventShouldNotBeFound("fee.specified=false");
+    }
+
+    @Test
+    @Transactional
+    void getAllEventsByFeeIsGreaterThanOrEqualToSomething() throws Exception {
+        // Initialize the database
+        eventRepository.saveAndFlush(event);
+
+        // Get all the eventList where fee is greater than or equal to DEFAULT_FEE
+        defaultEventShouldBeFound("fee.greaterThanOrEqual=" + DEFAULT_FEE);
+
+        // Get all the eventList where fee is greater than or equal to UPDATED_FEE
+        defaultEventShouldNotBeFound("fee.greaterThanOrEqual=" + UPDATED_FEE);
+    }
+
+    @Test
+    @Transactional
+    void getAllEventsByFeeIsLessThanOrEqualToSomething() throws Exception {
+        // Initialize the database
+        eventRepository.saveAndFlush(event);
+
+        // Get all the eventList where fee is less than or equal to DEFAULT_FEE
+        defaultEventShouldBeFound("fee.lessThanOrEqual=" + DEFAULT_FEE);
+
+        // Get all the eventList where fee is less than or equal to SMALLER_FEE
+        defaultEventShouldNotBeFound("fee.lessThanOrEqual=" + SMALLER_FEE);
+    }
+
+    @Test
+    @Transactional
+    void getAllEventsByFeeIsLessThanSomething() throws Exception {
+        // Initialize the database
+        eventRepository.saveAndFlush(event);
+
+        // Get all the eventList where fee is less than DEFAULT_FEE
+        defaultEventShouldNotBeFound("fee.lessThan=" + DEFAULT_FEE);
+
+        // Get all the eventList where fee is less than UPDATED_FEE
+        defaultEventShouldBeFound("fee.lessThan=" + UPDATED_FEE);
+    }
+
+    @Test
+    @Transactional
+    void getAllEventsByFeeIsGreaterThanSomething() throws Exception {
+        // Initialize the database
+        eventRepository.saveAndFlush(event);
+
+        // Get all the eventList where fee is greater than DEFAULT_FEE
+        defaultEventShouldNotBeFound("fee.greaterThan=" + DEFAULT_FEE);
+
+        // Get all the eventList where fee is greater than SMALLER_FEE
+        defaultEventShouldBeFound("fee.greaterThan=" + SMALLER_FEE);
+    }
+
+    @Test
+    @Transactional
+    void getAllEventsByRequiredTransportIsEqualToSomething() throws Exception {
+        // Initialize the database
+        eventRepository.saveAndFlush(event);
+
+        // Get all the eventList where requiredTransport equals to DEFAULT_REQUIRED_TRANSPORT
+        defaultEventShouldBeFound("requiredTransport.equals=" + DEFAULT_REQUIRED_TRANSPORT);
+
+        // Get all the eventList where requiredTransport equals to UPDATED_REQUIRED_TRANSPORT
+        defaultEventShouldNotBeFound("requiredTransport.equals=" + UPDATED_REQUIRED_TRANSPORT);
+    }
+
+    @Test
+    @Transactional
+    void getAllEventsByRequiredTransportIsNotEqualToSomething() throws Exception {
+        // Initialize the database
+        eventRepository.saveAndFlush(event);
+
+        // Get all the eventList where requiredTransport not equals to DEFAULT_REQUIRED_TRANSPORT
+        defaultEventShouldNotBeFound("requiredTransport.notEquals=" + DEFAULT_REQUIRED_TRANSPORT);
+
+        // Get all the eventList where requiredTransport not equals to UPDATED_REQUIRED_TRANSPORT
+        defaultEventShouldBeFound("requiredTransport.notEquals=" + UPDATED_REQUIRED_TRANSPORT);
+    }
+
+    @Test
+    @Transactional
+    void getAllEventsByRequiredTransportIsInShouldWork() throws Exception {
+        // Initialize the database
+        eventRepository.saveAndFlush(event);
+
+        // Get all the eventList where requiredTransport in DEFAULT_REQUIRED_TRANSPORT or UPDATED_REQUIRED_TRANSPORT
+        defaultEventShouldBeFound("requiredTransport.in=" + DEFAULT_REQUIRED_TRANSPORT + "," + UPDATED_REQUIRED_TRANSPORT);
+
+        // Get all the eventList where requiredTransport equals to UPDATED_REQUIRED_TRANSPORT
+        defaultEventShouldNotBeFound("requiredTransport.in=" + UPDATED_REQUIRED_TRANSPORT);
+    }
+
+    @Test
+    @Transactional
+    void getAllEventsByRequiredTransportIsNullOrNotNull() throws Exception {
+        // Initialize the database
+        eventRepository.saveAndFlush(event);
+
+        // Get all the eventList where requiredTransport is not null
+        defaultEventShouldBeFound("requiredTransport.specified=true");
+
+        // Get all the eventList where requiredTransport is null
+        defaultEventShouldNotBeFound("requiredTransport.specified=false");
+    }
+
+    @Test
+    @Transactional
+    void getAllEventsByStatusIsEqualToSomething() throws Exception {
+        // Initialize the database
+        eventRepository.saveAndFlush(event);
+
+        // Get all the eventList where status equals to DEFAULT_STATUS
+        defaultEventShouldBeFound("status.equals=" + DEFAULT_STATUS);
+
+        // Get all the eventList where status equals to UPDATED_STATUS
+        defaultEventShouldNotBeFound("status.equals=" + UPDATED_STATUS);
+    }
+
+    @Test
+    @Transactional
+    void getAllEventsByStatusIsNotEqualToSomething() throws Exception {
+        // Initialize the database
+        eventRepository.saveAndFlush(event);
+
+        // Get all the eventList where status not equals to DEFAULT_STATUS
+        defaultEventShouldNotBeFound("status.notEquals=" + DEFAULT_STATUS);
+
+        // Get all the eventList where status not equals to UPDATED_STATUS
+        defaultEventShouldBeFound("status.notEquals=" + UPDATED_STATUS);
+    }
+
+    @Test
+    @Transactional
+    void getAllEventsByStatusIsInShouldWork() throws Exception {
+        // Initialize the database
+        eventRepository.saveAndFlush(event);
+
+        // Get all the eventList where status in DEFAULT_STATUS or UPDATED_STATUS
+        defaultEventShouldBeFound("status.in=" + DEFAULT_STATUS + "," + UPDATED_STATUS);
+
+        // Get all the eventList where status equals to UPDATED_STATUS
+        defaultEventShouldNotBeFound("status.in=" + UPDATED_STATUS);
+    }
+
+    @Test
+    @Transactional
+    void getAllEventsByStatusIsNullOrNotNull() throws Exception {
+        // Initialize the database
+        eventRepository.saveAndFlush(event);
+
+        // Get all the eventList where status is not null
+        defaultEventShouldBeFound("status.specified=true");
+
+        // Get all the eventList where status is null
+        defaultEventShouldNotBeFound("status.specified=false");
+    }
+
+    /**
+     * Executes the search, and checks that the default entity is returned.
+     */
+    private void defaultEventShouldBeFound(String filter) throws Exception {
+        restEventMockMvc
+            .perform(get(ENTITY_API_URL + "?sort=id,desc&" + filter))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(TestUtil.APPLICATION_JSON_UTF8))
+            .andExpect(jsonPath("$.[*].id").value(hasItem(event.getId().intValue())))
+            .andExpect(jsonPath("$.[*].name").value(hasItem(DEFAULT_NAME)))
+            .andExpect(jsonPath("$.[*].description").value(hasItem(DEFAULT_DESCRIPTION.toString())))
+            .andExpect(jsonPath("$.[*].remarks").value(hasItem(DEFAULT_REMARKS)))
+            .andExpect(jsonPath("$.[*].venue").value(hasItem(DEFAULT_VENUE)))
+            .andExpect(jsonPath("$.[*].startDate").value(hasItem(DEFAULT_START_DATE.toString())))
+            .andExpect(jsonPath("$.[*].endDate").value(hasItem(DEFAULT_END_DATE.toString())))
+            .andExpect(jsonPath("$.[*].fee").value(hasItem(sameNumber(DEFAULT_FEE))))
+            .andExpect(jsonPath("$.[*].requiredTransport").value(hasItem(DEFAULT_REQUIRED_TRANSPORT.booleanValue())))
+            .andExpect(jsonPath("$.[*].status").value(hasItem(DEFAULT_STATUS.toString())));
+
+        // Check, that the count call also returns 1
+        restEventMockMvc
+            .perform(get(ENTITY_API_URL + "/count?sort=id,desc&" + filter))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(TestUtil.APPLICATION_JSON_UTF8))
+            .andExpect(content().string("1"));
+    }
+
+    /**
+     * Executes the search, and checks that the default entity is not returned.
+     */
+    private void defaultEventShouldNotBeFound(String filter) throws Exception {
+        restEventMockMvc
+            .perform(get(ENTITY_API_URL + "?sort=id,desc&" + filter))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(TestUtil.APPLICATION_JSON_UTF8))
+            .andExpect(jsonPath("$").isArray())
+            .andExpect(jsonPath("$").isEmpty());
+
+        // Check, that the count call also returns 0
+        restEventMockMvc
+            .perform(get(ENTITY_API_URL + "/count?sort=id,desc&" + filter))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(TestUtil.APPLICATION_JSON_UTF8))
+            .andExpect(content().string("0"));
+    }
 
     @Test
     @Transactional

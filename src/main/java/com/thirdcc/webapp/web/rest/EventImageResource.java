@@ -1,6 +1,8 @@
 package com.thirdcc.webapp.web.rest;
 
+import com.thirdcc.webapp.service.EventImageQueryService;
 import com.thirdcc.webapp.service.EventImageService;
+import com.thirdcc.webapp.service.criteria.EventImageCriteria;
 import com.thirdcc.webapp.web.rest.errors.BadRequestAlertException;
 import com.thirdcc.webapp.service.dto.EventImageDTO;
 
@@ -34,8 +36,11 @@ public class EventImageResource {
 
     private final EventImageService eventImageService;
 
-    public EventImageResource(EventImageService eventImageService) {
+    private final EventImageQueryService eventImageQueryService;
+
+    public EventImageResource(EventImageService eventImageService, EventImageQueryService eventImageQueryService) {
         this.eventImageService = eventImageService;
+        this.eventImageQueryService = eventImageQueryService;
     }
 
     /**
@@ -78,15 +83,17 @@ public class EventImageResource {
             .body(result);
     }
 
-    /**
-     * {@code GET  /event-images} : get all the eventImages.
-     *
-     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the list of eventImages in body.
-     */
     @GetMapping("/event-images")
-    public List<EventImageDTO> getAllEventImages() {
-        log.debug("REST request to get all EventImages");
-        return eventImageService.findAll();
+    public ResponseEntity<List<EventImageDTO>> getAllEventImages(EventImageCriteria criteria) {
+        log.debug("REST request to get EventImages by criteria: {}", criteria);
+        List<EventImageDTO> entityList = eventImageQueryService.findByCriteria(criteria);
+        return ResponseEntity.ok().body(entityList);
+    }
+
+    @GetMapping("/event-images/count")
+    public ResponseEntity<Long> countEventImages(EventImageCriteria criteria) {
+        log.debug("REST request to count EventImages by criteria: {}", criteria);
+        return ResponseEntity.ok().body(eventImageQueryService.countByCriteria(criteria));
     }
 
     /**

@@ -1,7 +1,8 @@
 package com.thirdcc.webapp.web.rest;
 
-import com.thirdcc.webapp.domain.User;
+import com.thirdcc.webapp.service.EventCrewQueryService;
 import com.thirdcc.webapp.service.EventCrewService;
+import com.thirdcc.webapp.service.criteria.EventCrewCriteria;
 import com.thirdcc.webapp.web.rest.errors.BadRequestAlertException;
 import com.thirdcc.webapp.service.dto.EventCrewDTO;
 
@@ -42,8 +43,11 @@ public class EventCrewResource {
 
     private final EventCrewService eventCrewService;
 
-    public EventCrewResource(EventCrewService eventCrewService) {
+    private final EventCrewQueryService eventCrewQueryService;
+
+    public EventCrewResource(EventCrewService eventCrewService, EventCrewQueryService eventCrewQueryService) {
         this.eventCrewService = eventCrewService;
+        this.eventCrewQueryService = eventCrewQueryService;
     }
 
     /**
@@ -88,15 +92,23 @@ public class EventCrewResource {
             .body(result);
     }
 
-    /**
-     * {@code GET  /event-crews} : get all the eventCrews.
-     *
-     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the list of eventCrews in body.
-     */
     @GetMapping("/event-crews")
-    public List<EventCrewDTO> getAllEventCrews() {
-        log.debug("REST request to get all EventCrews");
-        return eventCrewService.findAll();
+    public ResponseEntity<List<EventCrewDTO>> getAllEventCrews(EventCrewCriteria criteria) {
+        log.debug("REST request to get EventCrews by criteria: {}", criteria);
+        List<EventCrewDTO> entityList = eventCrewQueryService.findByCriteria(criteria);
+        return ResponseEntity.ok().body(entityList);
+    }
+
+    /**
+     * {@code GET  /event-crews/count} : count all the eventCrews.
+     *
+     * @param criteria the criteria which the requested entities should match.
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the count in body.
+     */
+    @GetMapping("/event-crews/count")
+    public ResponseEntity<Long> countEventCrews(EventCrewCriteria criteria) {
+        log.debug("REST request to count EventCrews by criteria: {}", criteria);
+        return ResponseEntity.ok().body(eventCrewQueryService.countByCriteria(criteria));
     }
 
     /**

@@ -11,13 +11,12 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.Set;
 
-
 /**
- * Spring Data  repository for the Event entity.
+ * Spring Data SQL repository for the Event entity.
  */
 @SuppressWarnings("unused")
 @Repository
-public interface EventRepository extends JpaRepository<Event, Long> {
+public interface EventRepository extends JpaRepository<Event, Long>, JpaSpecificationExecutor<Event> {
 
     Optional<Event> findOneByIdAndStatusIn(Long id, Set<EventStatus> eventStatus);
 

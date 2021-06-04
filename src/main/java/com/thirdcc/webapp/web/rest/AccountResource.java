@@ -24,6 +24,7 @@ import com.thirdcc.webapp.web.rest.vm.ManagedUserVM;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -244,14 +245,14 @@ public class AccountResource {
         boolean isProfileCompleted = isBasicProfileCompleted && isUserUniInfoCompleted;
         Map<String, Boolean> result = new HashMap<>();
         result.put("isProfileCompleted", isProfileCompleted);
-        return ResponseEntity.ok().headers(null).body(result);
+        return ResponseEntity.ok().headers((HttpHeaders) null).body(result);
     }
 
     @PostMapping("/account/profile")
     public ResponseEntity<UserUniInfoDTO> completeProfile(@RequestBody UserUniInfoDTO userUniInfoDTO) {
         userService.updateUser(userUniInfoDTO);
         UserUniInfoDTO result = userUniInfoService.save(userUniInfoDTO);
-        return ResponseEntity.ok().headers(null).body(result);
+        return ResponseEntity.ok().headers((HttpHeaders) null).body(result);
     }
 
     private static boolean checkPasswordLength(String password) {

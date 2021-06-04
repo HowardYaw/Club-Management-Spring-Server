@@ -3,6 +3,7 @@ package com.thirdcc.webapp.web.rest;
 import com.thirdcc.webapp.ClubmanagementApp;
 import com.thirdcc.webapp.domain.ClubFamily;
 import com.thirdcc.webapp.repository.ClubFamilyRepository;
+import com.thirdcc.webapp.service.ClubFamilyQueryService;
 import com.thirdcc.webapp.service.ClubFamilyService;
 import com.thirdcc.webapp.service.dto.ClubFamilyDTO;
 import com.thirdcc.webapp.service.mapper.ClubFamilyMapper;
@@ -34,10 +35,15 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WithMockUser(value = "user")
 public class ClubFamilyResourceIT {
 
-    private static final String DEFAULT_NAME = "AAAAAAAAAA";
+    private static final String ENTITY_API_URL = "/api/club-families";
+
+    // from club_family_TestFaker.csv
+    private static final Long FIXED_CLUB_FAMILY_ID = 2L;
+
+    private static final String DEFAULT_NAME = "Jin Long";
     private static final String UPDATED_NAME = "BBBBBBBBBB";
 
-    private static final String DEFAULT_SLOGAN = "AAAAAAAAAA";
+    private static final String DEFAULT_SLOGAN = "金龙精神, 靓仔美人";
     private static final String UPDATED_SLOGAN = "BBBBBBBBBB";
 
     @Autowired
@@ -50,6 +56,9 @@ public class ClubFamilyResourceIT {
     private ClubFamilyService clubFamilyService;
 
     @Autowired
+    private ClubFamilyQueryService clubFamilyQueryService;
+
+    @Autowired
     private EntityManager em;
 
     @Autowired
@@ -60,7 +69,7 @@ public class ClubFamilyResourceIT {
     @BeforeEach
     public void setup() {
         MockitoAnnotations.initMocks(this);
-        final ClubFamilyResource clubFamilyResource = new ClubFamilyResource(clubFamilyService);
+        final ClubFamilyResource clubFamilyResource = new ClubFamilyResource(clubFamilyService, clubFamilyQueryService);
     }
 
     /**
@@ -69,7 +78,7 @@ public class ClubFamilyResourceIT {
      * This is a static method, as tests for other entities might also need it,
      * if they test an entity which requires the current entity.
      */
-    public static ClubFamily createEntity(EntityManager em) {
+    public static ClubFamily createEntity() {
         ClubFamily clubFamily = new ClubFamily()
             .name(DEFAULT_NAME)
             .slogan(DEFAULT_SLOGAN);
@@ -90,11 +99,10 @@ public class ClubFamilyResourceIT {
 
     @BeforeEach
     public void initTest() {
-        clubFamily = createEntity(em);
+        clubFamily = createEntity();
     }
 
     @Test
-    @Transactional
     public void createClubFamily() throws Exception {
         int databaseSizeBeforeCreate = clubFamilyRepository.findAll().size();
 
@@ -111,10 +119,11 @@ public class ClubFamilyResourceIT {
         ClubFamily testClubFamily = clubFamilyList.get(clubFamilyList.size() - 1);
         assertThat(testClubFamily.getName()).isEqualTo(DEFAULT_NAME);
         assertThat(testClubFamily.getSlogan()).isEqualTo(DEFAULT_SLOGAN);
+
+        clubFamilyRepository.deleteById(testClubFamily.getId());
     }
 
     @Test
-    @Transactional
     public void createClubFamilyWithExistingId() throws Exception {
         int databaseSizeBeforeCreate = clubFamilyRepository.findAll().size();
 
@@ -135,37 +144,116 @@ public class ClubFamilyResourceIT {
 
 
     @Test
-    @Transactional
-    public void getAllClubFamilies() throws Exception {
-        // Initialize the database
-        clubFamilyRepository.saveAndFlush(clubFamily);
+    void getAllClubFamilies() throws Exception {
+        // Initialize the databaseFIXED_CLUB_FAMILY_ID
 
         // Get all the clubFamilyList
-        restClubFamilyMockMvc.perform(get("/api/club-families?sort=id,desc"))
+        restClubFamilyMockMvc
+            .perform(get(ENTITY_API_URL + "?sort=id,desc"))
             .andExpect(status().isOk())
-            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
-            .andExpect(jsonPath("$.[*].id").value(hasItem(clubFamily.getId().intValue())))
-            .andExpect(jsonPath("$.[*].name").value(hasItem(DEFAULT_NAME.toString())))
+            .andExpect(content().contentType(TestUtil.APPLICATION_JSON_UTF8))
+            .andExpect(jsonPath("$.[*].id").value(hasItem(FIXED_CLUB_FAMILY_ID.intValue())))
+            .andExpect(jsonPath("$.[*].name").value(hasItem(DEFAULT_NAME)))
             .andExpect(jsonPath("$.[*].slogan").value(hasItem(DEFAULT_SLOGAN.toString())));
     }
 
     @Test
-    @Transactional
+    void getClubFamiliesByIdFiltering() throws Exception {
+        // Initialize the databaseFIXED_CLUB_FAMILY_ID
+
+        Long id = FIXED_CLUB_FAMILY_ID;
+
+        defaultClubFamilyShouldBeFound("id.equals=" + id);
+    }
+
+    @Test
+    void getAllClubFamiliesByNameIsEqualToSomething() throws Exception {
+        // Initialize the database
+
+        // Get all the clubFamilyList where name equals to DEFAULT_NAME
+        defaultClubFamilyShouldBeFound("name.equals=" + DEFAULT_NAME);
+
+        // Get all the clubFamilyList where name equals to UPDATED_NAME
+        defaultClubFamilyShouldNotBeFound("name.equals=" + UPDATED_NAME);
+    }
+
+    @Test
+    void getAllClubFamiliesByNameIsInShouldWork() throws Exception {
+        // Initialize the database
+
+        // Get all the clubFamilyList where name in DEFAULT_NAME or UPDATED_NAME
+        defaultClubFamilyShouldBeFound("name.in=" + DEFAULT_NAME + "," + UPDATED_NAME);
+
+        // Get all the clubFamilyList where name equals to UPDATED_NAME
+        defaultClubFamilyShouldNotBeFound("name.in=" + UPDATED_NAME);
+    }
+
+
+    @Test
+    void getAllClubFamiliesByNameContainsSomething() throws Exception {
+        // Initialize the database
+
+        // Get all the clubFamilyList where name contains DEFAULT_NAME
+        defaultClubFamilyShouldBeFound("name.contains=" + DEFAULT_NAME);
+
+        // Get all the clubFamilyList where name contains UPDATED_NAME
+        defaultClubFamilyShouldNotBeFound("name.contains=" + UPDATED_NAME);
+    }
+
+
+    /**
+     * Executes the search, and checks that the default entity is returned.
+     */
+    private void defaultClubFamilyShouldBeFound(String filter) throws Exception {
+        restClubFamilyMockMvc
+            .perform(get(ENTITY_API_URL + "?sort=id,desc&" + filter))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(TestUtil.APPLICATION_JSON_UTF8))
+            .andExpect(jsonPath("$.[*].id").value(hasItem(FIXED_CLUB_FAMILY_ID.intValue())))
+            .andExpect(jsonPath("$.[*].name").value(hasItem(DEFAULT_NAME)))
+            .andExpect(jsonPath("$.[*].slogan").value(hasItem(DEFAULT_SLOGAN.toString())));
+
+        // Check, that the count call also returns 1
+        restClubFamilyMockMvc
+            .perform(get(ENTITY_API_URL + "/count?sort=id,desc&" + filter))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(TestUtil.APPLICATION_JSON_UTF8))
+            .andExpect(content().string("1"));
+    }
+
+    /**
+     * Executes the search, and checks that the default entity is not returned.
+     */
+    private void defaultClubFamilyShouldNotBeFound(String filter) throws Exception {
+        restClubFamilyMockMvc
+            .perform(get(ENTITY_API_URL + "?sort=id,desc&" + filter))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(TestUtil.APPLICATION_JSON_UTF8))
+            .andExpect(jsonPath("$").isArray())
+            .andExpect(jsonPath("$").isEmpty());
+
+        // Check, that the count call also returns 0
+        restClubFamilyMockMvc
+            .perform(get(ENTITY_API_URL + "/count?sort=id,desc&" + filter))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(TestUtil.APPLICATION_JSON_UTF8))
+            .andExpect(content().string("0"));
+    }
+
+    @Test
     public void getClubFamily() throws Exception {
         // Initialize the database
-        clubFamilyRepository.saveAndFlush(clubFamily);
 
         // Get the clubFamily
-        restClubFamilyMockMvc.perform(get("/api/club-families/{id}", clubFamily.getId()))
+        restClubFamilyMockMvc.perform(get("/api/club-families/{id}", FIXED_CLUB_FAMILY_ID))
             .andExpect(status().isOk())
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
-            .andExpect(jsonPath("$.id").value(clubFamily.getId().intValue()))
+            .andExpect(jsonPath("$.id").value(FIXED_CLUB_FAMILY_ID.intValue()))
             .andExpect(jsonPath("$.name").value(DEFAULT_NAME.toString()))
             .andExpect(jsonPath("$.slogan").value(DEFAULT_SLOGAN.toString()));
     }
 
     @Test
-    @Transactional
     public void getNonExistingClubFamily() throws Exception {
         // Get the clubFamily
         restClubFamilyMockMvc.perform(get("/api/club-families/{id}", Long.MAX_VALUE))
@@ -176,18 +264,13 @@ public class ClubFamilyResourceIT {
     @Transactional
     public void updateClubFamily() throws Exception {
         // Initialize the database
-        clubFamilyRepository.saveAndFlush(clubFamily);
 
+        ClubFamily savedClubFamily = clubFamilyRepository.saveAndFlush(createEntity());
         int databaseSizeBeforeUpdate = clubFamilyRepository.findAll().size();
 
-        // Update the clubFamily
-        ClubFamily updatedClubFamily = clubFamilyRepository.findById(clubFamily.getId()).get();
-        // Disconnect from session so that the updates on updatedClubFamily are not directly saved in db
-        em.detach(updatedClubFamily);
-        updatedClubFamily
-            .name(UPDATED_NAME)
-            .slogan(UPDATED_SLOGAN);
-        ClubFamilyDTO clubFamilyDTO = clubFamilyMapper.toDto(updatedClubFamily);
+        ClubFamilyDTO clubFamilyDTO = clubFamilyMapper.toDto(savedClubFamily);
+        clubFamilyDTO.setName(UPDATED_NAME);
+        clubFamilyDTO.setSlogan(UPDATED_SLOGAN);
 
         restClubFamilyMockMvc.perform(put("/api/club-families")
             .contentType(TestUtil.APPLICATION_JSON_UTF8)
@@ -197,9 +280,12 @@ public class ClubFamilyResourceIT {
         // Validate the ClubFamily in the database
         List<ClubFamily> clubFamilyList = clubFamilyRepository.findAll();
         assertThat(clubFamilyList).hasSize(databaseSizeBeforeUpdate);
-        ClubFamily testClubFamily = clubFamilyList.get(clubFamilyList.size() - 1);
+        ClubFamily testClubFamily =  clubFamilyList.get(clubFamilyList.size() - 1);
+        assertThat(testClubFamily.getId()).isEqualTo(savedClubFamily.getId());
         assertThat(testClubFamily.getName()).isEqualTo(UPDATED_NAME);
         assertThat(testClubFamily.getSlogan()).isEqualTo(UPDATED_SLOGAN);
+
+        clubFamilyRepository.deleteById(testClubFamily.getId());
     }
 
     @Test
@@ -222,15 +308,13 @@ public class ClubFamilyResourceIT {
     }
 
     @Test
-    @Transactional
     public void deleteClubFamily() throws Exception {
         // Initialize the database
-        clubFamilyRepository.saveAndFlush(clubFamily);
-
+        ClubFamily savedClubFamily = clubFamilyRepository.saveAndFlush(createEntity());
         int databaseSizeBeforeDelete = clubFamilyRepository.findAll().size();
 
         // Delete the clubFamily
-        restClubFamilyMockMvc.perform(delete("/api/club-families/{id}", clubFamily.getId())
+        restClubFamilyMockMvc.perform(delete("/api/club-families/{id}", savedClubFamily.getId())
             .accept(TestUtil.APPLICATION_JSON_UTF8))
             .andExpect(status().isNoContent());
 
@@ -240,7 +324,6 @@ public class ClubFamilyResourceIT {
     }
 
     @Test
-    @Transactional
     public void equalsVerifier() throws Exception {
         TestUtil.equalsVerifier(ClubFamily.class);
         ClubFamily clubFamily1 = new ClubFamily();
@@ -255,7 +338,6 @@ public class ClubFamilyResourceIT {
     }
 
     @Test
-    @Transactional
     public void dtoEqualsVerifier() throws Exception {
         TestUtil.equalsVerifier(ClubFamilyDTO.class);
         ClubFamilyDTO clubFamilyDTO1 = new ClubFamilyDTO();
@@ -271,7 +353,6 @@ public class ClubFamilyResourceIT {
     }
 
     @Test
-    @Transactional
     public void testEntityFromId() {
         assertThat(clubFamilyMapper.fromId(42L).getId()).isEqualTo(42);
         assertThat(clubFamilyMapper.fromId(null)).isNull();

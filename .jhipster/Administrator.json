@@ -1,33 +1,39 @@
 {
-    "name": "Administrator",
-    "fields": [
-        {
-            "fieldName": "userId",
-            "fieldType": "Long"
-        },
-        {
-            "fieldName": "yearSession",
-            "fieldType": "String"
-        },
-        {
-            "fieldName": "role",
-            "fieldType": "AdministratorRole",
-            "fieldValues": "CC_HEAD,VICE_CC_HEAD,SECRETARY,TEASURER"
-        },
-        {
-            "fieldName": "status",
-            "fieldType": "AdministratorStatus",
-            "fieldValues": "ACTIVE,DEACTIVATE,PENDING"
-        }
-    ],
-    "relationships": [],
-    "changelogDate": "20201028013341",
-    "entityTableName": "administrator",
-    "dto": "mapstruct",
-    "pagination": "no",
-    "service": "serviceImpl",
-    "jpaMetamodelFiltering": false,
-    "fluentMethods": true,
-    "clientRootFolder": "",
-    "applications": "*"
+  "name": "Administrator",
+  "fields": [
+    {
+      "fieldName": "id",
+      "fieldType": "Long"
+    },
+    {
+      "fieldName": "userId",
+      "fieldType": "Long"
+    },
+    {
+      "fieldName": "yearSession",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "role",
+      "fieldType": "AdministratorRole",
+      "fieldValues": "CC_HEAD,VICE_CC_HEAD,SECRETARY,TEASURER"
+    },
+    {
+      "fieldName": "status",
+      "fieldType": "AdministratorStatus",
+      "fieldValues": "ACTIVE,DEACTIVATE,PENDING"
+    }
+  ],
+  "relationships": [],
+  "changelogDate": "20201028013341",
+  "entityTableName": "administrator",
+  "dto": "mapstruct",
+  "pagination": "no",
+  "service": "serviceImpl",
+  "jpaMetamodelFiltering": true,
+  "fluentMethods": true,
+  "clientRootFolder": "",
+  "applications": "*",
+  "readOnly": false,
+  "embedded": false
 }

@@ -19,6 +19,7 @@ import com.thirdcc.webapp.service.UserUniInfoService;
 import com.thirdcc.webapp.service.dto.UserUniInfoDTO;
 import com.thirdcc.webapp.service.mapper.UserUniInfoMapper;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockitoAnnotations;
@@ -34,6 +35,7 @@ import javax.persistence.EntityManager;
 import java.math.BigDecimal;
 import java.util.List;
 
+import static com.thirdcc.webapp.web.rest.TestUtil.sameNumber;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.hasItem;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -46,12 +48,17 @@ import com.thirdcc.webapp.domain.enumeration.UserUniStatus;
 @SpringBootTest(classes = ClubmanagementApp.class)
 @AutoConfigureMockMvc
 @InitYearSession
+@WithNormalUser
 public class UserUniInfoResourceIT {
 
+    private static final String ENTITY_API_URL = "/api/user-uni-infos";
+
     private static final Long DEFAULT_USER_ID = 1L;
+    private static final Long SMALLER_USER_ID = DEFAULT_USER_ID - 1L;
     private static final Long UPDATED_USER_ID = 2L;
 
     private static final Long DEFAULT_COURSE_PROGRAM_ID = 1L;
+    private static final Long SMALLER_COURSE_PROGRAM_ID = DEFAULT_COURSE_PROGRAM_ID - 1L;
     private static final Long UPDATED_COURSE_PROGRAM_ID = 1L;
 
     private static final String DEFAULT_PROGRAM = "DEFAULT_PROGRAM";
@@ -61,9 +68,11 @@ public class UserUniInfoResourceIT {
     private static final String UPDATED_YEAR_SESSION = "2018/2019";
 
     private static final Integer DEFAULT_INTAKE_SEMESTER = 1;
+    private static final Integer SMALLER_INTAKE_SEMESTER = DEFAULT_INTAKE_SEMESTER - 1;
     private static final Integer UPDATED_INTAKE_SEMESTER = 2;
 
     private static final BigDecimal DEFAULT_YEAR_OF_STUDY = new BigDecimal(1);
+    private static final BigDecimal SMALLER_YEAR_OF_STUDY = DEFAULT_YEAR_OF_STUDY.subtract(BigDecimal.ONE);
     private static final BigDecimal UPDATED_YEAR_OF_STUDY = new BigDecimal(2);
 
     private static final String DEFAULT_STAY_IN = "DEFAULT_STAY_IN";
@@ -102,6 +111,11 @@ public class UserUniInfoResourceIT {
     @BeforeEach
     public void setup() {
         MockitoAnnotations.initMocks(this);
+    }
+
+    @AfterEach
+    public void cleanUp() {
+        userUniInfoRepository.deleteAll();
     }
 
     /**
@@ -151,7 +165,6 @@ public class UserUniInfoResourceIT {
     }
 
     @Test
-    @Transactional
     @WithNormalUser
     public void createUserUniInfo() throws Exception {
         User currentUser = getCurrentUser();
@@ -177,7 +190,6 @@ public class UserUniInfoResourceIT {
     }
 
     @Test
-    @Transactional
     @WithNormalUser
     public void createUserUniInfoWithExistingId() throws Exception {
         int databaseSizeBeforeCreate = userUniInfoRepository.findAll().size();
@@ -199,7 +211,6 @@ public class UserUniInfoResourceIT {
 
 
     @Test
-    @Transactional
     @WithNormalUser
     public void getAllUserUniInfos() throws Exception {
         // Initialize the database
@@ -218,8 +229,453 @@ public class UserUniInfoResourceIT {
             .andExpect(jsonPath("$.[*].status").value(hasItem(DEFAULT_STATUS.toString())));
     }
 
+
     @Test
-    @Transactional
+    void getUserUniInfosByIdFiltering() throws Exception {
+        // Initialize the database
+        userUniInfoRepository.saveAndFlush(userUniInfo);
+
+        Long id = userUniInfo.getId();
+
+        defaultUserUniInfoShouldBeFound("id.equals=" + id);
+        defaultUserUniInfoShouldNotBeFound("id.notEquals=" + id);
+
+        defaultUserUniInfoShouldBeFound("id.greaterThanOrEqual=" + id);
+        defaultUserUniInfoShouldNotBeFound("id.greaterThan=" + id);
+
+        defaultUserUniInfoShouldBeFound("id.lessThanOrEqual=" + id);
+        defaultUserUniInfoShouldNotBeFound("id.lessThan=" + id);
+    }
+
+    @Test
+    void getAllUserUniInfosByUserIdIsEqualToSomething() throws Exception {
+        // Initialize the database
+        userUniInfoRepository.saveAndFlush(userUniInfo);
+
+        // Get all the userUniInfoList where userId equals to DEFAULT_USER_ID
+        defaultUserUniInfoShouldBeFound("userId.equals=" + DEFAULT_USER_ID);
+
+        // Get all the userUniInfoList where userId equals to UPDATED_USER_ID
+        defaultUserUniInfoShouldNotBeFound("userId.equals=" + UPDATED_USER_ID);
+    }
+
+    @Test
+    void getAllUserUniInfosByUserIdIsNotEqualToSomething() throws Exception {
+        // Initialize the database
+        userUniInfoRepository.saveAndFlush(userUniInfo);
+
+        // Get all the userUniInfoList where userId not equals to DEFAULT_USER_ID
+        defaultUserUniInfoShouldNotBeFound("userId.notEquals=" + DEFAULT_USER_ID);
+
+        // Get all the userUniInfoList where userId not equals to UPDATED_USER_ID
+        defaultUserUniInfoShouldBeFound("userId.notEquals=" + UPDATED_USER_ID);
+    }
+
+    @Test
+    void getAllUserUniInfosByUserIdIsInShouldWork() throws Exception {
+        // Initialize the database
+        userUniInfoRepository.saveAndFlush(userUniInfo);
+
+        // Get all the userUniInfoList where userId in DEFAULT_USER_ID or UPDATED_USER_ID
+        defaultUserUniInfoShouldBeFound("userId.in=" + DEFAULT_USER_ID + "," + UPDATED_USER_ID);
+
+        // Get all the userUniInfoList where userId equals to UPDATED_USER_ID
+        defaultUserUniInfoShouldNotBeFound("userId.in=" + UPDATED_USER_ID);
+    }
+
+    @Test
+    void getAllUserUniInfosByUserIdIsNullOrNotNull() throws Exception {
+        // Initialize the database
+        userUniInfoRepository.saveAndFlush(userUniInfo);
+
+        // Get all the userUniInfoList where userId is not null
+        defaultUserUniInfoShouldBeFound("userId.specified=true");
+
+        // Get all the userUniInfoList where userId is null
+        defaultUserUniInfoShouldNotBeFound("userId.specified=false");
+    }
+
+    @Test
+    void getAllUserUniInfosByUserIdIsGreaterThanOrEqualToSomething() throws Exception {
+        // Initialize the database
+        userUniInfoRepository.saveAndFlush(userUniInfo);
+
+        // Get all the userUniInfoList where userId is greater than or equal to DEFAULT_USER_ID
+        defaultUserUniInfoShouldBeFound("userId.greaterThanOrEqual=" + DEFAULT_USER_ID);
+
+        // Get all the userUniInfoList where userId is greater than or equal to UPDATED_USER_ID
+        defaultUserUniInfoShouldNotBeFound("userId.greaterThanOrEqual=" + UPDATED_USER_ID);
+    }
+
+    @Test
+    void getAllUserUniInfosByUserIdIsLessThanOrEqualToSomething() throws Exception {
+        // Initialize the database
+        userUniInfoRepository.saveAndFlush(userUniInfo);
+
+        // Get all the userUniInfoList where userId is less than or equal to DEFAULT_USER_ID
+        defaultUserUniInfoShouldBeFound("userId.lessThanOrEqual=" + DEFAULT_USER_ID);
+
+        // Get all the userUniInfoList where userId is less than or equal to SMALLER_USER_ID
+        defaultUserUniInfoShouldNotBeFound("userId.lessThanOrEqual=" + SMALLER_USER_ID);
+    }
+
+    @Test
+    void getAllUserUniInfosByUserIdIsLessThanSomething() throws Exception {
+        // Initialize the database
+        userUniInfoRepository.saveAndFlush(userUniInfo);
+
+        // Get all the userUniInfoList where userId is less than DEFAULT_USER_ID
+        defaultUserUniInfoShouldNotBeFound("userId.lessThan=" + DEFAULT_USER_ID);
+
+        // Get all the userUniInfoList where userId is less than UPDATED_USER_ID
+        defaultUserUniInfoShouldBeFound("userId.lessThan=" + UPDATED_USER_ID);
+    }
+
+    @Test
+    void getAllUserUniInfosByUserIdIsGreaterThanSomething() throws Exception {
+        // Initialize the database
+        userUniInfoRepository.saveAndFlush(userUniInfo);
+
+        // Get all the userUniInfoList where userId is greater than DEFAULT_USER_ID
+        defaultUserUniInfoShouldNotBeFound("userId.greaterThan=" + DEFAULT_USER_ID);
+
+        // Get all the userUniInfoList where userId is greater than SMALLER_USER_ID
+        defaultUserUniInfoShouldBeFound("userId.greaterThan=" + SMALLER_USER_ID);
+    }
+
+    @Test
+    void getAllUserUniInfosByYearSessionIsEqualToSomething() throws Exception {
+        // Initialize the database
+        userUniInfoRepository.saveAndFlush(userUniInfo);
+
+        // Get all the userUniInfoList where yearSession equals to DEFAULT_YEAR_SESSION
+        defaultUserUniInfoShouldBeFound("yearSession.equals=" + DEFAULT_YEAR_SESSION);
+
+        // Get all the userUniInfoList where yearSession equals to UPDATED_YEAR_SESSION
+        defaultUserUniInfoShouldNotBeFound("yearSession.equals=" + UPDATED_YEAR_SESSION);
+    }
+
+    @Test
+    void getAllUserUniInfosByYearSessionIsNotEqualToSomething() throws Exception {
+        // Initialize the database
+        userUniInfoRepository.saveAndFlush(userUniInfo);
+
+        // Get all the userUniInfoList where yearSession not equals to DEFAULT_YEAR_SESSION
+        defaultUserUniInfoShouldNotBeFound("yearSession.notEquals=" + DEFAULT_YEAR_SESSION);
+
+        // Get all the userUniInfoList where yearSession not equals to UPDATED_YEAR_SESSION
+        defaultUserUniInfoShouldBeFound("yearSession.notEquals=" + UPDATED_YEAR_SESSION);
+    }
+
+    @Test
+    void getAllUserUniInfosByYearSessionIsInShouldWork() throws Exception {
+        // Initialize the database
+        userUniInfoRepository.saveAndFlush(userUniInfo);
+
+        // Get all the userUniInfoList where yearSession in DEFAULT_YEAR_SESSION or UPDATED_YEAR_SESSION
+        defaultUserUniInfoShouldBeFound("yearSession.in=" + DEFAULT_YEAR_SESSION + "," + UPDATED_YEAR_SESSION);
+
+        // Get all the userUniInfoList where yearSession equals to UPDATED_YEAR_SESSION
+        defaultUserUniInfoShouldNotBeFound("yearSession.in=" + UPDATED_YEAR_SESSION);
+    }
+
+    @Test
+    void getAllUserUniInfosByYearSessionIsNullOrNotNull() throws Exception {
+        // Initialize the database
+        userUniInfoRepository.saveAndFlush(userUniInfo);
+
+        // Get all the userUniInfoList where yearSession is not null
+        defaultUserUniInfoShouldBeFound("yearSession.specified=true");
+
+        // Get all the userUniInfoList where yearSession is null
+        defaultUserUniInfoShouldNotBeFound("yearSession.specified=false");
+    }
+
+    @Test
+    void getAllUserUniInfosByYearSessionContainsSomething() throws Exception {
+        // Initialize the database
+        userUniInfoRepository.saveAndFlush(userUniInfo);
+
+        // Get all the userUniInfoList where yearSession contains DEFAULT_YEAR_SESSION
+        defaultUserUniInfoShouldBeFound("yearSession.contains=" + DEFAULT_YEAR_SESSION);
+
+        // Get all the userUniInfoList where yearSession contains UPDATED_YEAR_SESSION
+        defaultUserUniInfoShouldNotBeFound("yearSession.contains=" + UPDATED_YEAR_SESSION);
+    }
+
+    @Test
+    void getAllUserUniInfosByYearSessionNotContainsSomething() throws Exception {
+        // Initialize the database
+        userUniInfoRepository.saveAndFlush(userUniInfo);
+
+        // Get all the userUniInfoList where yearSession does not contain DEFAULT_YEAR_SESSION
+        defaultUserUniInfoShouldNotBeFound("yearSession.doesNotContain=" + DEFAULT_YEAR_SESSION);
+
+        // Get all the userUniInfoList where yearSession does not contain UPDATED_YEAR_SESSION
+        defaultUserUniInfoShouldBeFound("yearSession.doesNotContain=" + UPDATED_YEAR_SESSION);
+    }
+
+    @Test
+    void getAllUserUniInfosByIntakeSemesterIsEqualToSomething() throws Exception {
+        // Initialize the database
+        userUniInfoRepository.saveAndFlush(userUniInfo);
+
+        // Get all the userUniInfoList where intakeSemester equals to DEFAULT_INTAKE_SEMESTER
+        defaultUserUniInfoShouldBeFound("intakeSemester.equals=" + DEFAULT_INTAKE_SEMESTER);
+
+        // Get all the userUniInfoList where intakeSemester equals to UPDATED_INTAKE_SEMESTER
+        defaultUserUniInfoShouldNotBeFound("intakeSemester.equals=" + UPDATED_INTAKE_SEMESTER);
+    }
+
+    @Test
+    void getAllUserUniInfosByIntakeSemesterIsNotEqualToSomething() throws Exception {
+        // Initialize the database
+        userUniInfoRepository.saveAndFlush(userUniInfo);
+
+        // Get all the userUniInfoList where intakeSemester not equals to DEFAULT_INTAKE_SEMESTER
+        defaultUserUniInfoShouldNotBeFound("intakeSemester.notEquals=" + DEFAULT_INTAKE_SEMESTER);
+
+        // Get all the userUniInfoList where intakeSemester not equals to UPDATED_INTAKE_SEMESTER
+        defaultUserUniInfoShouldBeFound("intakeSemester.notEquals=" + UPDATED_INTAKE_SEMESTER);
+    }
+
+    @Test
+    void getAllUserUniInfosByIntakeSemesterIsInShouldWork() throws Exception {
+        // Initialize the database
+        userUniInfoRepository.saveAndFlush(userUniInfo);
+
+        // Get all the userUniInfoList where intakeSemester in DEFAULT_INTAKE_SEMESTER or UPDATED_INTAKE_SEMESTER
+        defaultUserUniInfoShouldBeFound("intakeSemester.in=" + DEFAULT_INTAKE_SEMESTER + "," + UPDATED_INTAKE_SEMESTER);
+
+        // Get all the userUniInfoList where intakeSemester equals to UPDATED_INTAKE_SEMESTER
+        defaultUserUniInfoShouldNotBeFound("intakeSemester.in=" + UPDATED_INTAKE_SEMESTER);
+    }
+
+    @Test
+    void getAllUserUniInfosByIntakeSemesterIsNullOrNotNull() throws Exception {
+        // Initialize the database
+        userUniInfoRepository.saveAndFlush(userUniInfo);
+
+        // Get all the userUniInfoList where intakeSemester is not null
+        defaultUserUniInfoShouldBeFound("intakeSemester.specified=true");
+
+        // Get all the userUniInfoList where intakeSemester is null
+        defaultUserUniInfoShouldNotBeFound("intakeSemester.specified=false");
+    }
+
+    @Test
+    void getAllUserUniInfosByIntakeSemesterIsGreaterThanOrEqualToSomething() throws Exception {
+        // Initialize the database
+        userUniInfoRepository.saveAndFlush(userUniInfo);
+
+        // Get all the userUniInfoList where intakeSemester is greater than or equal to DEFAULT_INTAKE_SEMESTER
+        defaultUserUniInfoShouldBeFound("intakeSemester.greaterThanOrEqual=" + DEFAULT_INTAKE_SEMESTER);
+
+        // Get all the userUniInfoList where intakeSemester is greater than or equal to UPDATED_INTAKE_SEMESTER
+        defaultUserUniInfoShouldNotBeFound("intakeSemester.greaterThanOrEqual=" + UPDATED_INTAKE_SEMESTER);
+    }
+
+    @Test
+    void getAllUserUniInfosByIntakeSemesterIsLessThanOrEqualToSomething() throws Exception {
+        // Initialize the database
+        userUniInfoRepository.saveAndFlush(userUniInfo);
+
+        // Get all the userUniInfoList where intakeSemester is less than or equal to DEFAULT_INTAKE_SEMESTER
+        defaultUserUniInfoShouldBeFound("intakeSemester.lessThanOrEqual=" + DEFAULT_INTAKE_SEMESTER);
+
+        // Get all the userUniInfoList where intakeSemester is less than or equal to SMALLER_INTAKE_SEMESTER
+        defaultUserUniInfoShouldNotBeFound("intakeSemester.lessThanOrEqual=" + SMALLER_INTAKE_SEMESTER);
+    }
+
+    @Test
+    void getAllUserUniInfosByIntakeSemesterIsLessThanSomething() throws Exception {
+        // Initialize the database
+        userUniInfoRepository.saveAndFlush(userUniInfo);
+
+        // Get all the userUniInfoList where intakeSemester is less than DEFAULT_INTAKE_SEMESTER
+        defaultUserUniInfoShouldNotBeFound("intakeSemester.lessThan=" + DEFAULT_INTAKE_SEMESTER);
+
+        // Get all the userUniInfoList where intakeSemester is less than UPDATED_INTAKE_SEMESTER
+        defaultUserUniInfoShouldBeFound("intakeSemester.lessThan=" + UPDATED_INTAKE_SEMESTER);
+    }
+
+    @Test
+    void getAllUserUniInfosByIntakeSemesterIsGreaterThanSomething() throws Exception {
+        // Initialize the database
+        userUniInfoRepository.saveAndFlush(userUniInfo);
+
+        // Get all the userUniInfoList where intakeSemester is greater than DEFAULT_INTAKE_SEMESTER
+        defaultUserUniInfoShouldNotBeFound("intakeSemester.greaterThan=" + DEFAULT_INTAKE_SEMESTER);
+
+        // Get all the userUniInfoList where intakeSemester is greater than SMALLER_INTAKE_SEMESTER
+        defaultUserUniInfoShouldBeFound("intakeSemester.greaterThan=" + SMALLER_INTAKE_SEMESTER);
+    }
+
+    @Test
+    void getAllUserUniInfosByStayInIsEqualToSomething() throws Exception {
+        // Initialize the database
+        userUniInfoRepository.saveAndFlush(userUniInfo);
+
+        // Get all the userUniInfoList where stayIn equals to DEFAULT_STAY_IN
+        defaultUserUniInfoShouldBeFound("stayIn.equals=" + DEFAULT_STAY_IN);
+
+        // Get all the userUniInfoList where stayIn equals to UPDATED_STAY_IN
+        defaultUserUniInfoShouldNotBeFound("stayIn.equals=" + UPDATED_STAY_IN);
+    }
+
+    @Test
+    void getAllUserUniInfosByStayInIsNotEqualToSomething() throws Exception {
+        // Initialize the database
+        userUniInfoRepository.saveAndFlush(userUniInfo);
+
+        // Get all the userUniInfoList where stayIn not equals to DEFAULT_STAY_IN
+        defaultUserUniInfoShouldNotBeFound("stayIn.notEquals=" + DEFAULT_STAY_IN);
+
+        // Get all the userUniInfoList where stayIn not equals to UPDATED_STAY_IN
+        defaultUserUniInfoShouldBeFound("stayIn.notEquals=" + UPDATED_STAY_IN);
+    }
+
+    @Test
+    void getAllUserUniInfosByStayInIsInShouldWork() throws Exception {
+        // Initialize the database
+        userUniInfoRepository.saveAndFlush(userUniInfo);
+
+        // Get all the userUniInfoList where stayIn in DEFAULT_STAY_IN or UPDATED_STAY_IN
+        defaultUserUniInfoShouldBeFound("stayIn.in=" + DEFAULT_STAY_IN + "," + UPDATED_STAY_IN);
+
+        // Get all the userUniInfoList where stayIn equals to UPDATED_STAY_IN
+        defaultUserUniInfoShouldNotBeFound("stayIn.in=" + UPDATED_STAY_IN);
+    }
+
+    @Test
+    void getAllUserUniInfosByStayInIsNullOrNotNull() throws Exception {
+        // Initialize the database
+        userUniInfoRepository.saveAndFlush(userUniInfo);
+
+        // Get all the userUniInfoList where stayIn is not null
+        defaultUserUniInfoShouldBeFound("stayIn.specified=true");
+
+        // Get all the userUniInfoList where stayIn is null
+        defaultUserUniInfoShouldNotBeFound("stayIn.specified=false");
+    }
+
+    @Test
+    void getAllUserUniInfosByStayInContainsSomething() throws Exception {
+        // Initialize the database
+        userUniInfoRepository.saveAndFlush(userUniInfo);
+
+        // Get all the userUniInfoList where stayIn contains DEFAULT_STAY_IN
+        defaultUserUniInfoShouldBeFound("stayIn.contains=" + DEFAULT_STAY_IN);
+
+        // Get all the userUniInfoList where stayIn contains UPDATED_STAY_IN
+        defaultUserUniInfoShouldNotBeFound("stayIn.contains=" + UPDATED_STAY_IN);
+    }
+
+    @Test
+    void getAllUserUniInfosByStayInNotContainsSomething() throws Exception {
+        // Initialize the database
+        userUniInfoRepository.saveAndFlush(userUniInfo);
+
+        // Get all the userUniInfoList where stayIn does not contain DEFAULT_STAY_IN
+        defaultUserUniInfoShouldNotBeFound("stayIn.doesNotContain=" + DEFAULT_STAY_IN);
+
+        // Get all the userUniInfoList where stayIn does not contain UPDATED_STAY_IN
+        defaultUserUniInfoShouldBeFound("stayIn.doesNotContain=" + UPDATED_STAY_IN);
+    }
+
+    @Test
+    void getAllUserUniInfosByStatusIsEqualToSomething() throws Exception {
+        // Initialize the database
+        userUniInfoRepository.saveAndFlush(userUniInfo);
+
+        // Get all the userUniInfoList where status equals to DEFAULT_STATUS
+        defaultUserUniInfoShouldBeFound("status.equals=" + DEFAULT_STATUS);
+
+        // Get all the userUniInfoList where status equals to UPDATED_STATUS
+        defaultUserUniInfoShouldNotBeFound("status.equals=" + UPDATED_STATUS);
+    }
+
+    @Test
+    void getAllUserUniInfosByStatusIsNotEqualToSomething() throws Exception {
+        // Initialize the database
+        userUniInfoRepository.saveAndFlush(userUniInfo);
+
+        // Get all the userUniInfoList where status not equals to DEFAULT_STATUS
+        defaultUserUniInfoShouldNotBeFound("status.notEquals=" + DEFAULT_STATUS);
+
+        // Get all the userUniInfoList where status not equals to UPDATED_STATUS
+        defaultUserUniInfoShouldBeFound("status.notEquals=" + UPDATED_STATUS);
+    }
+
+    @Test
+    void getAllUserUniInfosByStatusIsInShouldWork() throws Exception {
+        // Initialize the database
+        userUniInfoRepository.saveAndFlush(userUniInfo);
+
+        // Get all the userUniInfoList where status in DEFAULT_STATUS or UPDATED_STATUS
+        defaultUserUniInfoShouldBeFound("status.in=" + DEFAULT_STATUS + "," + UPDATED_STATUS);
+
+        // Get all the userUniInfoList where status equals to UPDATED_STATUS
+        defaultUserUniInfoShouldNotBeFound("status.in=" + UPDATED_STATUS);
+    }
+
+    @Test
+    void getAllUserUniInfosByStatusIsNullOrNotNull() throws Exception {
+        // Initialize the database
+        userUniInfoRepository.saveAndFlush(userUniInfo);
+
+        // Get all the userUniInfoList where status is not null
+        defaultUserUniInfoShouldBeFound("status.specified=true");
+
+        // Get all the userUniInfoList where status is null
+        defaultUserUniInfoShouldNotBeFound("status.specified=false");
+    }
+
+    /**
+     * Executes the search, and checks that the default entity is returned.
+     */
+    private void defaultUserUniInfoShouldBeFound(String filter) throws Exception {
+        restUserUniInfoMockMvc
+            .perform(get(ENTITY_API_URL + "?sort=id,desc&" + filter))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(TestUtil.APPLICATION_JSON_UTF8))
+            .andExpect(jsonPath("$.[*].id").value(hasItem(userUniInfo.getId().intValue())))
+            .andExpect(jsonPath("$.[*].userId").value(hasItem(DEFAULT_USER_ID.intValue())))
+            .andExpect(jsonPath("$.[*].courseProgramId").value(hasItem(DEFAULT_COURSE_PROGRAM_ID.intValue())))
+            .andExpect(jsonPath("$.[*].yearSession").value(hasItem(DEFAULT_YEAR_SESSION)))
+            .andExpect(jsonPath("$.[*].intakeSemester").value(hasItem(DEFAULT_INTAKE_SEMESTER)))
+            .andExpect(jsonPath("$.[*].stayIn").value(hasItem(DEFAULT_STAY_IN)))
+            .andExpect(jsonPath("$.[*].status").value(hasItem(DEFAULT_STATUS.toString())));
+
+        // Check, that the count call also returns 1
+        restUserUniInfoMockMvc
+            .perform(get(ENTITY_API_URL + "/count?sort=id,desc&" + filter))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(TestUtil.APPLICATION_JSON_UTF8))
+            .andExpect(content().string("1"));
+    }
+
+    /**
+     * Executes the search, and checks that the default entity is not returned.
+     */
+    private void defaultUserUniInfoShouldNotBeFound(String filter) throws Exception {
+        restUserUniInfoMockMvc
+            .perform(get(ENTITY_API_URL + "?sort=id,desc&" + filter))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(TestUtil.APPLICATION_JSON_UTF8))
+            .andExpect(jsonPath("$").isArray())
+            .andExpect(jsonPath("$").isEmpty());
+
+        // Check, that the count call also returns 0
+        restUserUniInfoMockMvc
+            .perform(get(ENTITY_API_URL + "/count?sort=id,desc&" + filter))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(TestUtil.APPLICATION_JSON_UTF8))
+            .andExpect(content().string("0"));
+    }
+
+
+    @Test
     @WithNormalUser
     public void getUserUniInfo() throws Exception {
         // Initialize the database
@@ -239,7 +695,6 @@ public class UserUniInfoResourceIT {
     }
 
     @Test
-    @Transactional
     @WithNormalUser
     public void getNonExistingUserUniInfo() throws Exception {
         // Get the userUniInfo
@@ -248,7 +703,6 @@ public class UserUniInfoResourceIT {
     }
 
     @Test
-    @Transactional
     @WithNormalUser
     public void getCurrentUserDetailsWithUniInfo() throws Exception {
         User user = getCurrentUser();
@@ -286,7 +740,6 @@ public class UserUniInfoResourceIT {
     }
 
     @Test
-    @Transactional
     @WithNormalUser
     public void getCurrentUserDetailsWithUniInfo_UserUniInfoNotExist() throws Exception {
         User user = getCurrentUser();
@@ -305,7 +758,6 @@ public class UserUniInfoResourceIT {
     }
 
     @Test
-    @Transactional
     @WithNormalUser
     public void updateUserUniInfo() throws Exception {
         User currentUser = getCurrentUser();
@@ -343,7 +795,6 @@ public class UserUniInfoResourceIT {
     }
 
     @Test
-    @Transactional
     @WithNormalUser
     public void updateNonExistingUserUniInfo() throws Exception {
         int databaseSizeBeforeUpdate = userUniInfoRepository.findAll().size();
@@ -363,7 +814,6 @@ public class UserUniInfoResourceIT {
     }
 
     @Test
-    @Transactional
     @WithNormalUser
     public void deleteUserUniInfo() throws Exception {
         // Initialize the database
@@ -382,7 +832,6 @@ public class UserUniInfoResourceIT {
     }
 
     @Test
-    @Transactional
     public void equalsVerifier() throws Exception {
         TestUtil.equalsVerifier(UserUniInfo.class);
         UserUniInfo userUniInfo1 = new UserUniInfo();
@@ -397,7 +846,6 @@ public class UserUniInfoResourceIT {
     }
 
     @Test
-    @Transactional
     public void dtoEqualsVerifier() throws Exception {
         TestUtil.equalsVerifier(UserUniInfoDTO.class);
         UserUniInfoDTO userUniInfoDTO1 = new UserUniInfoDTO();
@@ -413,7 +861,6 @@ public class UserUniInfoResourceIT {
     }
 
     @Test
-    @Transactional
     public void testEntityFromId() {
         assertThat(userUniInfoMapper.fromId(42L).getId()).isEqualTo(42);
         assertThat(userUniInfoMapper.fromId(null)).isNull();

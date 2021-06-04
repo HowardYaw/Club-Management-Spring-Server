@@ -8,13 +8,12 @@ import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
 
-
 /**
- * Spring Data  repository for the UserCCInfo entity.
+ * Spring Data SQL repository for the UserCCInfo entity.
  */
 @SuppressWarnings("unused")
 @Repository
-public interface UserCCInfoRepository extends JpaRepository<UserCCInfo, Long> {
+public interface UserCCInfoRepository extends JpaRepository<UserCCInfo, Long>, JpaSpecificationExecutor<UserCCInfo> {
 
     Page<UserCCInfo> findAllByUserId(Long userId, Pageable pageable);
 

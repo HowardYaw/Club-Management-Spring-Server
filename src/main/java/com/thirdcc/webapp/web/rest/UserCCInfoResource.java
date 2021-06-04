@@ -3,8 +3,10 @@ package com.thirdcc.webapp.web.rest;
 import com.thirdcc.webapp.domain.User;
 import com.thirdcc.webapp.exception.BadRequestException;
 import com.thirdcc.webapp.security.SecurityUtils;
+import com.thirdcc.webapp.service.UserCCInfoQueryService;
 import com.thirdcc.webapp.service.UserCCInfoService;
 import com.thirdcc.webapp.service.UserService;
+import com.thirdcc.webapp.service.criteria.UserCCInfoCriteria;
 import com.thirdcc.webapp.service.dto.UserCCRoleDTO;
 import com.thirdcc.webapp.web.rest.errors.BadRequestAlertException;
 import com.thirdcc.webapp.service.dto.UserCCInfoDTO;
@@ -41,9 +43,12 @@ public class UserCCInfoResource {
 
     private final UserService userService;
 
-    public UserCCInfoResource(UserCCInfoService userCCInfoService, UserService userService) {
+    private final UserCCInfoQueryService userCCInfoQueryService;
+
+    public UserCCInfoResource(UserCCInfoService userCCInfoService, UserService userService, UserCCInfoQueryService userCCInfoQueryService) {
         this.userCCInfoService = userCCInfoService;
         this.userService = userService;
+        this.userCCInfoQueryService = userCCInfoQueryService;
     }
 
     /**
@@ -86,15 +91,17 @@ public class UserCCInfoResource {
             .body(result);
     }
 
-    /**
-     * {@code GET  /user-cc-infos} : get all the userCCInfos.
-     *
-     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the list of userCCInfos in body.
-     */
     @GetMapping("/user-cc-infos")
-    public List<UserCCInfoDTO> getAllUserCCInfos() {
-        log.debug("REST request to get all UserCCInfos");
-        return userCCInfoService.findAll();
+    public ResponseEntity<List<UserCCInfoDTO>> getAllUserCCInfos(UserCCInfoCriteria criteria) {
+        log.debug("REST request to get UserCCInfos by criteria: {}", criteria);
+        List<UserCCInfoDTO> entityList = userCCInfoQueryService.findByCriteria(criteria);
+        return ResponseEntity.ok().body(entityList);
+    }
+
+    @GetMapping("/user-cc-infos/count")
+    public ResponseEntity<Long> countUserCCInfos(UserCCInfoCriteria criteria) {
+        log.debug("REST request to count UserCCInfos by criteria: {}", criteria);
+        return ResponseEntity.ok().body(userCCInfoQueryService.countByCriteria(criteria));
     }
 
     /**

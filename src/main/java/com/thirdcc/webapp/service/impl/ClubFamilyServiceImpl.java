@@ -1,6 +1,7 @@
 package com.thirdcc.webapp.service.impl;
 
 import com.thirdcc.webapp.domain.UserCCInfo;
+import com.thirdcc.webapp.exception.BadRequestException;
 import com.thirdcc.webapp.repository.UserCCInfoRepository;
 import com.thirdcc.webapp.service.ClubFamilyService;
 import com.thirdcc.webapp.domain.ClubFamily;
@@ -49,6 +50,19 @@ public class ClubFamilyServiceImpl implements ClubFamilyService {
     public ClubFamilyDTO save(ClubFamilyDTO clubFamilyDTO) {
         log.debug("Request to save ClubFamily : {}", clubFamilyDTO);
         ClubFamily clubFamily = clubFamilyMapper.toEntity(clubFamilyDTO);
+        clubFamily = clubFamilyRepository.save(clubFamily);
+        return clubFamilyMapper.toDto(clubFamily);
+    }
+
+    @Override
+    public ClubFamilyDTO update(ClubFamilyDTO clubFamilyDTO) {
+        log.debug("Request to update ClubFamily : {}", clubFamilyDTO);
+        ClubFamily clubFamily = clubFamilyRepository
+            .findById(clubFamilyDTO.getId())
+            .orElseThrow(() -> new BadRequestException("Club Family not found"));
+        clubFamily.setName(clubFamilyDTO.getName());
+        clubFamily.setSlogan(clubFamilyDTO.getSlogan());
+        clubFamily.setDescription(clubFamilyDTO.getDescription());
         clubFamily = clubFamilyRepository.save(clubFamily);
         return clubFamilyMapper.toDto(clubFamily);
     }

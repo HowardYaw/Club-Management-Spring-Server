@@ -1,7 +1,9 @@
 package com.thirdcc.webapp.web.rest;
 
 import com.thirdcc.webapp.security.AuthoritiesConstants;
+import com.thirdcc.webapp.service.TransactionQueryService;
 import com.thirdcc.webapp.service.TransactionService;
+import com.thirdcc.webapp.service.criteria.TransactionCriteria;
 import com.thirdcc.webapp.service.dto.EventBudgetTotalDTO;
 import com.thirdcc.webapp.web.rest.errors.BadRequestAlertException;
 import com.thirdcc.webapp.service.dto.TransactionDTO;
@@ -16,6 +18,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.util.MultiValueMap;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -41,8 +44,11 @@ public class TransactionResource {
 
     private final TransactionService transactionService;
 
-    public TransactionResource(TransactionService transactionService) {
+    private final TransactionQueryService transactionQueryService;
+
+    public TransactionResource(TransactionService transactionService, TransactionQueryService transactionQueryService) {
         this.transactionService = transactionService;
+        this.transactionQueryService = transactionQueryService;
     }
 
     /**
@@ -87,21 +93,19 @@ public class TransactionResource {
             .body(result);
     }
 
-    /**
-     * {@code GET  /transactions} : get all the transactions.
-     *
-     * @param pageable the pagination information.
-     * @param queryParams a {@link MultiValueMap} query parameters.
-     * @param uriBuilder a {@link UriComponentsBuilder} URI builder.
-     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the list of transactions in body.
-     */
     @GetMapping("/transactions")
     @PreAuthorize("hasRole(\"" + AuthoritiesConstants.ADMIN + "\") || @managementTeamSecurityExpression.isCurrentAdministrator()")
-    public ResponseEntity<List<TransactionDTO>> getAllTransactions(Pageable pageable, @RequestParam MultiValueMap<String, String> queryParams, UriComponentsBuilder uriBuilder) {
-        log.debug("REST request to get a page of Transactions");
-        Page<TransactionDTO> page = transactionService.findAll(pageable);
-        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(uriBuilder.queryParams(queryParams), page);
+    public ResponseEntity<List<TransactionDTO>> getAllTransactions(TransactionCriteria criteria, Pageable pageable) {
+        log.debug("REST request to get Transactions by criteria: {}", criteria);
+        Page<TransactionDTO> page = transactionQueryService.findByCriteria(criteria, pageable);
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(ServletUriComponentsBuilder.fromCurrentRequest(), page);
         return ResponseEntity.ok().headers(headers).body(page.getContent());
+    }
+
+    @GetMapping("/transactions/count")
+    public ResponseEntity<Long> countTransactions(TransactionCriteria criteria) {
+        log.debug("REST request to count Transactions by criteria: {}", criteria);
+        return ResponseEntity.ok().body(transactionQueryService.countByCriteria(criteria));
     }
 
     @GetMapping("/transactions/event/{eventId}")
