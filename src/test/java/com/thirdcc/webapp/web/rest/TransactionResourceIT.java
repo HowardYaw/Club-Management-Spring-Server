@@ -428,6 +428,230 @@ public class TransactionResourceIT {
         assertThat(updatedTransaction.getTransactionStatus()).isEqualTo(UPDATED_TRANSACTION_STATUS);
     }
 
+    @Test
+    @WithNormalUser
+    public void updateNullEventTransactionPendingIncome_ToCompleted_UserIsNormalUser_ShouldThrow403() throws Exception {
+        // Create Transaction
+        transactionRepository.saveAndFlush(transaction);
+        // Get Database size after creating transaction
+        int databaseSizeAfterCreate = transactionRepository.findAll().size();
+        // find created transaction
+        Transaction createdTransaction = transactionRepository.findById(transaction.getId()).get();
+
+        // Update the transaction
+        restTransactionMockMvc.perform(putMultipartRequestBuilder
+            .file(MOCK_MULTIPART_FILE)
+            .param("id", createdTransaction.getId().toString())
+            .param("title", createdTransaction.getTitle())
+            .param("eventId", "")
+            .param("transactionType", createdTransaction.getTransactionType().name())
+            .param("transactionAmount", createdTransaction.getTransactionAmount().toString())
+            .param("description", createdTransaction.getDescription())
+            .param("transactionStatus", UPDATED_TRANSACTION_STATUS.name())
+            .param("transactionDate", createdTransaction.getTransactionDate().toString())
+        ).andExpect(status().isForbidden());
+
+        List<Transaction> transactionList = transactionRepository.findAll();
+        Transaction updatedTransaction = transactionList.get(transactionList.size() - 1);
+
+        // Validate the Transaction count stays the same after creating 1 transaction
+        assertThat(transactionList).hasSize(databaseSizeAfterCreate);
+        assertThat(updatedTransaction.getTransactionStatus()).isEqualTo(DEFAULT_TRANSACTION_STATUS);
+    }
+
+    @Test
+    @WithEventCrew
+    public void updateNullEventTransactionPendingIncome_ToCompleted_UserIsEventCrew_ShouldThrow403() throws Exception {
+        // Create Transaction
+        transactionRepository.saveAndFlush(transaction);
+        // Get Database size after creating transaction
+        int databaseSizeAfterCreate = transactionRepository.findAll().size();
+        // find created transaction
+        Transaction createdTransaction = transactionRepository.findById(transaction.getId()).get();
+
+        // Update the transaction
+        restTransactionMockMvc.perform(putMultipartRequestBuilder
+            .file(MOCK_MULTIPART_FILE)
+            .param("id", createdTransaction.getId().toString())
+            .param("title", createdTransaction.getTitle())
+            .param("eventId", "")
+            .param("transactionType", createdTransaction.getTransactionType().name())
+            .param("transactionAmount", createdTransaction.getTransactionAmount().toString())
+            .param("description", createdTransaction.getDescription())
+            .param("transactionStatus", UPDATED_TRANSACTION_STATUS.name())
+            .param("transactionDate", createdTransaction.getTransactionDate().toString())
+        ).andExpect(status().isForbidden());
+
+        List<Transaction> transactionList = transactionRepository.findAll();
+        Transaction updatedTransaction = transactionList.get(transactionList.size() - 1);
+
+        // Validate the Transaction count stays the same after creating 1 transaction
+        assertThat(transactionList).hasSize(databaseSizeAfterCreate);
+        assertThat(updatedTransaction.getTransactionStatus()).isEqualTo(DEFAULT_TRANSACTION_STATUS);
+    }
+
+    @Test
+    @WithCurrentCCAdministrator
+    public void updateNullEventTransactionPendingIncome_ToCompleted_UserIsCurrentCCAdmin_ShouldSuccess() throws Exception {
+        // Create Transaction
+        transactionRepository.saveAndFlush(transaction);
+        // Get Database size after creating transaction
+        int databaseSizeAfterCreate = transactionRepository.findAll().size();
+        // find created transaction
+        Transaction createdTransaction = transactionRepository.findById(transaction.getId()).get();
+
+        // Update the transaction
+        restTransactionMockMvc.perform(putMultipartRequestBuilder
+            .file(MOCK_MULTIPART_FILE)
+            .param("id", createdTransaction.getId().toString())
+            .param("title", createdTransaction.getTitle())
+            .param("eventId", "")
+            .param("transactionType", createdTransaction.getTransactionType().name())
+            .param("transactionAmount", createdTransaction.getTransactionAmount().toString())
+            .param("description", createdTransaction.getDescription())
+            .param("transactionStatus", UPDATED_TRANSACTION_STATUS.name())
+            .param("transactionDate", createdTransaction.getTransactionDate().toString())
+        ).andExpect(status().isOk());
+
+        List<Transaction> transactionList = transactionRepository.findAll();
+        Transaction updatedTransaction = transactionList.get(transactionList.size() - 1);
+
+        // Validate the Transaction count stays the same after creating 1 transaction
+        assertThat(transactionList).hasSize(databaseSizeAfterCreate);
+        assertThat(updatedTransaction.getTransactionStatus()).isEqualTo(UPDATED_TRANSACTION_STATUS);
+    }
+
+    @Test
+    public void updateEventTransactionPendingIncome_ToCompleted_UserIsAdmin_ShouldSuccess() throws Exception {
+        // Create Event
+        Event savedEvent = initEventDB();
+        // Create Transaction
+        transactionRepository.saveAndFlush(transaction.eventId(savedEvent.getId()));
+        // Get Database size after creating transaction
+        int databaseSizeAfterCreate = transactionRepository.findAll().size();
+        // find created transaction
+        Transaction createdTransaction = transactionRepository.findById(transaction.getId()).get();
+
+        // Update the transaction
+        restTransactionMockMvc.perform(putMultipartRequestBuilder
+            .file(MOCK_MULTIPART_FILE)
+            .param("id", createdTransaction.getId().toString())
+            .param("title", createdTransaction.getTitle())
+            .param("eventId", createdTransaction.getEventId().toString())
+            .param("transactionType", createdTransaction.getTransactionType().name())
+            .param("transactionAmount", createdTransaction.getTransactionAmount().toString())
+            .param("description", createdTransaction.getDescription())
+            .param("transactionStatus", UPDATED_TRANSACTION_STATUS.name())
+            .param("transactionDate", createdTransaction.getTransactionDate().toString())
+        ).andExpect(status().isOk());
+
+        List<Transaction> transactionList = transactionRepository.findAll();
+        Transaction updatedTransaction = transactionList.get(transactionList.size() - 1);
+
+        // Validate the Transaction count stays the same after creating 1 transaction
+        assertThat(transactionList).hasSize(databaseSizeAfterCreate);
+        assertThat(updatedTransaction.getTransactionStatus()).isEqualTo(UPDATED_TRANSACTION_STATUS);
+    }
+
+    @Test
+    @WithNormalUser
+    public void updateEventTransactionPendingIncome_ToCompleted_UserIsUser_ShouldThrow403() throws Exception {
+        // Create Event
+        Event savedEvent = initEventDB();
+        // Create Transaction
+        transactionRepository.saveAndFlush(transaction.eventId(savedEvent.getId()));
+        // Get Database size after creating transaction
+        int databaseSizeAfterCreate = transactionRepository.findAll().size();
+        // find created transaction
+        Transaction createdTransaction = transactionRepository.findById(transaction.getId()).get();
+
+        // Update the transaction
+        restTransactionMockMvc.perform(putMultipartRequestBuilder
+            .file(MOCK_MULTIPART_FILE)
+            .param("id", createdTransaction.getId().toString())
+            .param("title", createdTransaction.getTitle())
+            .param("eventId", createdTransaction.getEventId().toString())
+            .param("transactionType", createdTransaction.getTransactionType().name())
+            .param("transactionAmount", createdTransaction.getTransactionAmount().toString())
+            .param("description", createdTransaction.getDescription())
+            .param("transactionStatus", UPDATED_TRANSACTION_STATUS.name())
+            .param("transactionDate", createdTransaction.getTransactionDate().toString())
+        ).andExpect(status().isForbidden());
+
+        List<Transaction> transactionList = transactionRepository.findAll();
+        Transaction updatedTransaction = transactionList.get(transactionList.size() - 1);
+
+        // Validate the Transaction count stays the same after creating 1 transaction
+        assertThat(transactionList).hasSize(databaseSizeAfterCreate);
+        assertThat(updatedTransaction.getTransactionStatus()).isEqualTo(DEFAULT_TRANSACTION_STATUS);
+    }
+
+    @Test
+    @WithEventCrew
+    public void updateEventTransactionPendingIncome_ToCompleted_UserIsEventCrew_ShouldSuccess() throws Exception {
+        // Get event id by current event crew
+        EventCrew savedEventCrew = getEventCrewByCurrentLoginUser();
+        // Create Transaction
+        transactionRepository.saveAndFlush(transaction.eventId(savedEventCrew.getEventId()));
+        // Get Database size after creating transaction
+        int databaseSizeAfterCreate = transactionRepository.findAll().size();
+        // find created transaction
+        Transaction createdTransaction = transactionRepository.findById(transaction.getId()).get();
+
+        // Update the transaction
+        restTransactionMockMvc.perform(putMultipartRequestBuilder
+            .file(MOCK_MULTIPART_FILE)
+            .param("id", createdTransaction.getId().toString())
+            .param("title", createdTransaction.getTitle())
+            .param("eventId", createdTransaction.getEventId().toString())
+            .param("transactionType", createdTransaction.getTransactionType().name())
+            .param("transactionAmount", createdTransaction.getTransactionAmount().toString())
+            .param("description", createdTransaction.getDescription())
+            .param("transactionStatus", UPDATED_TRANSACTION_STATUS.name())
+            .param("transactionDate", createdTransaction.getTransactionDate().toString())
+        ).andExpect(status().isOk());
+
+        List<Transaction> transactionList = transactionRepository.findAll();
+        Transaction updatedTransaction = transactionList.get(transactionList.size() - 1);
+
+        // Validate the Transaction count stays the same after creating 1 transaction
+        assertThat(transactionList).hasSize(databaseSizeAfterCreate);
+        assertThat(updatedTransaction.getTransactionStatus()).isEqualTo(UPDATED_TRANSACTION_STATUS);
+    }
+
+    @Test
+    @WithCurrentCCAdministrator
+    public void updateEventTransactionPendingIncome_ToCompleted_UserIsCurrentCCAdmin_ShouldSuccess() throws Exception {
+        // Create Event
+        Event savedEvent = initEventDB();
+        // Create Transaction
+        transactionRepository.saveAndFlush(transaction.eventId(savedEvent.getId()));
+        // Get Database size after creating transaction
+        int databaseSizeAfterCreate = transactionRepository.findAll().size();
+        // find created transaction
+        Transaction createdTransaction = transactionRepository.findById(transaction.getId()).get();
+
+        // Update the transaction
+        restTransactionMockMvc.perform(putMultipartRequestBuilder
+            .file(MOCK_MULTIPART_FILE)
+            .param("id", createdTransaction.getId().toString())
+            .param("title", createdTransaction.getTitle())
+            .param("eventId", createdTransaction.getEventId().toString())
+            .param("transactionType", createdTransaction.getTransactionType().name())
+            .param("transactionAmount", createdTransaction.getTransactionAmount().toString())
+            .param("description", createdTransaction.getDescription())
+            .param("transactionStatus", UPDATED_TRANSACTION_STATUS.name())
+            .param("transactionDate", createdTransaction.getTransactionDate().toString())
+        ).andExpect(status().isOk());
+
+        List<Transaction> transactionList = transactionRepository.findAll();
+        Transaction updatedTransaction = transactionList.get(transactionList.size() - 1);
+
+        // Validate the Transaction count stays the same after creating 1 transaction
+        assertThat(transactionList).hasSize(databaseSizeAfterCreate);
+        assertThat(updatedTransaction.getTransactionStatus()).isEqualTo(UPDATED_TRANSACTION_STATUS);
+    }
+
 
 
     @Test
