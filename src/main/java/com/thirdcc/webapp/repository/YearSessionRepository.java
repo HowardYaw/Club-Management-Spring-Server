@@ -6,14 +6,12 @@ import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
 
-
 /**
- * Spring Data  repository for the YearSession entity.
+ * Spring Data SQL repository for the YearSession entity.
  */
 @SuppressWarnings("unused")
 @Repository
-public interface YearSessionRepository extends JpaRepository<YearSession, Long> {
+public interface YearSessionRepository extends JpaRepository<YearSession, Long>, JpaSpecificationExecutor<YearSession> {
 
     Optional<YearSession> findFirstByOrderByIdDesc();
-
 }

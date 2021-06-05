@@ -1,7 +1,9 @@
 package com.thirdcc.webapp.web.rest;
 
 import com.thirdcc.webapp.security.AuthoritiesConstants;
+import com.thirdcc.webapp.service.EventQueryService;
 import com.thirdcc.webapp.service.EventService;
+import com.thirdcc.webapp.service.criteria.EventCriteria;
 import com.thirdcc.webapp.web.rest.errors.BadRequestAlertException;
 import com.thirdcc.webapp.service.dto.EventDTO;
 
@@ -14,9 +16,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.util.MultiValueMap;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -43,8 +45,11 @@ public class EventResource {
 
     private final EventService eventService;
 
-    public EventResource(EventService eventService) {
+    private final EventQueryService eventQueryService;
+
+    public EventResource(EventService eventService, EventQueryService eventQueryService) {
         this.eventService = eventService;
+        this.eventQueryService = eventQueryService;
     }
 
     /**
@@ -90,14 +95,10 @@ public class EventResource {
     }
 
     /**
-     * {@code GET  /events} : get all the events.
-     *
-     * @param pageable the pagination information.
-     * @param queryParams a {@link MultiValueMap} query parameters.
-     * @param uriBuilder a {@link UriComponentsBuilder} URI builder.
-     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the list of events in body.
+     * use {@link #getAllEvents(EventCriteria, Pageable)} instead
      */
-    @GetMapping("/events")
+    @Deprecated
+    @GetMapping("/events/v1")
     public ResponseEntity<List<EventDTO>> getAllEvents(Pageable pageable, @RequestParam MultiValueMap<String, String> queryParams, UriComponentsBuilder uriBuilder) {
         log.debug("REST request to get a page of Events");
 
@@ -107,6 +108,26 @@ public class EventResource {
 
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(uriBuilder.queryParams(queryParams), page);
         return ResponseEntity.ok().headers(headers).body(page.getContent());
+    }
+
+    @GetMapping("/events")
+    public ResponseEntity<List<EventDTO>> getAllEvents(EventCriteria criteria, Pageable pageable) {
+        log.debug("REST request to get Events by criteria: {}", criteria);
+        Page<EventDTO> page = eventQueryService.findByCriteria(criteria, pageable);
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(ServletUriComponentsBuilder.fromCurrentRequest(), page);
+        return ResponseEntity.ok().headers(headers).body(page.getContent());
+    }
+
+    /**
+     * {@code GET  /events/count} : count all the events.
+     *
+     * @param criteria the criteria which the requested entities should match.
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the count in body.
+     */
+    @GetMapping("/events/count")
+    public ResponseEntity<Long> countEvents(EventCriteria criteria) {
+        log.debug("REST request to count Events by criteria: {}", criteria);
+        return ResponseEntity.ok().body(eventQueryService.countByCriteria(criteria));
     }
 
     /**

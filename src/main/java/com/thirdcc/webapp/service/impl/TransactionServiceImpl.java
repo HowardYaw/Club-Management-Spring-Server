@@ -204,4 +204,14 @@ public class TransactionServiceImpl implements TransactionService {
             return (hasTitle && hasTransactionAmount && hasTransactionStatus);
         }
     }
+
+//    private ClaimDTO createClaimRecord(Transaction transaction) {
+//        ClaimDTO claimDTO = new ClaimDTO();
+//        claimDTO.setAmount(transaction.getTransactionAmount());
+//        claimDTO.setStatus(ClaimStatus.OPEN);
+//        claimDTO.setCreatedBy(transaction.getCreatedBy());
+//        claimDTO.setCreatedDate(transaction.getCreatedDate());
+//        claimDTO.setTransactionId(transaction.getId());
+//        return claimService.save(claimDTO);
+//    }
 }

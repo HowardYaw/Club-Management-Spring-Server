@@ -1,10 +1,10 @@
 package com.thirdcc.webapp.repository;
 
 import com.thirdcc.webapp.domain.CourseProgram;
-import com.thirdcc.webapp.domain.Receipt;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
 
@@ -13,7 +13,7 @@ import org.springframework.stereotype.Repository;
  */
 @SuppressWarnings("unused")
 @Repository
-public interface CourseProgramRepository extends JpaRepository<CourseProgram, Long> {
+public interface CourseProgramRepository extends JpaRepository<CourseProgram, Long>, JpaSpecificationExecutor<CourseProgram> {
 
     Page<CourseProgram> findAllByFacultyId(Long facultyId, Pageable pageable);
 }

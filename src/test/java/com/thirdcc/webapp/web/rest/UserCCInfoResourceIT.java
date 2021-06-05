@@ -52,10 +52,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @InitYearSession
 public class UserCCInfoResourceIT {
 
+    private static final String ENTITY_API_URL = "/api/user-cc-infos";
+
     private static final Long DEFAULT_USER_ID = 1L;
+    private static final Long SMALLER_USER_ID = DEFAULT_USER_ID - 1L;
     private static final Long UPDATED_USER_ID = 2L;
 
     private static final Long DEFAULT_CLUB_FAMILY_ID = 1L;
+    private static final Long SMALLER_CLUB_FAMILY_ID = DEFAULT_CLUB_FAMILY_ID - 1L;
     private static final Long UPDATED_CLUB_FAMILY_ID = 2L;
 
     private static final ClubFamilyRole DEFAULT_FAMILY_ROLE = ClubFamilyRole.FATHER;
@@ -248,20 +252,401 @@ public class UserCCInfoResourceIT {
 
     @Test
     @Transactional
-    public void getAllUserCCInfos() throws Exception {
+    void getUserCCInfosByIdFiltering() throws Exception {
         // Initialize the database
         userCCInfoRepository.saveAndFlush(userCCInfo);
 
-        // Get all the userCCInfoList
-        restUserCCInfoMockMvc.perform(get("/api/user-cc-infos?sort=id,desc"))
+        Long id = userCCInfo.getId();
+
+        defaultUserCCInfoShouldBeFound("id.equals=" + id);
+        defaultUserCCInfoShouldNotBeFound("id.notEquals=" + id);
+
+        defaultUserCCInfoShouldBeFound("id.greaterThanOrEqual=" + id);
+        defaultUserCCInfoShouldNotBeFound("id.greaterThan=" + id);
+
+        defaultUserCCInfoShouldBeFound("id.lessThanOrEqual=" + id);
+        defaultUserCCInfoShouldNotBeFound("id.lessThan=" + id);
+    }
+
+    @Test
+    @Transactional
+    void getAllUserCCInfosByUserIdIsEqualToSomething() throws Exception {
+        // Initialize the database
+        userCCInfoRepository.saveAndFlush(userCCInfo);
+
+        // Get all the userCCInfoList where userId equals to DEFAULT_USER_ID
+        defaultUserCCInfoShouldBeFound("userId.equals=" + DEFAULT_USER_ID);
+
+        // Get all the userCCInfoList where userId equals to UPDATED_USER_ID
+        defaultUserCCInfoShouldNotBeFound("userId.equals=" + UPDATED_USER_ID);
+    }
+
+    @Test
+    @Transactional
+    void getAllUserCCInfosByUserIdIsNotEqualToSomething() throws Exception {
+        // Initialize the database
+        userCCInfoRepository.saveAndFlush(userCCInfo);
+
+        // Get all the userCCInfoList where userId not equals to DEFAULT_USER_ID
+        defaultUserCCInfoShouldNotBeFound("userId.notEquals=" + DEFAULT_USER_ID);
+
+        // Get all the userCCInfoList where userId not equals to UPDATED_USER_ID
+        defaultUserCCInfoShouldBeFound("userId.notEquals=" + UPDATED_USER_ID);
+    }
+
+    @Test
+    @Transactional
+    void getAllUserCCInfosByUserIdIsInShouldWork() throws Exception {
+        // Initialize the database
+        userCCInfoRepository.saveAndFlush(userCCInfo);
+
+        // Get all the userCCInfoList where userId in DEFAULT_USER_ID or UPDATED_USER_ID
+        defaultUserCCInfoShouldBeFound("userId.in=" + DEFAULT_USER_ID + "," + UPDATED_USER_ID);
+
+        // Get all the userCCInfoList where userId equals to UPDATED_USER_ID
+        defaultUserCCInfoShouldNotBeFound("userId.in=" + UPDATED_USER_ID);
+    }
+
+    @Test
+    @Transactional
+    void getAllUserCCInfosByUserIdIsNullOrNotNull() throws Exception {
+        // Initialize the database
+        userCCInfoRepository.saveAndFlush(userCCInfo);
+
+        // Get all the userCCInfoList where userId is not null
+        defaultUserCCInfoShouldBeFound("userId.specified=true");
+
+        // Get all the userCCInfoList where userId is null
+        defaultUserCCInfoShouldNotBeFound("userId.specified=false");
+    }
+
+    @Test
+    @Transactional
+    void getAllUserCCInfosByUserIdIsGreaterThanOrEqualToSomething() throws Exception {
+        // Initialize the database
+        userCCInfoRepository.saveAndFlush(userCCInfo);
+
+        // Get all the userCCInfoList where userId is greater than or equal to DEFAULT_USER_ID
+        defaultUserCCInfoShouldBeFound("userId.greaterThanOrEqual=" + DEFAULT_USER_ID);
+
+        // Get all the userCCInfoList where userId is greater than or equal to UPDATED_USER_ID
+        defaultUserCCInfoShouldNotBeFound("userId.greaterThanOrEqual=" + UPDATED_USER_ID);
+    }
+
+    @Test
+    @Transactional
+    void getAllUserCCInfosByUserIdIsLessThanOrEqualToSomething() throws Exception {
+        // Initialize the database
+        userCCInfoRepository.saveAndFlush(userCCInfo);
+
+        // Get all the userCCInfoList where userId is less than or equal to DEFAULT_USER_ID
+        defaultUserCCInfoShouldBeFound("userId.lessThanOrEqual=" + DEFAULT_USER_ID);
+
+        // Get all the userCCInfoList where userId is less than or equal to SMALLER_USER_ID
+        defaultUserCCInfoShouldNotBeFound("userId.lessThanOrEqual=" + SMALLER_USER_ID);
+    }
+
+    @Test
+    @Transactional
+    void getAllUserCCInfosByUserIdIsLessThanSomething() throws Exception {
+        // Initialize the database
+        userCCInfoRepository.saveAndFlush(userCCInfo);
+
+        // Get all the userCCInfoList where userId is less than DEFAULT_USER_ID
+        defaultUserCCInfoShouldNotBeFound("userId.lessThan=" + DEFAULT_USER_ID);
+
+        // Get all the userCCInfoList where userId is less than UPDATED_USER_ID
+        defaultUserCCInfoShouldBeFound("userId.lessThan=" + UPDATED_USER_ID);
+    }
+
+    @Test
+    @Transactional
+    void getAllUserCCInfosByUserIdIsGreaterThanSomething() throws Exception {
+        // Initialize the database
+        userCCInfoRepository.saveAndFlush(userCCInfo);
+
+        // Get all the userCCInfoList where userId is greater than DEFAULT_USER_ID
+        defaultUserCCInfoShouldNotBeFound("userId.greaterThan=" + DEFAULT_USER_ID);
+
+        // Get all the userCCInfoList where userId is greater than SMALLER_USER_ID
+        defaultUserCCInfoShouldBeFound("userId.greaterThan=" + SMALLER_USER_ID);
+    }
+
+    @Test
+    @Transactional
+    void getAllUserCCInfosByClubFamilyIdIsEqualToSomething() throws Exception {
+        // Initialize the database
+        userCCInfoRepository.saveAndFlush(userCCInfo);
+
+        // Get all the userCCInfoList where clubFamilyId equals to DEFAULT_CLUB_FAMILY_ID
+        defaultUserCCInfoShouldBeFound("clubFamilyId.equals=" + DEFAULT_CLUB_FAMILY_ID);
+
+        // Get all the userCCInfoList where clubFamilyId equals to UPDATED_CLUB_FAMILY_ID
+        defaultUserCCInfoShouldNotBeFound("clubFamilyId.equals=" + UPDATED_CLUB_FAMILY_ID);
+    }
+
+    @Test
+    @Transactional
+    void getAllUserCCInfosByClubFamilyIdIsNotEqualToSomething() throws Exception {
+        // Initialize the database
+        userCCInfoRepository.saveAndFlush(userCCInfo);
+
+        // Get all the userCCInfoList where clubFamilyId not equals to DEFAULT_CLUB_FAMILY_ID
+        defaultUserCCInfoShouldNotBeFound("clubFamilyId.notEquals=" + DEFAULT_CLUB_FAMILY_ID);
+
+        // Get all the userCCInfoList where clubFamilyId not equals to UPDATED_CLUB_FAMILY_ID
+        defaultUserCCInfoShouldBeFound("clubFamilyId.notEquals=" + UPDATED_CLUB_FAMILY_ID);
+    }
+
+    @Test
+    @Transactional
+    void getAllUserCCInfosByClubFamilyIdIsInShouldWork() throws Exception {
+        // Initialize the database
+        userCCInfoRepository.saveAndFlush(userCCInfo);
+
+        // Get all the userCCInfoList where clubFamilyId in DEFAULT_CLUB_FAMILY_ID or UPDATED_CLUB_FAMILY_ID
+        defaultUserCCInfoShouldBeFound("clubFamilyId.in=" + DEFAULT_CLUB_FAMILY_ID + "," + UPDATED_CLUB_FAMILY_ID);
+
+        // Get all the userCCInfoList where clubFamilyId equals to UPDATED_CLUB_FAMILY_ID
+        defaultUserCCInfoShouldNotBeFound("clubFamilyId.in=" + UPDATED_CLUB_FAMILY_ID);
+    }
+
+    @Test
+    @Transactional
+    void getAllUserCCInfosByClubFamilyIdIsNullOrNotNull() throws Exception {
+        // Initialize the database
+        userCCInfoRepository.saveAndFlush(userCCInfo);
+
+        // Get all the userCCInfoList where clubFamilyId is not null
+        defaultUserCCInfoShouldBeFound("clubFamilyId.specified=true");
+
+        // Get all the userCCInfoList where clubFamilyId is null
+        defaultUserCCInfoShouldNotBeFound("clubFamilyId.specified=false");
+    }
+
+    @Test
+    @Transactional
+    void getAllUserCCInfosByClubFamilyIdIsGreaterThanOrEqualToSomething() throws Exception {
+        // Initialize the database
+        userCCInfoRepository.saveAndFlush(userCCInfo);
+
+        // Get all the userCCInfoList where clubFamilyId is greater than or equal to DEFAULT_CLUB_FAMILY_ID
+        defaultUserCCInfoShouldBeFound("clubFamilyId.greaterThanOrEqual=" + DEFAULT_CLUB_FAMILY_ID);
+
+        // Get all the userCCInfoList where clubFamilyId is greater than or equal to UPDATED_CLUB_FAMILY_ID
+        defaultUserCCInfoShouldNotBeFound("clubFamilyId.greaterThanOrEqual=" + UPDATED_CLUB_FAMILY_ID);
+    }
+
+    @Test
+    @Transactional
+    void getAllUserCCInfosByClubFamilyIdIsLessThanOrEqualToSomething() throws Exception {
+        // Initialize the database
+        userCCInfoRepository.saveAndFlush(userCCInfo);
+
+        // Get all the userCCInfoList where clubFamilyId is less than or equal to DEFAULT_CLUB_FAMILY_ID
+        defaultUserCCInfoShouldBeFound("clubFamilyId.lessThanOrEqual=" + DEFAULT_CLUB_FAMILY_ID);
+
+        // Get all the userCCInfoList where clubFamilyId is less than or equal to SMALLER_CLUB_FAMILY_ID
+        defaultUserCCInfoShouldNotBeFound("clubFamilyId.lessThanOrEqual=" + SMALLER_CLUB_FAMILY_ID);
+    }
+
+    @Test
+    @Transactional
+    void getAllUserCCInfosByClubFamilyIdIsLessThanSomething() throws Exception {
+        // Initialize the database
+        userCCInfoRepository.saveAndFlush(userCCInfo);
+
+        // Get all the userCCInfoList where clubFamilyId is less than DEFAULT_CLUB_FAMILY_ID
+        defaultUserCCInfoShouldNotBeFound("clubFamilyId.lessThan=" + DEFAULT_CLUB_FAMILY_ID);
+
+        // Get all the userCCInfoList where clubFamilyId is less than UPDATED_CLUB_FAMILY_ID
+        defaultUserCCInfoShouldBeFound("clubFamilyId.lessThan=" + UPDATED_CLUB_FAMILY_ID);
+    }
+
+    @Test
+    @Transactional
+    void getAllUserCCInfosByClubFamilyIdIsGreaterThanSomething() throws Exception {
+        // Initialize the database
+        userCCInfoRepository.saveAndFlush(userCCInfo);
+
+        // Get all the userCCInfoList where clubFamilyId is greater than DEFAULT_CLUB_FAMILY_ID
+        defaultUserCCInfoShouldNotBeFound("clubFamilyId.greaterThan=" + DEFAULT_CLUB_FAMILY_ID);
+
+        // Get all the userCCInfoList where clubFamilyId is greater than SMALLER_CLUB_FAMILY_ID
+        defaultUserCCInfoShouldBeFound("clubFamilyId.greaterThan=" + SMALLER_CLUB_FAMILY_ID);
+    }
+
+    @Test
+    @Transactional
+    void getAllUserCCInfosByFamilyRoleIsEqualToSomething() throws Exception {
+        // Initialize the database
+        userCCInfoRepository.saveAndFlush(userCCInfo);
+
+        // Get all the userCCInfoList where familyRole equals to DEFAULT_FAMILY_ROLE
+        defaultUserCCInfoShouldBeFound("familyRole.equals=" + DEFAULT_FAMILY_ROLE);
+
+        // Get all the userCCInfoList where familyRole equals to UPDATED_FAMILY_ROLE
+        defaultUserCCInfoShouldNotBeFound("familyRole.equals=" + UPDATED_FAMILY_ROLE);
+    }
+
+    @Test
+    @Transactional
+    void getAllUserCCInfosByFamilyRoleIsNotEqualToSomething() throws Exception {
+        // Initialize the database
+        userCCInfoRepository.saveAndFlush(userCCInfo);
+
+        // Get all the userCCInfoList where familyRole not equals to DEFAULT_FAMILY_ROLE
+        defaultUserCCInfoShouldNotBeFound("familyRole.notEquals=" + DEFAULT_FAMILY_ROLE);
+
+        // Get all the userCCInfoList where familyRole not equals to UPDATED_FAMILY_ROLE
+        defaultUserCCInfoShouldBeFound("familyRole.notEquals=" + UPDATED_FAMILY_ROLE);
+    }
+
+    @Test
+    @Transactional
+    void getAllUserCCInfosByFamilyRoleIsInShouldWork() throws Exception {
+        // Initialize the database
+        userCCInfoRepository.saveAndFlush(userCCInfo);
+
+        // Get all the userCCInfoList where familyRole in DEFAULT_FAMILY_ROLE or UPDATED_FAMILY_ROLE
+        defaultUserCCInfoShouldBeFound("familyRole.in=" + DEFAULT_FAMILY_ROLE + "," + UPDATED_FAMILY_ROLE);
+
+        // Get all the userCCInfoList where familyRole equals to UPDATED_FAMILY_ROLE
+        defaultUserCCInfoShouldNotBeFound("familyRole.in=" + UPDATED_FAMILY_ROLE);
+    }
+
+    @Test
+    @Transactional
+    void getAllUserCCInfosByFamilyRoleIsNullOrNotNull() throws Exception {
+        // Initialize the database
+        userCCInfoRepository.saveAndFlush(userCCInfo);
+
+        // Get all the userCCInfoList where familyRole is not null
+        defaultUserCCInfoShouldBeFound("familyRole.specified=true");
+
+        // Get all the userCCInfoList where familyRole is null
+        defaultUserCCInfoShouldNotBeFound("familyRole.specified=false");
+    }
+
+    @Test
+    @Transactional
+    void getAllUserCCInfosByYearSessionIsEqualToSomething() throws Exception {
+        // Initialize the database
+        userCCInfoRepository.saveAndFlush(userCCInfo);
+
+        // Get all the userCCInfoList where yearSession equals to DEFAULT_YEAR_SESSION
+        defaultUserCCInfoShouldBeFound("yearSession.equals=" + DEFAULT_YEAR_SESSION);
+
+        // Get all the userCCInfoList where yearSession equals to UPDATED_YEAR_SESSION
+        defaultUserCCInfoShouldNotBeFound("yearSession.equals=" + UPDATED_YEAR_SESSION);
+    }
+
+    @Test
+    @Transactional
+    void getAllUserCCInfosByYearSessionIsNotEqualToSomething() throws Exception {
+        // Initialize the database
+        userCCInfoRepository.saveAndFlush(userCCInfo);
+
+        // Get all the userCCInfoList where yearSession not equals to DEFAULT_YEAR_SESSION
+        defaultUserCCInfoShouldNotBeFound("yearSession.notEquals=" + DEFAULT_YEAR_SESSION);
+
+        // Get all the userCCInfoList where yearSession not equals to UPDATED_YEAR_SESSION
+        defaultUserCCInfoShouldBeFound("yearSession.notEquals=" + UPDATED_YEAR_SESSION);
+    }
+
+    @Test
+    @Transactional
+    void getAllUserCCInfosByYearSessionIsInShouldWork() throws Exception {
+        // Initialize the database
+        userCCInfoRepository.saveAndFlush(userCCInfo);
+
+        // Get all the userCCInfoList where yearSession in DEFAULT_YEAR_SESSION or UPDATED_YEAR_SESSION
+        defaultUserCCInfoShouldBeFound("yearSession.in=" + DEFAULT_YEAR_SESSION + "," + UPDATED_YEAR_SESSION);
+
+        // Get all the userCCInfoList where yearSession equals to UPDATED_YEAR_SESSION
+        defaultUserCCInfoShouldNotBeFound("yearSession.in=" + UPDATED_YEAR_SESSION);
+    }
+
+    @Test
+    @Transactional
+    void getAllUserCCInfosByYearSessionIsNullOrNotNull() throws Exception {
+        // Initialize the database
+        userCCInfoRepository.saveAndFlush(userCCInfo);
+
+        // Get all the userCCInfoList where yearSession is not null
+        defaultUserCCInfoShouldBeFound("yearSession.specified=true");
+
+        // Get all the userCCInfoList where yearSession is null
+        defaultUserCCInfoShouldNotBeFound("yearSession.specified=false");
+    }
+
+    @Test
+    @Transactional
+    void getAllUserCCInfosByYearSessionContainsSomething() throws Exception {
+        // Initialize the database
+        userCCInfoRepository.saveAndFlush(userCCInfo);
+
+        // Get all the userCCInfoList where yearSession contains DEFAULT_YEAR_SESSION
+        defaultUserCCInfoShouldBeFound("yearSession.contains=" + DEFAULT_YEAR_SESSION);
+
+        // Get all the userCCInfoList where yearSession contains UPDATED_YEAR_SESSION
+        defaultUserCCInfoShouldNotBeFound("yearSession.contains=" + UPDATED_YEAR_SESSION);
+    }
+
+    @Test
+    @Transactional
+    void getAllUserCCInfosByYearSessionNotContainsSomething() throws Exception {
+        // Initialize the database
+        userCCInfoRepository.saveAndFlush(userCCInfo);
+
+        // Get all the userCCInfoList where yearSession does not contain DEFAULT_YEAR_SESSION
+        defaultUserCCInfoShouldNotBeFound("yearSession.doesNotContain=" + DEFAULT_YEAR_SESSION);
+
+        // Get all the userCCInfoList where yearSession does not contain UPDATED_YEAR_SESSION
+        defaultUserCCInfoShouldBeFound("yearSession.doesNotContain=" + UPDATED_YEAR_SESSION);
+    }
+
+    /**
+     * Executes the search, and checks that the default entity is returned.
+     */
+    private void defaultUserCCInfoShouldBeFound(String filter) throws Exception {
+        restUserCCInfoMockMvc
+            .perform(get(ENTITY_API_URL + "?sort=id,desc&" + filter))
             .andExpect(status().isOk())
-            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
+            .andExpect(content().contentType(TestUtil.APPLICATION_JSON_UTF8))
             .andExpect(jsonPath("$.[*].id").value(hasItem(userCCInfo.getId().intValue())))
             .andExpect(jsonPath("$.[*].userId").value(hasItem(DEFAULT_USER_ID.intValue())))
             .andExpect(jsonPath("$.[*].clubFamilyId").value(hasItem(DEFAULT_CLUB_FAMILY_ID.intValue())))
             .andExpect(jsonPath("$.[*].familyRole").value(hasItem(DEFAULT_FAMILY_ROLE.toString())))
-            .andExpect(jsonPath("$.[*].yearSession").value(hasItem(DEFAULT_YEAR_SESSION.toString())));
+            .andExpect(jsonPath("$.[*].yearSession").value(hasItem(DEFAULT_YEAR_SESSION)));
+
+        // Check, that the count call also returns 1
+        restUserCCInfoMockMvc
+            .perform(get(ENTITY_API_URL + "/count?sort=id,desc&" + filter))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(TestUtil.APPLICATION_JSON_UTF8))
+            .andExpect(content().string("1"));
     }
+
+    /**
+     * Executes the search, and checks that the default entity is not returned.
+     */
+    private void defaultUserCCInfoShouldNotBeFound(String filter) throws Exception {
+        restUserCCInfoMockMvc
+            .perform(get(ENTITY_API_URL + "?sort=id,desc&" + filter))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(TestUtil.APPLICATION_JSON_UTF8))
+            .andExpect(jsonPath("$").isArray())
+            .andExpect(jsonPath("$").isEmpty());
+
+        // Check, that the count call also returns 0
+        restUserCCInfoMockMvc
+            .perform(get(ENTITY_API_URL + "/count?sort=id,desc&" + filter))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(TestUtil.APPLICATION_JSON_UTF8))
+            .andExpect(content().string("0"));
+    }
+
 
     @Test
     @Transactional

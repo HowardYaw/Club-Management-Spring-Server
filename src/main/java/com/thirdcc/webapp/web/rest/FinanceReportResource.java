@@ -74,6 +74,6 @@ public class FinanceReportResource {
             yearSession = yearSessionService.getYearSessionStringById(yearSessionId);
         }
         Map<TransactionType, Map<Month, BigDecimal>> result = financeReportService.getFinanceReportByYearSession(yearSession);
-        return ResponseEntity.ok().headers(null).body(result);
+        return ResponseEntity.ok().headers((HttpHeaders) null).body(result);
     }
 }

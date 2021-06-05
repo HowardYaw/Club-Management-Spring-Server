@@ -33,9 +33,28 @@
     "otherModules": [],
     "enableTranslation": true,
     "nativeLanguage": "en",
-    "languages": [
-      "en",
-      "zh-cn"
+    "languages": ["en", "zh-cn"],
+    "blueprints": [],
+    "entities": [
+      "Event",
+      "EventCrew",
+      "EventAttendee",
+      "ImageStorage",
+      "EventImage",
+      "Budget",
+      "EventActivity",
+      "Checklist",
+      "Transaction",
+      "Claim",
+      "Debt",
+      "Receipt",
+      "Administrator",
+      "ClubFamily",
+      "UserCCInfo",
+      "UserUniInfo",
+      "YearSession",
+      "Faculty",
+      "EventRegistrationClosingCriteria"
     ]
   }
 }

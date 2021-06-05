@@ -4,7 +4,9 @@ import com.thirdcc.webapp.domain.User;
 import com.thirdcc.webapp.exception.BadRequestException;
 import com.thirdcc.webapp.security.SecurityUtils;
 import com.thirdcc.webapp.service.UserService;
+import com.thirdcc.webapp.service.UserUniInfoQueryService;
 import com.thirdcc.webapp.service.UserUniInfoService;
+import com.thirdcc.webapp.service.criteria.UserUniInfoCriteria;
 import com.thirdcc.webapp.web.rest.errors.BadRequestAlertException;
 import com.thirdcc.webapp.service.dto.UserUniInfoDTO;
 
@@ -40,11 +42,14 @@ public class UserUniInfoResource {
 
     private final UserService userService;
 
+    private final UserUniInfoQueryService userUniInfoQueryService;
+
     public UserUniInfoResource(UserUniInfoService userUniInfoService,
-                               UserService userService
-    ) {
+                               UserService userService,
+                               UserUniInfoQueryService userUniInfoQueryService) {
         this.userUniInfoService = userUniInfoService;
         this.userService = userService;
+        this.userUniInfoQueryService = userUniInfoQueryService;
     }
 
     /**
@@ -87,15 +92,17 @@ public class UserUniInfoResource {
             .body(result);
     }
 
-    /**
-     * {@code GET  /user-uni-infos} : get all the userUniInfos.
-     *
-     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the list of userUniInfos in body.
-     */
     @GetMapping("/user-uni-infos")
-    public List<UserUniInfoDTO> getAllUserUniInfos() {
-        log.debug("REST request to get all UserUniInfos");
-        return userUniInfoService.findAll();
+    public ResponseEntity<List<UserUniInfoDTO>> getAllUserUniInfos(UserUniInfoCriteria criteria) {
+        log.debug("REST request to get UserUniInfos by criteria: {}", criteria);
+        List<UserUniInfoDTO> entityList = userUniInfoQueryService.findByCriteria(criteria);
+        return ResponseEntity.ok().body(entityList);
+    }
+
+    @GetMapping("/user-uni-infos/count")
+    public ResponseEntity<Long> countUserUniInfos(UserUniInfoCriteria criteria) {
+        log.debug("REST request to count UserUniInfos by criteria: {}", criteria);
+        return ResponseEntity.ok().body(userUniInfoQueryService.countByCriteria(criteria));
     }
 
     /**

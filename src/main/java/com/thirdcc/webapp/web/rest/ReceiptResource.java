@@ -1,6 +1,8 @@
 package com.thirdcc.webapp.web.rest;
 
+import com.thirdcc.webapp.service.ReceiptQueryService;
 import com.thirdcc.webapp.service.ReceiptService;
+import com.thirdcc.webapp.service.criteria.ReceiptCriteria;
 import com.thirdcc.webapp.web.rest.errors.BadRequestAlertException;
 import com.thirdcc.webapp.service.dto.ReceiptDTO;
 
@@ -34,8 +36,11 @@ public class ReceiptResource {
 
     private final ReceiptService receiptService;
 
-    public ReceiptResource(ReceiptService receiptService) {
+    private final ReceiptQueryService receiptQueryService;
+
+    public ReceiptResource(ReceiptService receiptService, ReceiptQueryService receiptQueryService) {
         this.receiptService = receiptService;
+        this.receiptQueryService = receiptQueryService;
     }
 
     /**
@@ -78,15 +83,17 @@ public class ReceiptResource {
             .body(result);
     }
 
-    /**
-     * {@code GET  /receipts} : get all the receipts.
-     *
-     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the list of receipts in body.
-     */
     @GetMapping("/receipts")
-    public List<ReceiptDTO> getAllReceipts() {
-        log.debug("REST request to get all Receipts");
-        return receiptService.findAll();
+    public ResponseEntity<List<ReceiptDTO>> getAllReceipts(ReceiptCriteria criteria) {
+        log.debug("REST request to get Receipts by criteria: {}", criteria);
+        List<ReceiptDTO> entityList = receiptQueryService.findByCriteria(criteria);
+        return ResponseEntity.ok().body(entityList);
+    }
+
+    @GetMapping("/receipts/count")
+    public ResponseEntity<Long> countReceipts(ReceiptCriteria criteria) {
+        log.debug("REST request to count Receipts by criteria: {}", criteria);
+        return ResponseEntity.ok().body(receiptQueryService.countByCriteria(criteria));
     }
 
     /**
