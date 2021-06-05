@@ -2,7 +2,7 @@ package com.thirdcc.webapp.web.rest;
 
 import com.thirdcc.webapp.ClubmanagementApp;
 import com.thirdcc.webapp.annotations.authorization.WithCurrentCCAdministrator;
-import com.thirdcc.webapp.annotations.authorization.WithNormalUser;
+import com.thirdcc.webapp.annotations.authorization.WithEventHead;
 import com.thirdcc.webapp.annotations.init.InitYearSession;
 import com.thirdcc.webapp.domain.*;
 import com.thirdcc.webapp.domain.enumeration.EventStatus;
@@ -32,7 +32,6 @@ import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 
 import static org.hamcrest.Matchers.hasItem;
-import org.springframework.test.annotation.DirtiesContext;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -40,7 +39,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest(classes = ClubmanagementApp.class)
 @AutoConfigureMockMvc
 @InitYearSession
-@WithNormalUser
+@WithCurrentCCAdministrator
 class FinanceReportResourceIT {
 
     private static final BigDecimal DEFAULT_TRANSACTION_AMOUNT = new BigDecimal(11);
@@ -156,6 +155,14 @@ class FinanceReportResourceIT {
     }
 
     @Test
+    @WithEventHead
+    public void getAllEventFinanceReport_IsNotAdmin_ShouldReturnIsForbidden403() throws Exception {
+        Event savedEvent = initEventDB();
+        restFinanceReportMockMvc.perform(get("/api/finance-report?sort=id,desc"))
+            .andExpect(status().isForbidden());
+    }
+    
+    @Test
     public void getFinanceReportByEventId() throws Exception {
         Event savedEvent = initEventDB();
         Receipt savedReceipt = initReceiptDB();
@@ -179,25 +186,32 @@ class FinanceReportResourceIT {
         restFinanceReportMockMvc.perform(get("/api/finance-report/event/{eventId}", Long.MAX_VALUE))
             .andExpect(status().isNotFound());
     }
+    
+    @Test
+    @WithEventHead
+    public void getFinanceReportByEventId_IsNotAdmin_ShouldReturnIsForbidden403() throws Exception {
+        Event savedEvent = initEventDB();
+        restFinanceReportMockMvc.perform(get("/api/finance-report/event/{eventId}", savedEvent.getId()))
+            .andExpect(status().isForbidden());
+    }
 
     @Test
     public void getFinanceReportByYearSession() throws Exception {
         //mock createdDate
-        LocalDateTime transactionLocalDateTime =  LocalDateTime.of(2020, 1, 20, 0, 0, 0);
+        LocalDateTime transactionLocalDateTime =  LocalDateTime.of(LocalDateTime.now().getYear(), 1, 20, 0, 0, 0);
         Mockito
             .when(dateTimeProvider.getNow())
             .thenReturn(Optional.of(transactionLocalDateTime));
-
         Event savedEvent = initEventDB();
         Receipt savedReceipt = initReceiptDB();
+        Long currentYearSessionId = yearSessionService.getCurrentYearSession().getId();
         Instant transactionDate = transactionLocalDateTime.atZone(ZoneId.systemDefault()).toInstant();
-        YearSession savedYearSession = initYearSessionDB(transactionDate);
         Transaction incomeTransaction = initTransactionDB(DEFAULT_INCOME_TRANSACTION_TITLE, savedEvent, savedReceipt, TransactionType.INCOME, transactionDate);
         Transaction expenseTransaction = initTransactionDB(DEFAULT_EXPENSE_TRANSACTION_TITLE, savedEvent, savedReceipt, TransactionType.EXPENSE, transactionDate);
 
         restFinanceReportMockMvc.perform(
             get("/api/finance-report/year-session")
-                .param("yearSessionId", savedYearSession.getId().toString())
+                .param("yearSessionId", currentYearSessionId.toString())
         )
             .andExpect(status().isOk())
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
@@ -268,7 +282,13 @@ class FinanceReportResourceIT {
     }
     
     @Test
-    @WithCurrentCCAdministrator
+    @WithEventHead
+    public void getFinanceReportByYearSession_IsNotAdmin_ShouldReturnIsForbidden403() throws Exception {
+        restFinanceReportMockMvc.perform(get("/api/finance-report/year-session"))
+            .andExpect(status().isForbidden());
+    }
+    
+    @Test
     public void getFinanceReportStatisticOfCurrentYearSession() throws Exception {
         Event savedEvent = initEventDB();
         Receipt savedReceipt = initReceiptDB();
@@ -288,7 +308,6 @@ class FinanceReportResourceIT {
     }
 
     @Test
-    @WithCurrentCCAdministrator
     public void getFinanceReportOfCurrentYearSession_WithNoTransaction() throws Exception {
         restFinanceReportMockMvc.perform(get("/api/finance-report/current-year-session-statistic"))
             .andExpect(status().isOk())
@@ -299,6 +318,13 @@ class FinanceReportResourceIT {
             .andExpect(jsonPath("$.pendingExpenses").value(BigDecimal.ZERO.doubleValue()))
             .andExpect(jsonPath("$.invalidExpenses").value(BigDecimal.ZERO.doubleValue()))
             .andExpect(jsonPath("$.badDebt").value(BigDecimal.ZERO.doubleValue()));
+    }
+    
+    @Test
+    @WithEventHead
+    public void getFinanceReportOfCurrentYearSession_IsNotAdmin_ShouldReturnIsForbidden403() throws Exception {
+        restFinanceReportMockMvc.perform(get("/api/finance-report/current-year-session-statistic"))
+            .andExpect(status().isForbidden());
     }
 
     private Event initEventDB() {
@@ -333,12 +359,5 @@ class FinanceReportResourceIT {
         transaction.setTransactionStatus(DEFAULT_TRANSACTION_STATUS);
         transaction.setTransactionDate(transactionDate);
         return transactionRepository.saveAndFlush(transaction);
-    }
-
-    private YearSession initYearSessionDB(Instant instant) {
-        YearSession yearSession = new YearSession();
-        String value = YearSessionUtils.toYearSession(instant);
-        yearSession.setValue(value);
-        return yearSessionRepository.saveAndFlush(yearSession);
     }
 }
