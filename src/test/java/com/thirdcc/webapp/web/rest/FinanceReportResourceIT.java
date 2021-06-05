@@ -1,8 +1,12 @@
 package com.thirdcc.webapp.web.rest;
 
 import com.thirdcc.webapp.ClubmanagementApp;
+import com.thirdcc.webapp.annotations.authorization.WithCurrentCCAdministrator;
+import com.thirdcc.webapp.annotations.authorization.WithNormalUser;
+import com.thirdcc.webapp.annotations.init.InitYearSession;
 import com.thirdcc.webapp.domain.*;
 import com.thirdcc.webapp.domain.enumeration.EventStatus;
+import com.thirdcc.webapp.domain.enumeration.TransactionStatus;
 import com.thirdcc.webapp.domain.enumeration.TransactionType;
 import com.thirdcc.webapp.repository.*;
 import com.thirdcc.webapp.service.FinanceReportService;
@@ -18,8 +22,6 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.auditing.DateTimeProvider;
 import org.springframework.http.MediaType;
-import org.springframework.security.test.context.support.WithMockUser;
-import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.web.servlet.MockMvc;
 
 import javax.persistence.EntityManager;
@@ -30,17 +32,23 @@ import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 
 import static org.hamcrest.Matchers.hasItem;
+import org.springframework.test.annotation.DirtiesContext;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 
 @SpringBootTest(classes = ClubmanagementApp.class)
 @AutoConfigureMockMvc
-@WithMockUser(value = "user")
+@InitYearSession
+@WithNormalUser
 class FinanceReportResourceIT {
 
     private static final BigDecimal DEFAULT_TRANSACTION_AMOUNT = new BigDecimal(11);
     private static final String DEFAULT_TRANSACTION_DETAILS = "DEFAULT_BUDGET_DETAILS";
+    private static final TransactionStatus DEFAULT_TRANSACTION_STATUS = TransactionStatus.PENDING;
+    private static final String DEFAULT_INCOME_TRANSACTION_TITLE = "DEFAULT_INCOME_TRANSACTION_TITLE";
+    private static final String DEFAULT_EXPENSE_TRANSACTION_TITLE = "DEFAULT_EXPENSE_TRANSACTION_TITLE";
+    private static final Instant DEFAULT_TRANSACTION_DATE = Instant.now();
 
     private static final BigDecimal DEFAULT_BUDGET_AMOUNT = new BigDecimal(22);
     private static final String DEFAULT_BUDGET_NAME = "DEFAULT_BUDGET_NAME";
@@ -128,14 +136,14 @@ class FinanceReportResourceIT {
         transactionRepository.deleteAll();
     }
 
-//    @Test
+    @Test
     public void getAllEventFinanceReport() throws Exception {
         Event savedEvent = initEventDB();
         Receipt savedReceipt = initReceiptDB();
         Budget incomeBudget = initBudgetDB(savedEvent, TransactionType.INCOME);
         Budget expenseBudget = initBudgetDB(savedEvent, TransactionType.EXPENSE);
-        Transaction incomeTransaction = initTransactionDB(savedEvent, savedReceipt, TransactionType.INCOME);
-        Transaction expenseTransaction = initTransactionDB(savedEvent, savedReceipt, TransactionType.EXPENSE);
+        Transaction incomeTransaction = initTransactionDB(DEFAULT_INCOME_TRANSACTION_TITLE, savedEvent, savedReceipt, TransactionType.INCOME, DEFAULT_TRANSACTION_DATE);
+        Transaction expenseTransaction = initTransactionDB(DEFAULT_EXPENSE_TRANSACTION_TITLE, savedEvent, savedReceipt, TransactionType.EXPENSE, DEFAULT_TRANSACTION_DATE);
 
         restFinanceReportMockMvc.perform(get("/api/finance-report?sort=id,desc"))
             .andExpect(status().isOk())
@@ -147,14 +155,14 @@ class FinanceReportResourceIT {
             .andExpect(jsonPath("$.[*].totalExpenses").value(hasItem(DEFAULT_TRANSACTION_AMOUNT.doubleValue())));
     }
 
-//    @Test
+    @Test
     public void getFinanceReportByEventId() throws Exception {
         Event savedEvent = initEventDB();
         Receipt savedReceipt = initReceiptDB();
         Budget incomeBudget = initBudgetDB(savedEvent, TransactionType.INCOME);
         Budget expenseBudget = initBudgetDB(savedEvent, TransactionType.EXPENSE);
-        Transaction incomeTransaction = initTransactionDB(savedEvent, savedReceipt, TransactionType.INCOME);
-        Transaction expenseTransaction = initTransactionDB(savedEvent, savedReceipt, TransactionType.EXPENSE);
+        Transaction incomeTransaction = initTransactionDB(DEFAULT_INCOME_TRANSACTION_TITLE, savedEvent, savedReceipt, TransactionType.INCOME, DEFAULT_TRANSACTION_DATE);
+        Transaction expenseTransaction = initTransactionDB(DEFAULT_EXPENSE_TRANSACTION_TITLE, savedEvent, savedReceipt, TransactionType.EXPENSE, DEFAULT_TRANSACTION_DATE);
 
         restFinanceReportMockMvc.perform(get("/api/finance-report/event/{eventId}", savedEvent.getId()))
             .andExpect(status().isOk())
@@ -172,11 +180,10 @@ class FinanceReportResourceIT {
             .andExpect(status().isNotFound());
     }
 
-//    @Test
-    @DirtiesContext(methodMode = DirtiesContext.MethodMode.BEFORE_METHOD)
+    @Test
     public void getFinanceReportByYearSession() throws Exception {
         //mock createdDate
-        LocalDateTime transactionLocalDateTime =  LocalDateTime.of(1998, 1, 20, 0, 0, 0);
+        LocalDateTime transactionLocalDateTime =  LocalDateTime.of(2020, 1, 20, 0, 0, 0);
         Mockito
             .when(dateTimeProvider.getNow())
             .thenReturn(Optional.of(transactionLocalDateTime));
@@ -185,8 +192,8 @@ class FinanceReportResourceIT {
         Receipt savedReceipt = initReceiptDB();
         Instant transactionDate = transactionLocalDateTime.atZone(ZoneId.systemDefault()).toInstant();
         YearSession savedYearSession = initYearSessionDB(transactionDate);
-        Transaction incomeTransaction = initTransactionDB(savedEvent, savedReceipt, TransactionType.INCOME);
-        Transaction expenseTransaction = initTransactionDB(savedEvent, savedReceipt, TransactionType.EXPENSE);
+        Transaction incomeTransaction = initTransactionDB(DEFAULT_INCOME_TRANSACTION_TITLE, savedEvent, savedReceipt, TransactionType.INCOME, transactionDate);
+        Transaction expenseTransaction = initTransactionDB(DEFAULT_EXPENSE_TRANSACTION_TITLE, savedEvent, savedReceipt, TransactionType.EXPENSE, transactionDate);
 
         restFinanceReportMockMvc.perform(
             get("/api/finance-report/year-session")
@@ -222,8 +229,6 @@ class FinanceReportResourceIT {
 
     @Test
     public void getFinanceReportByYearSession_WithNoTransaction() throws Exception {
-        YearSession savedYearSession = initYearSessionDB(Instant.now());
-
         restFinanceReportMockMvc.perform(get("/api/finance-report/year-session"))
             .andExpect(status().isOk())
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
@@ -253,16 +258,47 @@ class FinanceReportResourceIT {
             .andExpect(jsonPath("$.EXPENSE.DECEMBER").value(BigDecimal.ZERO.doubleValue()));
     }
 
-
     @Test
     public void getFinanceReportByYearSession_WithInvalidYearSessionId() throws Exception {
-        YearSession savedYearSession = initYearSessionDB(Instant.now());
-
         restFinanceReportMockMvc.perform(
             get("/api/finance-report/year-session")
                 .param("yearSessionId", String.valueOf(Long.MAX_VALUE))
         )
             .andExpect(status().isBadRequest());
+    }
+    
+    @Test
+    @WithCurrentCCAdministrator
+    public void getFinanceReportStatisticOfCurrentYearSession() throws Exception {
+        Event savedEvent = initEventDB();
+        Receipt savedReceipt = initReceiptDB();
+        Instant transactionDate = DEFAULT_TRANSACTION_DATE;
+        Transaction incomeTransaction = initTransactionDB(DEFAULT_INCOME_TRANSACTION_TITLE, savedEvent, savedReceipt, TransactionType.INCOME, transactionDate);
+        Transaction expenseTransaction = initTransactionDB(DEFAULT_EXPENSE_TRANSACTION_TITLE, savedEvent, savedReceipt, TransactionType.EXPENSE, transactionDate);
+
+        restFinanceReportMockMvc.perform(get("/api/finance-report/current-year-session-statistic"))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
+            .andExpect(jsonPath("$.realisedIncome").value(BigDecimal.ZERO.doubleValue()))
+            .andExpect(jsonPath("$.pendingIncome").value(DEFAULT_TRANSACTION_AMOUNT.doubleValue()))
+            .andExpect(jsonPath("$.realisedExpenses").value(BigDecimal.ZERO.doubleValue()))
+            .andExpect(jsonPath("$.pendingExpenses").value(DEFAULT_TRANSACTION_AMOUNT.doubleValue()))
+            .andExpect(jsonPath("$.invalidExpenses").value(BigDecimal.ZERO.doubleValue()))
+            .andExpect(jsonPath("$.badDebt").value(BigDecimal.ZERO.doubleValue()));
+    }
+
+    @Test
+    @WithCurrentCCAdministrator
+    public void getFinanceReportOfCurrentYearSession_WithNoTransaction() throws Exception {
+        restFinanceReportMockMvc.perform(get("/api/finance-report/current-year-session-statistic"))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
+            .andExpect(jsonPath("$.realisedIncome").value(BigDecimal.ZERO.doubleValue()))
+            .andExpect(jsonPath("$.pendingIncome").value(BigDecimal.ZERO.doubleValue()))
+            .andExpect(jsonPath("$.realisedExpenses").value(BigDecimal.ZERO.doubleValue()))
+            .andExpect(jsonPath("$.pendingExpenses").value(BigDecimal.ZERO.doubleValue()))
+            .andExpect(jsonPath("$.invalidExpenses").value(BigDecimal.ZERO.doubleValue()))
+            .andExpect(jsonPath("$.badDebt").value(BigDecimal.ZERO.doubleValue()));
     }
 
     private Event initEventDB() {
@@ -287,12 +323,15 @@ class FinanceReportResourceIT {
         return budgetRepository.saveAndFlush(budget);
     }
 
-    private Transaction initTransactionDB(Event savedEvent, Receipt savedReceipt, TransactionType transactionType) {
+    private Transaction initTransactionDB(String title, Event savedEvent, Receipt savedReceipt, TransactionType transactionType, Instant transactionDate) {
         Transaction transaction = new Transaction();
+        transaction.setTitle(DEFAULT_FILE_TYPE);
         transaction.setEventId(savedEvent.getId());
         transaction.setTransactionAmount(DEFAULT_TRANSACTION_AMOUNT);
         transaction.setTransactionType(transactionType);
         transaction.setDescription(DEFAULT_TRANSACTION_DETAILS);
+        transaction.setTransactionStatus(DEFAULT_TRANSACTION_STATUS);
+        transaction.setTransactionDate(transactionDate);
         return transactionRepository.saveAndFlush(transaction);
     }
 
