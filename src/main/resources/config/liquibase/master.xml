@@ -53,6 +53,7 @@
     <include file="config/liquibase/changelog/20210510104832_alter_column_clubFamily.xml" relativeToChangelogFile="false" />
     <include file="config/liquibase/changelog/20210427_load_test_faker_ClubFamily.xml" relativeToChangelogFile="false" />
     <include file="config/liquibase/changelog/20210510_transaction_table_update.xml" relativeToChangelogFile="false" />
-    <include file="config/liquibase/changelog/20210510104832_alter_column_clubFamily.xml" relativeToChangelogFile="false" />
+
+    <include file="config/liquibase/changelog/20210523150936_added_column_Event.xml" relativeToChangelogFile="false" />
 
 </databaseChangeLog>

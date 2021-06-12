@@ -53,6 +53,9 @@ public class Event implements Serializable {
     @Column(name = "status")
     private EventStatus status;
 
+    @Column(name = "image_storage_id")
+    private Long imageStorageId;
+
     // jhipster-needle-entity-add-field - JHipster will add fields here, do not remove
     public Long getId() {
         return id;
@@ -209,6 +212,20 @@ public class Event implements Serializable {
             ", fee=" + getFee() +
             ", requiredTransport='" + isRequiredTransport() + "'" +
             ", status='" + getStatus() + "'" +
+            ", imageStorageId='" + getImageStorageId() + "'" +
             "}";
+    }
+
+    public Event imageStorageId(Long imageStorageId) {
+        this.imageStorageId = imageStorageId;
+        return this;
+    }
+
+    public Long getImageStorageId() {
+        return imageStorageId;
+    }
+
+    public void setImageStorageId(Long imageStorageId) {
+        this.imageStorageId = imageStorageId;
     }
 }

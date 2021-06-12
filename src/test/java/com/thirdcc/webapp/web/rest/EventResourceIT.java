@@ -1,32 +1,37 @@
 package com.thirdcc.webapp.web.rest;
 
 import com.thirdcc.webapp.ClubmanagementApp;
-import com.thirdcc.webapp.domain.Administrator;
-import com.thirdcc.webapp.domain.Event;
-import com.thirdcc.webapp.domain.User;
-import com.thirdcc.webapp.domain.YearSession;
-import com.thirdcc.webapp.repository.AdministratorRepository;
-import com.thirdcc.webapp.repository.EventRepository;
-import com.thirdcc.webapp.repository.YearSessionRepository;
+import com.thirdcc.webapp.annotations.authorization.WithCurrentCCAdministrator;
+import com.thirdcc.webapp.annotations.authorization.WithEventHead;
+import com.thirdcc.webapp.annotations.init.InitYearSession;
+import com.thirdcc.webapp.domain.*;
+import com.thirdcc.webapp.exception.BadRequestException;
+import com.thirdcc.webapp.repository.*;
+import com.thirdcc.webapp.security.SecurityUtils;
 import com.thirdcc.webapp.service.EventCrewService;
-import com.thirdcc.webapp.service.EventService;
+import com.thirdcc.webapp.service.ImageStorageService;
 import com.thirdcc.webapp.service.UserService;
 import com.thirdcc.webapp.service.dto.EventCrewDTO;
 import com.thirdcc.webapp.service.dto.EventDTO;
+import com.thirdcc.webapp.service.dto.ImageStorageDTO;
 import com.thirdcc.webapp.service.mapper.EventMapper;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.persistence.EntityManager;
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -36,18 +41,21 @@ import java.util.Optional;
 import static com.thirdcc.webapp.web.rest.TestUtil.sameNumber;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.*;
+import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import com.thirdcc.webapp.domain.enumeration.EventStatus;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  * Integration tests for the {@Link EventResource} REST controller.
  */
 @SpringBootTest(classes = ClubmanagementApp.class)
 @AutoConfigureMockMvc
-@WithMockUser()
+@InitYearSession
+@WithMockUser
 public class EventResourceIT {
 
     private static final String ENTITY_API_URL = "/api/events";
@@ -83,6 +91,11 @@ public class EventResourceIT {
 
     private static final String DEFAULT_YEAR_SESSION_VALUE = "2021/2022";
 
+    private static final Long DEFAULT_IMAGE_STORAGE_ID = 1L;
+
+    private static final MockMultipartFile MOCK_MULTIPART_FILE = new MockMultipartFile("multipartFile", "Event Image".getBytes());
+    private static final String DEFAULT_EVENT_IMAGE_LINK = "https://gcp/eventImage.jpg";
+
     @Autowired
     private EventRepository eventRepository;
 
@@ -97,6 +110,18 @@ public class EventResourceIT {
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private EventCrewRepository eventCrewRepository;
+
+    @Autowired
+    private ImageStorageService imageStorageService;
+
+//    @MockBean
+//    private ImageStorageService imageStorageService;
 
     @Autowired
     private MockMvc restEventMockMvc;
@@ -124,7 +149,8 @@ public class EventResourceIT {
             .endDate(DEFAULT_END_DATE)
             .fee(DEFAULT_FEE)
             .requiredTransport(DEFAULT_REQUIRED_TRANSPORT)
-            .status(DEFAULT_STATUS);
+            .status(DEFAULT_STATUS)
+            .imageStorageId(DEFAULT_IMAGE_STORAGE_ID);
     }
 
     /**
@@ -156,18 +182,42 @@ public class EventResourceIT {
         event = createEntity();
     }
 
+    @BeforeEach
+    public void initStub() throws IOException {
+        ImageStorageDTO mockImageSavingResult = new ImageStorageDTO();
+        mockImageSavingResult.setId(DEFAULT_IMAGE_STORAGE_ID);
+        mockImageSavingResult.setImageUrl(DEFAULT_EVENT_IMAGE_LINK);
+        mockImageSavingResult.setFileType("image/jpeg");
+        mockImageSavingResult.setFileName("Event Image");
+
+        when(imageStorageService.save(Mockito.any(ImageStorageDTO.class), Mockito.any(MultipartFile.class)))
+            .thenReturn(mockImageSavingResult);
+    }
+
+    @AfterEach
+    public void cleanUp() {
+        eventCrewRepository.deleteAll();
+        eventRepository.deleteAll();
+        userRepository.deleteAll();
+    }
+
     @Test
     @Transactional
-    @WithMockUser(username = "admin", password = "admin", roles = "ADMIN")
+    @WithCurrentCCAdministrator
     public void createEvent() throws Exception {
         int databaseSizeBeforeCreate = eventRepository.findAll().size();
 
-        // Create the Event
-        EventDTO eventDTO = eventMapper.toDto(event);
         restEventMockMvc.perform(post("/api/events")
-            .contentType(TestUtil.APPLICATION_JSON_UTF8)
-            .content(TestUtil.convertObjectToJsonBytes(eventDTO)))
-            .andExpect(status().isCreated());
+            .param("name", DEFAULT_NAME)
+            .param("description", DEFAULT_DESCRIPTION)
+            .param("remarks", DEFAULT_REMARKS)
+            .param("venue", DEFAULT_VENUE)
+            .param("startDate", DEFAULT_START_DATE.toString())
+            .param("endDate", DEFAULT_END_DATE.toString())
+            .param("fee", DEFAULT_FEE.toString())
+            .param("requiredTransport", DEFAULT_REQUIRED_TRANSPORT.toString())
+            .param("status", DEFAULT_STATUS.toString())
+        ).andExpect(status().isCreated());
 
         // Validate the Event in the database
         List<Event> eventList = eventRepository.findAll();
@@ -182,44 +232,259 @@ public class EventResourceIT {
         assertThat(testEvent.getFee()).isEqualTo(DEFAULT_FEE);
         assertThat(testEvent.isRequiredTransport()).isEqualTo(DEFAULT_REQUIRED_TRANSPORT);
         assertThat(testEvent.getStatus()).isEqualTo(DEFAULT_STATUS);
+        assertThat(testEvent.getImageStorageId()).isNull();
     }
-
 
     @Test
     @Transactional
-    public void createEventWithUserRole() throws Exception {
-
-        // Create the Event
-        EventDTO eventDTO = eventMapper.toDto(event);
-        restEventMockMvc.perform(post("/api/events").with(user("user").password("user").roles("USER"))
-            .contentType(TestUtil.APPLICATION_JSON_UTF8)
-            .content(TestUtil.convertObjectToJsonBytes(eventDTO)))
-            .andExpect(status().isForbidden());
-
-    }
-
-
-    @Test
-    @Transactional
-    @WithMockUser(username = "admin", password = "admin", roles = "ADMIN")
-    public void createEventWithExistingId() throws Exception {
+    @WithCurrentCCAdministrator
+    public void createEventWithEventImage_ShouldSuccess() throws Exception {
         int databaseSizeBeforeCreate = eventRepository.findAll().size();
 
-        // Create the Event with an existing ID
-        event.setId(1L);
-        EventDTO eventDTO = eventMapper.toDto(event);
+        restEventMockMvc.perform(multipart("/api/events")
+            .file(MOCK_MULTIPART_FILE)
+            .param("name", DEFAULT_NAME)
+            .param("description", DEFAULT_DESCRIPTION)
+            .param("remarks", DEFAULT_REMARKS)
+            .param("venue", DEFAULT_VENUE)
+            .param("startDate", DEFAULT_START_DATE.toString())
+            .param("endDate", DEFAULT_END_DATE.toString())
+            .param("fee", DEFAULT_FEE.toString())
+            .param("requiredTransport", DEFAULT_REQUIRED_TRANSPORT.toString())
+            .param("status", DEFAULT_STATUS.toString())
+            .with(request -> {
+                request.setMethod("POST");
+                return request;
+            })
+        ).andExpect(status().isCreated());
+
+        // Validate the Event in the database
+        List<Event> eventList = eventRepository.findAll();
+        assertThat(eventList).hasSize(databaseSizeBeforeCreate + 1);
+        Event testEvent = eventList.get(eventList.size() - 1);
+        assertThat(testEvent.getName()).isEqualTo(DEFAULT_NAME);
+        assertThat(testEvent.getDescription()).isEqualTo(DEFAULT_DESCRIPTION);
+        assertThat(testEvent.getRemarks()).isEqualTo(DEFAULT_REMARKS);
+        assertThat(testEvent.getVenue()).isEqualTo(DEFAULT_VENUE);
+        assertThat(testEvent.getStartDate()).isEqualTo(DEFAULT_START_DATE);
+        assertThat(testEvent.getEndDate()).isEqualTo(DEFAULT_END_DATE);
+        assertThat(testEvent.getFee()).isEqualTo(DEFAULT_FEE);
+        assertThat(testEvent.isRequiredTransport()).isEqualTo(DEFAULT_REQUIRED_TRANSPORT);
+        assertThat(testEvent.getStatus()).isEqualTo(DEFAULT_STATUS);
+        assertThat(testEvent.getImageStorageId()).isEqualTo(DEFAULT_IMAGE_STORAGE_ID);
+    }
+
+
+    @Test
+    @Transactional
+    public void createEventWithUserRole_ShouldReturn403() throws Exception {
+
+        restEventMockMvc.perform(post("/api/events")
+            .param("name", DEFAULT_NAME)
+            .param("description", DEFAULT_DESCRIPTION)
+            .param("remarks", DEFAULT_REMARKS)
+            .param("venue", DEFAULT_VENUE)
+            .param("startDate", DEFAULT_START_DATE.toString())
+            .param("endDate", DEFAULT_END_DATE.toString())
+            .param("fee", DEFAULT_FEE.toString())
+            .param("requiredTransport", DEFAULT_REQUIRED_TRANSPORT.toString())
+            .param("status", DEFAULT_STATUS.toString())
+        ).andExpect(status().isForbidden());
+    }
+
+
+    @Test
+    @Transactional
+    @WithCurrentCCAdministrator
+    public void createEventWithExistingId_ShouldReturn400() throws Exception {
+        int databaseSizeBeforeCreate = eventRepository.findAll().size();
 
         // An entity with an existing ID cannot be created, so this API call must fail
         restEventMockMvc.perform(post("/api/events")
-            .contentType(TestUtil.APPLICATION_JSON_UTF8)
-            .content(TestUtil.convertObjectToJsonBytes(eventDTO)))
-            .andExpect(status().isBadRequest());
+            .param("id", "1")
+            .param("name", DEFAULT_NAME)
+            .param("description", DEFAULT_DESCRIPTION)
+            .param("remarks", DEFAULT_REMARKS)
+            .param("venue", DEFAULT_VENUE)
+            .param("startDate", DEFAULT_START_DATE.toString())
+            .param("endDate", DEFAULT_END_DATE.toString())
+            .param("fee", DEFAULT_FEE.toString())
+            .param("requiredTransport", DEFAULT_REQUIRED_TRANSPORT.toString())
+            .param("status", DEFAULT_STATUS.toString())
+        ).andExpect(status().isBadRequest());
 
         // Validate the Event in the database
         List<Event> eventList = eventRepository.findAll();
         assertThat(eventList).hasSize(databaseSizeBeforeCreate);
     }
 
+    @Test
+    @Transactional
+    @WithCurrentCCAdministrator
+    public void updateEvent() throws Exception {
+        // Initialize the database
+        eventRepository.saveAndFlush(event);
+
+        int databaseSizeBeforeUpdate = eventRepository.findAll().size();
+
+        // Update the event
+        Event updatedEvent = eventRepository.findById(event.getId()).get();
+
+        restEventMockMvc.perform(put("/api/events")
+            .param("id", updatedEvent.getId().toString())
+            .param("name", UPDATED_NAME)
+            .param("description", UPDATED_DESCRIPTION)
+            .param("remarks", UPDATED_REMARKS)
+            .param("venue", UPDATED_VENUE)
+            .param("startDate", UPDATED_START_DATE.toString())
+            .param("endDate", UPDATED_END_DATE.toString())
+            .param("fee", UPDATED_FEE.toString())
+            .param("requiredTransport", UPDATED_REQUIRED_TRANSPORT.toString())
+            .param("status", UPDATED_STATUS.toString())
+        ).andExpect(status().isOk());
+
+        // Validate the Event in the database
+        List<Event> eventList = eventRepository.findAll();
+        assertThat(eventList).hasSize(databaseSizeBeforeUpdate);
+        Event testEvent = eventList.get(eventList.size() - 1);
+        assertThat(testEvent.getName()).isEqualTo(UPDATED_NAME);
+        assertThat(testEvent.getDescription()).isEqualTo(UPDATED_DESCRIPTION);
+        assertThat(testEvent.getRemarks()).isEqualTo(UPDATED_REMARKS);
+        assertThat(testEvent.getVenue()).isEqualTo(UPDATED_VENUE);
+        assertThat(testEvent.getStartDate()).isEqualTo(UPDATED_START_DATE);
+        assertThat(testEvent.getEndDate()).isEqualTo(UPDATED_END_DATE);
+        assertThat(testEvent.getFee()).isEqualTo(UPDATED_FEE);
+        assertThat(testEvent.isRequiredTransport()).isEqualTo(UPDATED_REQUIRED_TRANSPORT);
+        assertThat(testEvent.getStatus()).isEqualTo(UPDATED_STATUS);
+    }
+
+    @Test
+    @Transactional
+    @WithCurrentCCAdministrator
+    public void updateEventWithEventImage_ShouldSuccess() throws Exception {
+        // Initialize the database
+        eventRepository.saveAndFlush(event);
+
+        int databaseSizeBeforeUpdate = eventRepository.findAll().size();
+
+        // Update the event
+        Event updatedEvent = eventRepository.findById(event.getId()).get();
+        Event testUpdateEvent = createUpdatedEntity();
+        testUpdateEvent.setId(updatedEvent.getId());
+        EventDTO eventDTO = eventMapper.toDto(testUpdateEvent);
+        eventDTO.setMultipartFile(MOCK_MULTIPART_FILE);
+
+        restEventMockMvc.perform(multipart("/api/events")
+            .file(MOCK_MULTIPART_FILE)
+            .param("id", updatedEvent.getId().toString())
+            .param("name", UPDATED_NAME)
+            .param("description", UPDATED_DESCRIPTION)
+            .param("remarks", UPDATED_REMARKS)
+            .param("venue", UPDATED_VENUE)
+            .param("startDate", UPDATED_START_DATE.toString())
+            .param("endDate", UPDATED_END_DATE.toString())
+            .param("fee", UPDATED_FEE.toString())
+            .param("requiredTransport", UPDATED_REQUIRED_TRANSPORT.toString())
+            .param("status", UPDATED_STATUS.toString())
+            .with(request -> {
+                request.setMethod("PUT");
+                    return request;
+            })
+        ).andExpect(status().isOk());
+
+        // Validate the Event in the database
+        List<Event> eventList = eventRepository.findAll();
+        assertThat(eventList).hasSize(databaseSizeBeforeUpdate);
+        Event testEvent = eventList.get(eventList.size() - 1);
+        assertThat(testEvent.getName()).isEqualTo(UPDATED_NAME);
+        assertThat(testEvent.getDescription()).isEqualTo(UPDATED_DESCRIPTION);
+        assertThat(testEvent.getRemarks()).isEqualTo(UPDATED_REMARKS);
+        assertThat(testEvent.getVenue()).isEqualTo(UPDATED_VENUE);
+        assertThat(testEvent.getStartDate()).isEqualTo(UPDATED_START_DATE);
+        assertThat(testEvent.getEndDate()).isEqualTo(UPDATED_END_DATE);
+        assertThat(testEvent.getFee()).isEqualTo(UPDATED_FEE);
+        assertThat(testEvent.isRequiredTransport()).isEqualTo(UPDATED_REQUIRED_TRANSPORT);
+        assertThat(testEvent.getStatus()).isEqualTo(UPDATED_STATUS);
+        assertThat(testEvent.getImageStorageId()).isEqualTo(DEFAULT_IMAGE_STORAGE_ID);
+    }
+
+    @Test
+    @Transactional
+    @WithEventHead
+    public void updateEventWithEventHead_ShouldSuccess() throws Exception {
+        // Initialize the database
+        EventCrew currentEventHead = getEventCrewByCurrentLoginUser();
+
+        int databaseSizeBeforeUpdate = eventRepository.findAll().size();
+
+        // Update the event
+        Event updatedEvent = eventRepository.findById(currentEventHead.getEventId()).get();
+        // Disconnect from session so that the updates on updatedEvent are not directly saved in db
+
+        restEventMockMvc.perform(put("/api/events")
+            .param("id", updatedEvent.getId().toString())
+            .param("name", UPDATED_NAME)
+            .param("description", UPDATED_DESCRIPTION)
+            .param("remarks", UPDATED_REMARKS)
+            .param("venue", UPDATED_VENUE)
+            .param("startDate", UPDATED_START_DATE.toString())
+            .param("endDate", UPDATED_END_DATE.toString())
+            .param("fee", UPDATED_FEE.toString())
+            .param("requiredTransport", UPDATED_REQUIRED_TRANSPORT.toString())
+            .param("status", UPDATED_STATUS.toString())
+        ).andExpect(status().isOk());
+
+        // Validate the Event in the database
+        List<Event> eventList = eventRepository.findAll();
+        assertThat(eventList).hasSize(databaseSizeBeforeUpdate);
+        Event testEvent = eventList.get(eventList.size() - 1);
+        assertThat(testEvent.getName()).isEqualTo(UPDATED_NAME);
+        assertThat(testEvent.getDescription()).isEqualTo(UPDATED_DESCRIPTION);
+        assertThat(testEvent.getRemarks()).isEqualTo(UPDATED_REMARKS);
+        assertThat(testEvent.getVenue()).isEqualTo(UPDATED_VENUE);
+        assertThat(testEvent.getStartDate()).isEqualTo(UPDATED_START_DATE);
+        assertThat(testEvent.getEndDate()).isEqualTo(UPDATED_END_DATE);
+        assertThat(testEvent.getFee()).isEqualTo(UPDATED_FEE);
+        assertThat(testEvent.isRequiredTransport()).isEqualTo(UPDATED_REQUIRED_TRANSPORT);
+        assertThat(testEvent.getStatus()).isEqualTo(UPDATED_STATUS);
+    }
+
+    // TODO: Update Event with New Event Image
+
+    @Test
+    @Transactional
+    @WithCurrentCCAdministrator
+    public void updateNonExistingEvent() throws Exception {
+        int databaseSizeBeforeUpdate = eventRepository.findAll().size();
+
+        // Create the Event
+        EventDTO eventDTO = eventMapper.toDto(event);
+
+        // Mock user for Authorization Checking
+        Optional<User> currentUser = userService.getUserWithAuthorities();
+        EventCrewDTO eventCrewDTO = new EventCrewDTO();
+        eventCrewDTO.setEventId(event.getId());
+        eventCrewDTO.setUserId(currentUser.get().getId());
+        eventCrewService.save(eventCrewDTO);
+
+        // If the entity doesn't have an ID, it will throw BadRequestAlertException
+        restEventMockMvc.perform(put("/api/events")
+            .param("id", "1")
+            .param("name", UPDATED_NAME)
+            .param("description", UPDATED_DESCRIPTION)
+            .param("remarks", UPDATED_REMARKS)
+            .param("venue", UPDATED_VENUE)
+            .param("startDate", UPDATED_START_DATE.toString())
+            .param("endDate", UPDATED_END_DATE.toString())
+            .param("fee", UPDATED_FEE.toString())
+            .param("requiredTransport", UPDATED_REQUIRED_TRANSPORT.toString())
+            .param("status", UPDATED_STATUS.toString())
+        ).andExpect(status().isBadRequest());
+
+        // Validate the Event in the database
+        List<Event> eventList = eventRepository.findAll();
+        assertThat(eventList).hasSize(databaseSizeBeforeUpdate);
+    }
 
     @Test
     @Transactional
@@ -1004,59 +1269,7 @@ public class EventResourceIT {
 
     @Test
     @Transactional
-    @WithMockUser(username = "user", password = "user", roles = "ADMIN")
-    public void updateEvent() throws Exception {
-        // Initialize the database
-        YearSession savedYearSession = initYearSessionDB();
-        eventRepository.saveAndFlush(event);
-
-        int databaseSizeBeforeUpdate = eventRepository.findAll().size();
-
-        // Mock user for Authorization Checking
-        Optional<User> currentUser = userService.getUserWithAuthorities();
-        EventCrewDTO eventCrewDTO = new EventCrewDTO();
-        eventCrewDTO.setEventId(event.getId());
-        eventCrewDTO.setUserId(currentUser.get().getId());
-        eventCrewService.save(eventCrewDTO);
-
-        // Update the event
-        Event updatedEvent = eventRepository.findById(event.getId()).get();
-        // Disconnect from session so that the updates on updatedEvent are not directly saved in db
-        updatedEvent
-            .name(UPDATED_NAME)
-            .description(UPDATED_DESCRIPTION)
-            .remarks(UPDATED_REMARKS)
-            .venue(UPDATED_VENUE)
-            .startDate(UPDATED_START_DATE)
-            .endDate(UPDATED_END_DATE)
-            .fee(UPDATED_FEE)
-            .requiredTransport(UPDATED_REQUIRED_TRANSPORT)
-            .status(UPDATED_STATUS);
-        EventDTO eventDTO = eventMapper.toDto(updatedEvent);
-
-        restEventMockMvc.perform(put("/api/events")
-            .contentType(TestUtil.APPLICATION_JSON_UTF8)
-            .content(TestUtil.convertObjectToJsonBytes(eventDTO)))
-            .andExpect(status().isOk());
-
-        // Validate the Event in the database
-        List<Event> eventList = eventRepository.findAll();
-        assertThat(eventList).hasSize(databaseSizeBeforeUpdate);
-        Event testEvent = eventList.get(eventList.size() - 1);
-        assertThat(testEvent.getName()).isEqualTo(UPDATED_NAME);
-        assertThat(testEvent.getDescription()).isEqualTo(UPDATED_DESCRIPTION);
-        assertThat(testEvent.getRemarks()).isEqualTo(UPDATED_REMARKS);
-        assertThat(testEvent.getVenue()).isEqualTo(UPDATED_VENUE);
-        assertThat(testEvent.getStartDate()).isEqualTo(UPDATED_START_DATE);
-        assertThat(testEvent.getEndDate()).isEqualTo(UPDATED_END_DATE);
-        assertThat(testEvent.getFee()).isEqualTo(UPDATED_FEE);
-        assertThat(testEvent.isRequiredTransport()).isEqualTo(UPDATED_REQUIRED_TRANSPORT);
-        assertThat(testEvent.getStatus()).isEqualTo(UPDATED_STATUS);
-    }
-
-    @Test
-    @Transactional
-    @WithMockUser(username = "admin", password = "admin", roles = "ADMIN")
+    @WithCurrentCCAdministrator
     public void cancelEvent() throws Exception {
         // Initialize the database
         eventRepository.saveAndFlush(event);
@@ -1079,7 +1292,6 @@ public class EventResourceIT {
 
     @Test
     @Transactional
-    @WithMockUser(username="user", roles="USER")
     public void cancelEvent_AsNonAdminUser_ShouldReturn403() throws Exception {
         // Initialize the database
         eventRepository.saveAndFlush(event);
@@ -1092,7 +1304,7 @@ public class EventResourceIT {
 
     @Test
     @Transactional
-    @WithMockUser(username = "admin", password = "admin", roles = "ADMIN")
+    @WithCurrentCCAdministrator
     public void cancelEvent_WithNonExistingEventId_ShouldReturn400() throws Exception {
 
         restEventMockMvc.perform(put("/api/event/{eventId}/deactivate", Long.MAX_VALUE))
@@ -1101,34 +1313,7 @@ public class EventResourceIT {
 
     @Test
     @Transactional
-    @WithMockUser(username = "admin", password = "admin", roles = "ADMIN")
-    public void updateNonExistingEvent() throws Exception {
-        int databaseSizeBeforeUpdate = eventRepository.findAll().size();
-
-        // Create the Event
-        EventDTO eventDTO = eventMapper.toDto(event);
-
-        // Mock user for Authorization Checking
-        Optional<User> currentUser = userService.getUserWithAuthorities();
-        EventCrewDTO eventCrewDTO = new EventCrewDTO();
-        eventCrewDTO.setEventId(event.getId());
-        eventCrewDTO.setUserId(currentUser.get().getId());
-        eventCrewService.save(eventCrewDTO);
-
-        // If the entity doesn't have an ID, it will throw BadRequestAlertException
-        restEventMockMvc.perform(put("/api/events")
-            .contentType(TestUtil.APPLICATION_JSON_UTF8)
-            .content(TestUtil.convertObjectToJsonBytes(eventDTO)))
-            .andExpect(status().isBadRequest());
-
-        // Validate the Event in the database
-        List<Event> eventList = eventRepository.findAll();
-        assertThat(eventList).hasSize(databaseSizeBeforeUpdate);
-    }
-
-    @Test
-    @Transactional
-    @WithMockUser(username = "user", password = "user", roles = "ADMIN")
+    @WithCurrentCCAdministrator
     public void deleteEvent() throws Exception {
         // Initialize the database
         YearSession savedYearSession = initYearSessionDB();
@@ -1182,5 +1367,16 @@ public class EventResourceIT {
     public void testEntityFromId() {
         assertThat(eventMapper.fromId(42L).getId()).isEqualTo(42);
         assertThat(eventMapper.fromId(null)).isNull();
+    }
+
+    private EventCrew getEventCrewByCurrentLoginUser() {
+        User currentUser = SecurityUtils
+            .getCurrentUserLogin()
+            .flatMap(userRepository::findOneWithAuthoritiesByLogin)
+            .orElseThrow(() -> new BadRequestException("Cannot find user"));
+        List<EventCrew> eventCrewList = eventCrewRepository
+            .findAllByUserId(currentUser.getId());
+        assertThat(eventCrewList).hasSize(1);
+        return eventCrewList.get(0);
     }
 }
