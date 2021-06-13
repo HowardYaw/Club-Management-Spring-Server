@@ -207,8 +207,10 @@ public class EventServiceImpl implements EventService {
     }
 
     private EventDTO mapEventImageStorage(EventDTO eventDTO) {
-        imageStorageService.findOne(eventDTO.getImageStorageId())
-            .ifPresent(eventDTO::setImageStorageDTO);
+        if (eventDTO.getImageStorageId() != null) {
+            imageStorageService.findOne(eventDTO.getImageStorageId())
+                .ifPresent(eventDTO::setImageStorageDTO);
+        }
         return eventDTO;
     }
 
