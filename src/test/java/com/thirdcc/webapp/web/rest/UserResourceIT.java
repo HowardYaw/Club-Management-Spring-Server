@@ -19,6 +19,7 @@ import com.thirdcc.webapp.web.rest.vm.ManagedUserVM;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -138,6 +139,7 @@ public class UserResourceIT {
 
     @BeforeEach
     public void setup() {
+        MockitoAnnotations.initMocks(this);
     }
 
     /**
@@ -672,7 +674,7 @@ public class UserResourceIT {
         userRepository.saveAndFlush(user);
 
         // Get all the users
-        restUserMockMvc.perform(get("/api/users/event-crews/{eventId}?size={size}", Long.MAX_VALUE, 100)
+        restUserMockMvc.perform(get("/api/users/event-crews/{eventId}?size={size}", Long.MAX_VALUE, 300)
             .accept(MediaType.APPLICATION_JSON))
             .andExpect(status().isOk())
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
