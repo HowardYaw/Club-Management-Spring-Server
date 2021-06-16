@@ -1,6 +1,8 @@
 package com.thirdcc.webapp.web.rest;
 
 import com.thirdcc.webapp.ClubmanagementApp;
+import com.thirdcc.webapp.annotations.authorization.WithCurrentCCAdministrator;
+import com.thirdcc.webapp.annotations.init.InitYearSession;
 import com.thirdcc.webapp.domain.Administrator;
 import com.thirdcc.webapp.repository.AdministratorRepository;
 import com.thirdcc.webapp.service.AdministratorQueryService;
@@ -36,7 +38,8 @@ import com.thirdcc.webapp.domain.enumeration.AdministratorStatus;
  */
 @SpringBootTest(classes = ClubmanagementApp.class)
 @AutoConfigureMockMvc
-@WithMockUser(value = "user")
+@WithMockUser
+@InitYearSession
 public class AdministratorResourceIT {
 
     private static final String ENTITY_API_URL = "/api/administrators";
@@ -45,8 +48,8 @@ public class AdministratorResourceIT {
     private static final Long SMALLER_USER_ID = DEFAULT_USER_ID - 1L;
     private static final Long UPDATED_USER_ID = 2L;
 
-    private static final String DEFAULT_YEAR_SESSION = "AAAAAAAAAA";
-    private static final String UPDATED_YEAR_SESSION = "BBBBBBBBBB";
+    private static final String DEFAULT_YEAR_SESSION = "2020/2021";
+    private static final String UPDATED_YEAR_SESSION = "2021/2022";
 
     private static final AdministratorRole DEFAULT_ROLE = AdministratorRole.CC_HEAD;
     private static final AdministratorRole UPDATED_ROLE = AdministratorRole.VICE_CC_HEAD;
@@ -121,6 +124,7 @@ public class AdministratorResourceIT {
     }
 
     @Test
+    @WithCurrentCCAdministrator
     public void createAdministrator() throws Exception {
         int databaseSizeBeforeCreate = administratorRepository.findAll().size();
 
@@ -142,6 +146,7 @@ public class AdministratorResourceIT {
     }
 
     @Test
+    @WithCurrentCCAdministrator
     public void createAdministratorWithExistingId() throws Exception {
         int databaseSizeBeforeCreate = administratorRepository.findAll().size();
 
@@ -505,6 +510,7 @@ public class AdministratorResourceIT {
     }
 
     @Test
+    @WithCurrentCCAdministrator
     public void updateAdministrator() throws Exception {
         // Initialize the database
         administratorRepository.saveAndFlush(administrator);
@@ -538,6 +544,7 @@ public class AdministratorResourceIT {
     }
 
     @Test
+    @WithCurrentCCAdministrator
     public void updateNonExistingAdministrator() throws Exception {
         int databaseSizeBeforeUpdate = administratorRepository.findAll().size();
 
@@ -556,6 +563,7 @@ public class AdministratorResourceIT {
     }
 
     @Test
+    @WithCurrentCCAdministrator
     public void deleteAdministrator() throws Exception {
         // Initialize the database
         administratorRepository.saveAndFlush(administrator);
