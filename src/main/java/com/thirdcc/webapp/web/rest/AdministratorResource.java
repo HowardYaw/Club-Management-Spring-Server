@@ -1,5 +1,6 @@
 package com.thirdcc.webapp.web.rest;
 
+import com.thirdcc.webapp.domain.enumeration.AdministratorStatus;
 import com.thirdcc.webapp.service.AdministratorQueryService;
 import com.thirdcc.webapp.service.AdministratorService;
 import com.thirdcc.webapp.service.criteria.AdministratorCriteria;
@@ -12,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
@@ -19,6 +21,8 @@ import java.net.URISyntaxException;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * REST controller for managing {@link com.thirdcc.webapp.domain.Administrator}.
@@ -50,11 +54,13 @@ public class AdministratorResource {
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
     @PostMapping("/administrators")
+    @PreAuthorize("@managementTeamSecurityExpression.isCurrentAdministrator()")
     public ResponseEntity<AdministratorDTO> createAdministrator(@RequestBody AdministratorDTO administratorDTO) throws URISyntaxException {
         log.debug("REST request to save Administrator : {}", administratorDTO);
         if (administratorDTO.getId() != null) {
             throw new BadRequestAlertException("A new administrator cannot already have an ID", ENTITY_NAME, "idexists");
         }
+        administratorDTO.setStatus(AdministratorStatus.ACTIVE);
         AdministratorDTO result = administratorService.save(administratorDTO);
         return ResponseEntity.created(new URI("/api/administrators/" + result.getId()))
             .headers(HeaderUtil.createEntityCreationAlert(applicationName, true, ENTITY_NAME, result.getId().toString()))
@@ -71,6 +77,7 @@ public class AdministratorResource {
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
     @PutMapping("/administrators")
+    @PreAuthorize("@managementTeamSecurityExpression.isCurrentAdministrator()")
     public ResponseEntity<AdministratorDTO> updateAdministrator(@RequestBody AdministratorDTO administratorDTO) throws URISyntaxException {
         log.debug("REST request to update Administrator : {}", administratorDTO);
         if (administratorDTO.getId() == null) {
@@ -85,7 +92,10 @@ public class AdministratorResource {
     @GetMapping("/administrators")
     public ResponseEntity<List<AdministratorDTO>> getAllAdministrators(AdministratorCriteria criteria) {
         log.debug("REST request to get Administrators by criteria: {}", criteria);
-        List<AdministratorDTO> entityList = administratorQueryService.findByCriteria(criteria);
+        List<AdministratorDTO> entityList = administratorQueryService.findByCriteria(criteria)
+            .stream()
+            .map(administratorService::mapUserDetails)
+            .collect(Collectors.toList());
         return ResponseEntity.ok().body(entityList);
     }
 
@@ -101,6 +111,7 @@ public class AdministratorResource {
      * @param id the id of the administratorDTO to retrieve.
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the administratorDTO, or with status {@code 404 (Not Found)}.
      */
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/administrators/{id}")
     public ResponseEntity<AdministratorDTO> getAdministrator(@PathVariable Long id) {
         log.debug("REST request to get Administrator : {}", id);
@@ -115,6 +126,7 @@ public class AdministratorResource {
      * @return the {@link ResponseEntity} with status {@code 204 (NO_CONTENT)}.
      */
     @DeleteMapping("/administrators/{id}")
+    @PreAuthorize("@managementTeamSecurityExpression.isCurrentAdministrator()")
     public ResponseEntity<Void> deleteAdministrator(@PathVariable Long id) {
         log.debug("REST request to delete Administrator : {}", id);
         administratorService.delete(id);
