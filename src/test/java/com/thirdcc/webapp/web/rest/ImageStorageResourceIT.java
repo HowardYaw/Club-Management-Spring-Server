@@ -451,7 +451,7 @@ public class ImageStorageResourceIT {
     @Test
     @Transactional
     public void dtoEqualsVerifier() throws Exception {
-        TestUtil.equalsVerifier(ImageStorageDTO.class);
+//        TestUtil.equalsVerifier(ImageStorageDTO.class); ImageStorageDTO equalsVerifier is not valid anymore, please look at the override of equals in ImageStorageDTO
         ImageStorageDTO imageStorageDTO1 = new ImageStorageDTO();
         imageStorageDTO1.setId(1L);
         ImageStorageDTO imageStorageDTO2 = new ImageStorageDTO();

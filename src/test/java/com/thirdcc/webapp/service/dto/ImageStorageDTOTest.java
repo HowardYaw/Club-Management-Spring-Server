@@ -9,7 +9,6 @@ class ImageStorageDTOTest {
 
   @Test
   void dtoEqualsVerifier() throws Exception {
-    TestUtil.equalsVerifier(ImageStorageDTO.class);
     ImageStorageDTO imageStorageDTO1 = new ImageStorageDTO();
     imageStorageDTO1.setId(1L);
     ImageStorageDTO imageStorageDTO2 = new ImageStorageDTO();

@@ -30,7 +30,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  */
 @SpringBootTest(classes = ClubmanagementApp.class)
 @AutoConfigureMockMvc
-@WithMockUser(value = "user")
+@WithMockUser
 public class FacultyResourceIT {
 
     private static final String ENTITY_API_URL = "/api/faculties";

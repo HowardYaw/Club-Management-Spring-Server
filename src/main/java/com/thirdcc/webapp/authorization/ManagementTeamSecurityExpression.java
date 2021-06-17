@@ -5,7 +5,6 @@ import com.thirdcc.webapp.domain.enumeration.AdministratorRole;
 import com.thirdcc.webapp.domain.enumeration.AdministratorStatus;
 import com.thirdcc.webapp.domain.enumeration.EventCrewRole;
 import com.thirdcc.webapp.exception.BadRequestException;
-import com.thirdcc.webapp.exception.InternalServerErrorException;
 import com.thirdcc.webapp.repository.AdministratorRepository;
 import com.thirdcc.webapp.repository.EventCrewRepository;
 import com.thirdcc.webapp.repository.UserRepository;
@@ -25,7 +24,6 @@ public class ManagementTeamSecurityExpression {
     private final EventCrewRepository eventCrewRepository;
     private final AdministratorRepository administratorRepository;
     private final YearSessionService yearSessionService;
-
 
     public ManagementTeamSecurityExpression(
         UserService userService,
@@ -65,10 +63,13 @@ public class ManagementTeamSecurityExpression {
 
     /**
      * Check if User is Event Crew
-     * @param eventId
+     * @param eventId eventId
      */
     public boolean isEventCrew(Long eventId) {
         User currentUser = getCurrentUserWithLogin();
+
+        if (eventId == null) return false;
+
         return eventCrewRepository
             .findByUserIdAndAndEventId(currentUser.getId(), eventId)
             .isPresent();
@@ -76,7 +77,7 @@ public class ManagementTeamSecurityExpression {
 
     /**
      * Check if User is Event Head only
-     * @param eventId
+     * @param eventId eventId
      */
     public boolean isEventHead(Long eventId) {
         User currentUser = getCurrentUserWithLogin();
