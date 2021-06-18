@@ -23,6 +23,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 
@@ -59,13 +60,14 @@ public class TransactionResource {
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
     @PostMapping("/transactions")
-    @PreAuthorize("hasRole(\"" + AuthoritiesConstants.ADMIN + "\") || @managementTeamSecurityExpression.isEventCrew(#transactionDTO.getEventId()) || @managementTeamSecurityExpression.isCurrentAdministrator()")
-    public ResponseEntity<TransactionDTO> createTransaction(@RequestBody TransactionDTO transactionDTO) throws URISyntaxException {
+    @PreAuthorize("hasRole(\"" + AuthoritiesConstants.ADMIN + "\") || @transactionSecurityExpression.transactionAccess(#transactionDTO.getEventId())")
+    public ResponseEntity<TransactionDTO> createTransaction(@ModelAttribute TransactionDTO transactionDTO) throws URISyntaxException, IOException {
+
         log.debug("REST request to save Transaction : {}", transactionDTO);
         if (transactionDTO.getId() != null) {
             throw new BadRequestAlertException("A new transaction cannot already have an ID", ENTITY_NAME, "idexists");
         }
-        TransactionDTO result = transactionService.save(transactionDTO);
+        TransactionDTO result = transactionService.save(transactionDTO.getMultipartFile(), transactionDTO);
         return ResponseEntity.created(new URI("/api/transactions/" + result.getId()))
             .headers(HeaderUtil.createEntityCreationAlert(applicationName, true, ENTITY_NAME, result.getId().toString()))
             .body(result);
@@ -78,16 +80,17 @@ public class TransactionResource {
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the updated transactionDTO,
      * or with status {@code 400 (Bad Request)} if the transactionDTO is not valid,
      * or with status {@code 500 (Internal Server Error)} if the transactionDTO couldn't be updated.
-     * @throws URISyntaxException if the Location URI syntax is incorrect.
+     * @throws IOException if IO error occurs is incorrect.
      */
     @PutMapping("/transactions")
-    @PreAuthorize("hasRole(\"" + AuthoritiesConstants.ADMIN + "\") || @managementTeamSecurityExpression.isEventHead(#transactionDTO.getEventId()) || @managementTeamSecurityExpression.isCurrentAdministrator()")
-    public ResponseEntity<TransactionDTO> updateTransaction(@RequestBody TransactionDTO transactionDTO) throws URISyntaxException {
+    @PreAuthorize("hasRole(\"" + AuthoritiesConstants.ADMIN + "\") || @transactionSecurityExpression.transactionAccess(#transactionDTO.getEventId())")
+    public ResponseEntity<TransactionDTO> updateTransaction(@ModelAttribute TransactionDTO transactionDTO) throws IOException {
+
         log.debug("REST request to update Transaction: {}", transactionDTO);
         if (transactionDTO.getId() == null) {
             throw new BadRequestAlertException("Invalid id", ENTITY_NAME, "idnull");
         }
-        TransactionDTO result = transactionService.update(transactionDTO);
+        TransactionDTO result = transactionService.save(transactionDTO.getMultipartFile(), transactionDTO);
         return ResponseEntity.ok()
             .headers(HeaderUtil.createEntityUpdateAlert(applicationName, true, ENTITY_NAME, transactionDTO.getId().toString()))
             .body(result);

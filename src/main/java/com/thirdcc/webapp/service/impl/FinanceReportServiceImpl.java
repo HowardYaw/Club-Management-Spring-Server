@@ -142,21 +142,21 @@ public class FinanceReportServiceImpl implements FinanceReportService {
             switch(transactionType){
                 case INCOME:
                     switch(transactionStatus){
-                        case SUCCESS: reliasedIncome = reliasedIncome.add(transactionAmount);
+                        case COMPLETED: reliasedIncome = reliasedIncome.add(transactionAmount);
                         break;
                         case PENDING: pendingIncome = pendingIncome.add(transactionAmount);
                         break;
-                        case CANCELLED: badDebt = badDebt.add(transactionAmount);
+                        case INVALID: badDebt = badDebt.add(transactionAmount);
                         break;
                     }
                     break;
                 case EXPENSE:
                     switch(transactionStatus){
-                        case SUCCESS: reliasedExpense = reliasedExpense.add(transactionAmount);
+                        case COMPLETED: reliasedExpense = reliasedExpense.add(transactionAmount);
                         break;
                         case PENDING: pendingExpense = pendingExpense.add(transactionAmount);
                         break;
-                        case CANCELLED: invalidExpense = invalidExpense.add(transactionAmount);
+                        case INVALID: invalidExpense = invalidExpense.add(transactionAmount);
                         break;
                     }
                     break;

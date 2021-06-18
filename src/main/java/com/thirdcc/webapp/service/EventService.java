@@ -5,6 +5,7 @@ import com.thirdcc.webapp.service.dto.EventDTO;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Optional;
 
@@ -17,9 +18,19 @@ public interface EventService {
      * Save a event.
      *
      * @param eventDTO the entity to save.
+     * @param multipartFile Event Image File
      * @return the persisted entity.
      */
-    EventDTO save(EventDTO eventDTO);
+    EventDTO save(EventDTO eventDTO, MultipartFile multipartFile);
+
+    /**
+     * Update a event.
+     *
+     * @param eventDTO the entity to update.
+     * @param multipartFile
+     * @return the persisted entity.
+     */
+    EventDTO update(EventDTO eventDTO, MultipartFile multipartFile);
 
     /**
      * Get all the events.

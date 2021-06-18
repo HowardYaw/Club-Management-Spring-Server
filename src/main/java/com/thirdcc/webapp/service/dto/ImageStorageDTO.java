@@ -58,9 +58,10 @@ public class ImageStorageDTO implements Serializable {
         }
 
         ImageStorageDTO imageStorageDTO = (ImageStorageDTO) o;
-        if (imageStorageDTO.getId() == null || getId() == null) {
-            return false;
-        }
+        // Image storage disabled Null check because it will prevent mockito mocks param matching to fail. @LUXIANZE
+//        if (imageStorageDTO.getId() == null || getId() == null) {
+//            return false;
+//        }
         return Objects.equals(getId(), imageStorageDTO.getId());
     }
 

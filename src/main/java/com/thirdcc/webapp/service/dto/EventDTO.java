@@ -5,6 +5,7 @@ import java.math.BigDecimal;
 import java.util.Objects;
 import javax.persistence.Lob;
 import com.thirdcc.webapp.domain.enumeration.EventStatus;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  * A DTO for the {@link com.thirdcc.webapp.domain.Event} entity.
@@ -31,6 +32,12 @@ public class EventDTO implements Serializable {
     private Boolean requiredTransport;
 
     private EventStatus status;
+
+    private Long imageStorageId;
+
+    private MultipartFile multipartFile;
+
+    private ImageStorageDTO imageStorageDTO;
 
 
     public Long getId() {
@@ -147,6 +154,31 @@ public class EventDTO implements Serializable {
             ", fee=" + getFee() +
             ", requiredTransport='" + isRequiredTransport() + "'" +
             ", status='" + getStatus() + "'" +
+            ", imageStorageId='" + getImageStorageId() + "'" +
             "}";
+    }
+
+    public ImageStorageDTO getImageStorageDTO() {
+        return imageStorageDTO;
+    }
+
+    public void setImageStorageDTO(ImageStorageDTO imageStorageDTO) {
+        this.imageStorageDTO = imageStorageDTO;
+    }
+
+    public Long getImageStorageId() {
+        return imageStorageId;
+    }
+
+    public void setImageStorageId(Long imageStorageId) {
+        this.imageStorageId = imageStorageId;
+    }
+
+    public MultipartFile getMultipartFile() {
+        return multipartFile;
+    }
+
+    public void setMultipartFile(MultipartFile multipartFile) {
+        this.multipartFile = multipartFile;
     }
 }

@@ -3,14 +3,17 @@ package com.thirdcc.webapp.web.rest;
 import com.thirdcc.webapp.ClubmanagementApp;
 import com.thirdcc.webapp.annotations.authorization.WithCurrentCCAdministrator;
 import com.thirdcc.webapp.annotations.authorization.WithEventCrew;
+import com.thirdcc.webapp.annotations.authorization.WithNormalUser;
 import com.thirdcc.webapp.annotations.init.InitYearSession;
 import com.thirdcc.webapp.domain.*;
 import com.thirdcc.webapp.domain.enumeration.*;
 import com.thirdcc.webapp.exception.BadRequestException;
 import com.thirdcc.webapp.repository.*;
 import com.thirdcc.webapp.security.SecurityUtils;
+import com.thirdcc.webapp.service.ImageStorageService;
 import com.thirdcc.webapp.service.UserService;
 import com.thirdcc.webapp.service.dto.EventBudgetTotalDTO;
+import com.thirdcc.webapp.service.dto.ImageStorageDTO;
 import com.thirdcc.webapp.service.dto.ReceiptDTO;
 import com.thirdcc.webapp.service.dto.TransactionDTO;
 import com.thirdcc.webapp.service.mapper.TransactionMapper;
@@ -24,20 +27,24 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.MockMultipartHttpServletRequestBuilder;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.EntityManager;
+import java.io.IOException;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.Instant;
-import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 import static com.thirdcc.webapp.web.rest.TestUtil.sameNumber;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.hasItem;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -61,8 +68,8 @@ public class TransactionResourceIT {
     private static final Long SMALLER_RECEIPT_ID = DEFAULT_RECEIPT_ID - 1L;
     private static final Long UPDATED_RECEIPT_ID = 2L;
 
-    private static final TransactionType DEFAULT_TYPE = TransactionType.INCOME;
-    private static final TransactionType UPDATED_TYPE = TransactionType.EXPENSE;
+    private static final TransactionType DEFAULT_TRANSACTION_TYPE = TransactionType.INCOME;
+    private static final TransactionType UPDATED_TRANSACTION_TYPE = TransactionType.EXPENSE;
 
     private static final String DEFAULT_TITLE = "DEFAULT_TITLE";
     private static final String UPDATED_TITLE = "UPDATED_TITLE";
@@ -74,13 +81,14 @@ public class TransactionResourceIT {
     private static final BigDecimal SMALLER_AMOUNT = DEFAULT_AMOUNT.subtract(BigDecimal.ONE);
     private static final BigDecimal UPDATED_AMOUNT = new BigDecimal(2);
 
-    private static final String DEFAULT_DETAILS = "TRANSACTION_DETAILS";
+    private static final String DEFAULT_DESCRIPTION = "TRANSACTION_DETAILS";
     private static final String UPDATED_DETAILS = "TRANSACTION_UPDATED_DETAILS";
 
     private static final String DEFAULT_IMAGE_LINK = "DEFAULT_IMAGE_LINK";
     private static final String UPDATED_IMAGE_LINK = "UPDATED_IMAGE_LINK";
 
-    private static final TransactionStatus DEFAULT_TRANSACTION_STATUS = TransactionStatus.SUCCESS;
+    private static final TransactionStatus DEFAULT_TRANSACTION_STATUS = TransactionStatus.COMPLETED;
+    private static final TransactionStatus UPDATED_TRANSACTION_STATUS = TransactionStatus.COMPLETED;
 
     private static final String DEFAULT_CLOSED_BY = USERNAME;
     private static final String UPDATED_CLOSED_BY = "UPDATED_CLOSED_BY";
@@ -113,6 +121,9 @@ public class TransactionResourceIT {
     // Event Crew Default data
     private static final Long DEFAULT_USER_ID = 1L;
     private static final EventCrewRole EVENT_CREW_ROLE_HEAD = EventCrewRole.HEAD;
+
+    // Image File
+    private static final MockMultipartFile MOCK_MULTIPART_FILE =  new MockMultipartFile("multipartFile", "Mocked Content".getBytes());
 
 
     @Autowired
@@ -147,9 +158,17 @@ public class TransactionResourceIT {
     private ReceiptDTO receiptDTO;
 
     @Autowired
+    private ImageStorageService imageStorageService;
+
+    @Autowired
     private EventCrewRepository eventCrewRepository;
 
     private EventCrew eventCrew;
+
+    private final MockMultipartHttpServletRequestBuilder putMultipartRequestBuilder = (MockMultipartHttpServletRequestBuilder) multipart(ENTITY_API_URL).with(request -> {
+        request.setMethod("PUT");
+        return request;
+    });
 
     @BeforeEach
     public void setup() {
@@ -166,13 +185,13 @@ public class TransactionResourceIT {
         return new Transaction()
             .title(DEFAULT_TITLE)
             .transactionDate(DEFAULT_TRANSACTION_DATE)
-            .transactionType(DEFAULT_TYPE)
+            .transactionType(DEFAULT_TRANSACTION_TYPE)
             .transactionStatus(DEFAULT_TRANSACTION_STATUS)
             .eventId(DEFAULT_EVENT_ID)
             .transactionAmount(DEFAULT_AMOUNT)
             .imageLink(DEFAULT_IMAGE_LINK)
             .closedBy(DEFAULT_CLOSED_BY)
-            .description(DEFAULT_DETAILS);
+            .description(DEFAULT_DESCRIPTION);
     }
 
     public static Event createEventEntity() {
@@ -210,356 +229,23 @@ public class TransactionResourceIT {
         eventCrew = createEventCrew();
     }
 
+    @BeforeEach
+    public void initStub() throws IOException {
+        ImageStorageDTO mockImageSavingResult = new ImageStorageDTO();
+        mockImageSavingResult.setId(1L);
+        mockImageSavingResult.setImageUrl(DEFAULT_IMAGE_LINK);
+        mockImageSavingResult.setFileType("jpeg");
+        mockImageSavingResult.setFileName("Receipt Image");
+
+        when(imageStorageService.save(new ImageStorageDTO(), MOCK_MULTIPART_FILE)).thenReturn(mockImageSavingResult);
+    }
+
     @AfterEach
     public void cleanUp() {
         transactionRepository.deleteAll();
         eventRepository.deleteAll();
         receiptRepository.deleteAll();
         eventCrewRepository.deleteAll();
-    }
-
-//    @Test
-    public void createTransaction_UserWithRoleAdmin() throws Exception {
-        // Initialize the database
-        Event savedEvent = initEventDB();
-        transaction.setEventId(savedEvent.getId());
-        transaction.setTransactionType(TransactionType.INCOME);
-
-        int databaseSizeBeforeCreate = transactionRepository.findAll().size();
-        int receiptDatabaseSizeBeforeCreate = receiptRepository.findAll().size();
-
-        // Create the Transaction
-        TransactionDTO transactionDTO = transactionMapper.toDto(transaction);
-        restTransactionMockMvc.perform(post("/api/transactions")
-            .contentType(TestUtil.APPLICATION_JSON_UTF8)
-            .content(TestUtil.convertObjectToJsonBytes(transactionDTO)))
-            .andExpect(status().isCreated());
-
-        // Validate Receipt Table
-        List<Receipt> receiptList = receiptRepository.findAll();
-        assertThat(receiptList).hasSize(receiptDatabaseSizeBeforeCreate);
-
-        // Validate the Transaction in the database
-        List<Transaction> transactionList = transactionRepository.findAll();
-        assertThat(transactionList).hasSize(databaseSizeBeforeCreate + 1);
-        Transaction testTransaction = transactionList.get(transactionList.size() - 1);
-        assertThat(testTransaction.getEventId()).isEqualTo(savedEvent.getId());
-        assertThat(testTransaction.getTransactionType()).isEqualTo(TransactionType.INCOME);
-        assertThat(testTransaction.getTransactionAmount()).isEqualTo(DEFAULT_AMOUNT.setScale(2));
-        assertThat(testTransaction.getDescription()).isEqualTo(DEFAULT_DETAILS);
-        assertThat(testTransaction.getTransactionStatus()).isEqualTo(DEFAULT_TRANSACTION_STATUS);
-    }
-
-//    @Test
-    @WithMockUser
-    public void createTransaction_UserIsEventCrew() throws Exception {
-        currentUser = getLoggedInUser();
-        // Initialize the database
-        Event savedEvent = initEventDB();
-        eventCrew.setUserId(currentUser.getId());
-        eventCrew.setEventId(savedEvent.getId());
-        EventCrew savedEventCrew = initEventCrewDB();
-        transaction.setEventId(savedEvent.getId());
-        transaction.setTransactionType(TransactionType.INCOME);
-
-        int databaseSizeBeforeCreate = transactionRepository.findAll().size();
-        int receiptDatabaseSizeBeforeCreate = receiptRepository.findAll().size();
-
-        // Create the Transaction
-        TransactionDTO transactionDTO = transactionMapper.toDto(transaction);
-        restTransactionMockMvc.perform(post("/api/transactions")
-            .contentType(TestUtil.APPLICATION_JSON_UTF8)
-            .content(TestUtil.convertObjectToJsonBytes(transactionDTO)))
-            .andExpect(status().isCreated());
-
-        // Validate Receipt Table
-        List<Receipt> receiptList = receiptRepository.findAll();
-        assertThat(receiptList).hasSize(receiptDatabaseSizeBeforeCreate);
-
-        // Validate the Transaction in the database
-        List<Transaction> transactionList = transactionRepository.findAll();
-        assertThat(transactionList).hasSize(databaseSizeBeforeCreate + 1);
-        Transaction testTransaction = transactionList.get(transactionList.size() - 1);
-        assertThat(testTransaction.getEventId()).isEqualTo(savedEvent.getId());
-        assertThat(testTransaction.getTransactionType()).isEqualTo(TransactionType.INCOME);
-        assertThat(testTransaction.getTransactionAmount()).isEqualTo(DEFAULT_AMOUNT.setScale(2));
-        assertThat(testTransaction.getDescription()).isEqualTo(DEFAULT_DETAILS);
-        assertThat(testTransaction.getTransactionStatus()).isEqualTo(DEFAULT_TRANSACTION_STATUS);
-    }
-
-    @Test
-    @WithMockUser
-    public void createTransaction_UserNotEventCrewAndRoleUserOnly_ShouldThrow400() throws Exception {
-        currentUser = getLoggedInUser();
-        // Initialize the database
-        Event savedEvent = initEventDB();
-        transaction.setEventId(savedEvent.getId());
-        transaction.setTransactionType(TransactionType.INCOME);
-
-        int databaseSizeBeforeCreate = transactionRepository.findAll().size();
-        int receiptDatabaseSizeBeforeCreate = receiptRepository.findAll().size();
-
-        // Create the Transaction
-        TransactionDTO transactionDTO = transactionMapper.toDto(transaction);
-        restTransactionMockMvc.perform(post("/api/transactions")
-            .contentType(TestUtil.APPLICATION_JSON_UTF8)
-            .content(TestUtil.convertObjectToJsonBytes(transactionDTO)))
-            .andExpect(status().isForbidden());
-
-        // Validate Receipt Table
-        List<Receipt> receiptList = receiptRepository.findAll();
-        assertThat(receiptList).hasSize(receiptDatabaseSizeBeforeCreate);
-
-        // Validate the Transaction in the database
-        List<Transaction> transactionList = transactionRepository.findAll();
-        assertThat(transactionList).hasSize(databaseSizeBeforeCreate);
-    }
-
-//    @Test
-    public void createTransaction_TypeExpense() throws Exception {
-        // Initialize the database
-        Event savedEvent = initEventDB();
-        transaction.setEventId(savedEvent.getId());
-        transaction.setTransactionType(TransactionType.EXPENSE);
-
-        int databaseSizeBeforeCreate = transactionRepository.findAll().size();
-        int receiptDatabaseSizeBeforeCreate = receiptRepository.findAll().size();
-
-        // Create the Transaction
-        TransactionDTO transactionDTO = transactionMapper.toDto(transaction);
-        transactionDTO.setReceiptDTO(receiptDTO);
-        restTransactionMockMvc.perform(post("/api/transactions")
-            .contentType(TestUtil.APPLICATION_JSON_UTF8)
-            .content(TestUtil.convertObjectToJsonBytes(transactionDTO)))
-            .andExpect(status().isCreated());
-
-        // Validate Receipt Table
-        List<Receipt> receiptList = receiptRepository.findAll();
-        assertThat(receiptList).hasSize(receiptDatabaseSizeBeforeCreate + 1);
-        Receipt testReceipt = receiptList.get(receiptList.size() - 1);
-
-        // Validate the Transaction in the database
-        List<Transaction> transactionList = transactionRepository.findAll();
-        assertThat(transactionList).hasSize(databaseSizeBeforeCreate + 1);
-        Transaction testTransaction = transactionList.get(transactionList.size() - 1);
-        assertThat(testTransaction.getEventId()).isEqualTo(savedEvent.getId());
-        assertThat(testTransaction.getTransactionType()).isEqualTo(TransactionType.EXPENSE);
-        assertThat(testTransaction.getTransactionAmount()).isEqualTo(DEFAULT_AMOUNT.setScale(2));
-        assertThat(testTransaction.getDescription()).isEqualTo(DEFAULT_DETAILS);
-        assertThat(testTransaction.getTransactionStatus()).isEqualTo(DEFAULT_TRANSACTION_STATUS);
-    }
-
-    @Test
-    public void createTransaction_TypeExpense_WithCancelledEvent_ShouldThrow400() throws Exception {
-        // Initialize the database
-        event.setStatus(EventStatus.CANCELLED);
-        Event savedEvent = initEventDB();
-        transaction.setEventId(savedEvent.getId());
-        transaction.setTransactionType(TransactionType.EXPENSE);
-
-        int databaseSizeBeforeCreate = transactionRepository.findAll().size();
-        int receiptDatabaseSizeBeforeCreate = receiptRepository.findAll().size();
-
-        // Create the Transaction
-        TransactionDTO transactionDTO = transactionMapper.toDto(transaction);
-        transactionDTO.setReceiptDTO(receiptDTO);
-        restTransactionMockMvc.perform(post("/api/transactions")
-            .contentType(TestUtil.APPLICATION_JSON_UTF8)
-            .content(TestUtil.convertObjectToJsonBytes(transactionDTO)))
-            .andExpect(status().isBadRequest());
-
-        // Validate Receipt Table
-        List<Receipt> receiptList = receiptRepository.findAll();
-        assertThat(receiptList).hasSize(receiptDatabaseSizeBeforeCreate);
-
-        // Validate the Transaction in the database
-        List<Transaction> transactionList = transactionRepository.findAll();
-        assertThat(transactionList).hasSize(databaseSizeBeforeCreate);
-    }
-
-    @Test
-    public void createTransaction_TypeExpense_WithNullEventId_ShouldThrow400() throws Exception {
-        // Initialize the database
-        Event savedEvent = initEventDB();
-        transaction.setEventId(null);
-        transaction.setTransactionType(TransactionType.EXPENSE);
-
-        int databaseSizeBeforeCreate = transactionRepository.findAll().size();
-        int receiptDatabaseSizeBeforeCreate = receiptRepository.findAll().size();
-
-        // Create the Transaction
-        TransactionDTO transactionDTO = transactionMapper.toDto(transaction);
-        transactionDTO.setReceiptDTO(receiptDTO);
-        restTransactionMockMvc.perform(post("/api/transactions")
-            .contentType(TestUtil.APPLICATION_JSON_UTF8)
-            .content(TestUtil.convertObjectToJsonBytes(transactionDTO)))
-            .andExpect(status().isBadRequest());
-
-        // Validate Receipt Table
-        List<Receipt> receiptList = receiptRepository.findAll();
-        assertThat(receiptList).hasSize(receiptDatabaseSizeBeforeCreate);
-
-        // Validate the Transaction in the database
-        List<Transaction> transactionList = transactionRepository.findAll();
-        assertThat(transactionList).hasSize(databaseSizeBeforeCreate);
-    }
-
-//    @Test
-    public void createTransaction_TypeExpense_WithoutReceiptDTO_ShouldThrow400() throws Exception {
-        // Initialize the database
-        Event savedEvent = initEventDB();
-        transaction.setEventId(savedEvent.getId());
-        transaction.setTransactionType(TransactionType.EXPENSE);
-
-        int databaseSizeBeforeCreate = transactionRepository.findAll().size();
-        int receiptDatabaseSizeBeforeCreate = receiptRepository.findAll().size();
-
-        // Create the Transaction
-        TransactionDTO transactionDTO = transactionMapper.toDto(transaction);
-        restTransactionMockMvc.perform(post("/api/transactions")
-            .contentType(TestUtil.APPLICATION_JSON_UTF8)
-            .content(TestUtil.convertObjectToJsonBytes(transactionDTO)))
-            .andExpect(status().isBadRequest());
-
-        // Validate Receipt Table
-        List<Receipt> receiptList = receiptRepository.findAll();
-        assertThat(receiptList).hasSize(receiptDatabaseSizeBeforeCreate);
-
-        // Validate the Transaction in the database
-        List<Transaction> transactionList = transactionRepository.findAll();
-        assertThat(transactionList).hasSize(databaseSizeBeforeCreate);
-    }
-
-//    @Test
-    public void createTransaction_TypeIncome() throws Exception {
-        // Initialize the database
-        Event savedEvent = initEventDB();
-        transaction.setEventId(savedEvent.getId());
-        transaction.setTransactionType(TransactionType.INCOME);
-
-        int databaseSizeBeforeCreate = transactionRepository.findAll().size();
-        int receiptDatabaseSizeBeforeCreate = receiptRepository.findAll().size();
-
-        // Create the Transaction
-        TransactionDTO transactionDTO = transactionMapper.toDto(transaction);
-        restTransactionMockMvc.perform(post("/api/transactions")
-            .contentType(TestUtil.APPLICATION_JSON_UTF8)
-            .content(TestUtil.convertObjectToJsonBytes(transactionDTO)))
-            .andExpect(status().isCreated());
-
-        // Validate Receipt Table
-        List<Receipt> receiptList = receiptRepository.findAll();
-        assertThat(receiptList).hasSize(receiptDatabaseSizeBeforeCreate);
-
-        // Validate the Transaction in the database
-        List<Transaction> transactionList = transactionRepository.findAll();
-        assertThat(transactionList).hasSize(databaseSizeBeforeCreate + 1);
-        Transaction testTransaction = transactionList.get(transactionList.size() - 1);
-        assertThat(testTransaction.getEventId()).isEqualTo(savedEvent.getId());
-        assertThat(testTransaction.getTransactionType()).isEqualTo(TransactionType.INCOME);
-        assertThat(testTransaction.getTransactionAmount()).isEqualTo(DEFAULT_AMOUNT.setScale(2));
-        assertThat(testTransaction.getDescription()).isEqualTo(DEFAULT_DETAILS);
-        assertThat(testTransaction.getTransactionStatus()).isEqualTo(DEFAULT_TRANSACTION_STATUS);
-    }
-
-    @Test
-    public void createTransaction_TypeIncome_WithCancelledEvent_ShouldThrow400() throws Exception {
-        // Initialize the database
-        event.setStatus(EventStatus.CANCELLED);
-        Event savedEvent = initEventDB();
-        transaction.setEventId(savedEvent.getId());
-        transaction.setTransactionType(TransactionType.INCOME);
-
-        int databaseSizeBeforeCreate = transactionRepository.findAll().size();
-        int receiptDatabaseSizeBeforeCreate = receiptRepository.findAll().size();
-
-        // Create the Transaction
-        TransactionDTO transactionDTO = transactionMapper.toDto(transaction);
-        restTransactionMockMvc.perform(post("/api/transactions")
-            .contentType(TestUtil.APPLICATION_JSON_UTF8)
-            .content(TestUtil.convertObjectToJsonBytes(transactionDTO)))
-            .andExpect(status().isBadRequest());
-
-        // Validate Receipt Table
-        List<Receipt> receiptList = receiptRepository.findAll();
-        assertThat(receiptList).hasSize(receiptDatabaseSizeBeforeCreate);
-
-        // Validate the Transaction in the database
-        List<Transaction> transactionList = transactionRepository.findAll();
-        assertThat(transactionList).hasSize(databaseSizeBeforeCreate);
-    }
-
-//    @Test
-    public void createTransaction_WithExistingId_ShouldThrow400() throws Exception {
-        Event savedEvent = initEventDB();
-        transaction.setEventId(savedEvent.getId());
-        Transaction savedTransaction = transactionRepository.save(transaction);
-
-        int databaseSizeBeforeCreate = transactionRepository.findAll().size();
-
-        // Create the Transaction with an existing ID
-        transaction.setId(savedTransaction.getId());
-        TransactionDTO transactionDTO = transactionMapper.toDto(transaction);
-
-        // An entity with an existing ID cannot be created, so this API call must fail
-        restTransactionMockMvc.perform(post("/api/transactions")
-            .contentType(TestUtil.APPLICATION_JSON_UTF8)
-            .content(TestUtil.convertObjectToJsonBytes(transactionDTO)))
-            .andExpect(status().isBadRequest());
-
-        // Validate the Transaction in the database
-        List<Transaction> transactionList = transactionRepository.findAll();
-        assertThat(transactionList).hasSize(databaseSizeBeforeCreate);
-    }
-
-
-//    @Test
-    public void getAllTransactions() throws Exception {
-        // Initialize the database
-        Event savedEvent = initEventDB();
-        transaction.setEventId(savedEvent.getId());
-        Transaction savedTransaction = initTransactionDB();
-
-        // Get all the transactionList
-        restTransactionMockMvc.perform(get("/api/transactions?sort=id,desc"))
-            .andExpect(status().isOk())
-            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
-            .andExpect(jsonPath("$.[*].id").value(hasItem(savedTransaction.getId().intValue())))
-            .andExpect(jsonPath("$.[*].eventId").value(hasItem(savedTransaction.getEventId().intValue())))
-            .andExpect(jsonPath("$.[*].type").value(hasItem(savedTransaction.getTransactionType().toString())))
-            .andExpect(jsonPath("$.[*].amount").value(hasItem(savedTransaction.getTransactionAmount().doubleValue())))
-            .andExpect(jsonPath("$.[*].details").value(hasItem(savedTransaction.getDescription())));
-    }
-
-//    @Test
-    public void getAllTransactionByEventId() throws Exception {
-        // Initialize the database
-        Event savedEvent = initEventDB();
-        transaction.setEventId(savedEvent.getId());
-        Transaction savedTransaction = initTransactionDB();
-
-        // Get all the transactionList
-        restTransactionMockMvc.perform(get("/api/transactions/event/{eventId}?sort=id,desc", savedEvent.getId()))
-            .andExpect(status().isOk())
-            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
-            .andExpect(jsonPath("$.[*].id").value(hasItem(savedTransaction.getId().intValue())))
-            .andExpect(jsonPath("$.[*].eventId").value(hasItem(savedTransaction.getEventId().intValue())))
-            .andExpect(jsonPath("$.[*].type").value(hasItem(savedTransaction.getTransactionType().toString())))
-            .andExpect(jsonPath("$.[*].amount").value(hasItem(savedTransaction.getTransactionAmount().doubleValue())))
-            .andExpect(jsonPath("$.[*].details").value(hasItem(savedTransaction.getDescription())));
-    }
-
-//    @Test
-    public void getAllTransactionByEventId_WithCancelledEvent_ShouldThrow400() throws Exception {
-        // Initialize the database
-        event.setStatus(EventStatus.CANCELLED);
-        Event savedEvent = initEventDB();
-        transaction.setEventId(savedEvent.getId());
-        Transaction savedTransaction = initTransactionDB();
-
-        // Get all the transactionList
-        restTransactionMockMvc.perform(get("/api/transactions/event/{eventId}?sort=id,desc", savedEvent.getId()))
-            .andExpect(status().isBadRequest());
     }
 
     @Test
@@ -838,7 +524,7 @@ public class TransactionResourceIT {
             .andExpect(jsonPath("$.[*].id").value(hasItem(transaction.getId().intValue())))
             .andExpect(jsonPath("$.[*].title").value(hasItem(DEFAULT_TITLE)))
             .andExpect(jsonPath("$.[*].transactionDate").value(hasItem(DEFAULT_TRANSACTION_DATE.toString())))
-            .andExpect(jsonPath("$.[*].transactionType").value(hasItem(DEFAULT_TYPE.name())))
+            .andExpect(jsonPath("$.[*].transactionType").value(hasItem(DEFAULT_TRANSACTION_TYPE.name())))
             .andExpect(jsonPath("$.[*].transactionStatus").value(hasItem(DEFAULT_TRANSACTION_STATUS.name())))
             .andExpect(jsonPath("$.[*].eventId").value(hasItem(DEFAULT_EVENT_ID.intValue())))
             .andExpect(jsonPath("$.[*].transactionAmount").value(hasItem(sameNumber(DEFAULT_AMOUNT))))
@@ -877,150 +563,458 @@ public class TransactionResourceIT {
     }
 
     @Test
-    public void updateTransaction() throws Exception {
+    public void createNullEventPendingIncome_UserIsAdmin_ShouldSuccess() throws Exception {
         // Initialize the database
-        Event savedEvent = initEventDB();
-        transaction.setEventId(savedEvent.getId());
-        transaction.setTransactionStatus(DEFAULT_TRANSACTION_STATUS);
-        Transaction savedTransaction = initTransactionDB();
-
-        int databaseSizeBeforeUpdate = transactionRepository.findAll().size();
-
-        // Update the transaction
-        Transaction updatedTransaction = transactionRepository.findById(savedTransaction.getId()).get();
-        // Disconnect from session so that the updates on updatedTransaction are not directly saved in db
-        em.detach(updatedTransaction);
-        updatedTransaction
-            .transactionType(UPDATED_TYPE)
-            .transactionAmount(UPDATED_AMOUNT)
-            .description(UPDATED_DETAILS)
-            .transactionStatus(TransactionStatus.CANCELLED);
-        TransactionDTO transactionDTO = transactionMapper.toDto(updatedTransaction);
-
-        restTransactionMockMvc.perform(put("/api/transactions")
-            .contentType(TestUtil.APPLICATION_JSON_UTF8)
-            .content(TestUtil.convertObjectToJsonBytes(transactionDTO)))
-            .andExpect(status().isOk());
-
-        // Validate the Transaction in the database
-        List<Transaction> transactionList = transactionRepository.findAll();
-        assertThat(transactionList).hasSize(databaseSizeBeforeUpdate);
-        Transaction testTransaction = transactionList.get(transactionList.size() - 1);
-        assertThat(testTransaction.getEventId()).isEqualTo(savedEvent.getId());
-        assertThat(testTransaction.getTransactionType()).isEqualTo(DEFAULT_TYPE);
-        assertThat(testTransaction.getTransactionAmount()).isEqualTo(DEFAULT_AMOUNT.setScale(2));
-        assertThat(testTransaction.getDescription()).isEqualTo(UPDATED_DETAILS);
-        assertThat(testTransaction.getTransactionStatus()).isEqualTo(TransactionStatus.CANCELLED);
-    }
-
-//    @Test
-    public void updateTransaction_NonExistingRecord_ShouldThrow400() throws Exception {
-        // Initialize the database
-        Event savedEvent = initEventDB();
-        transaction.setEventId(savedEvent.getId());
-        transaction.setTransactionStatus(DEFAULT_TRANSACTION_STATUS);
-        Transaction savedTransaction = initTransactionDB();
-
-        int databaseSizeBeforeUpdate = transactionRepository.findAll().size();
+        int databaseSizeBeforeCreate = transactionRepository.findAll().size();
 
         // Create the Transaction
-        transaction.setId(Long.MAX_VALUE);
-        TransactionDTO transactionDTO = transactionMapper.toDto(transaction);
-
-        System.out.println("USER AUTH :: " + getLoggedInUser().getAuthorities());
-        // If the entity doesn't have an ID, it will throw BadRequestAlertException
-        restTransactionMockMvc.perform(put("/api/transactions")
-            .contentType(TestUtil.APPLICATION_JSON_UTF8)
-            .content(TestUtil.convertObjectToJsonBytes(transactionDTO)))
-            .andExpect(status().isBadRequest());
+        restTransactionMockMvc.perform(multipart("/api/transactions")
+            .file(MOCK_MULTIPART_FILE)
+            .param("title", DEFAULT_TITLE)
+            .param("eventId", "")
+            .param("transactionType", DEFAULT_TRANSACTION_TYPE.name())
+            .param("transactionAmount", DEFAULT_AMOUNT.toString())
+            .param("description", DEFAULT_DESCRIPTION)
+            .param("transactionStatus", DEFAULT_TRANSACTION_STATUS.name())
+            .param("transactionDate", DEFAULT_TRANSACTION_DATE.toString())
+        ).andExpect(status().isCreated());
 
         // Validate the Transaction in the database
         List<Transaction> transactionList = transactionRepository.findAll();
-        assertThat(transactionList).hasSize(databaseSizeBeforeUpdate);
+        assertThat(transactionList).hasSize(databaseSizeBeforeCreate + 1);
+
+        // Validate the saved Transaction
+        Transaction testTransaction = transactionList.get(transactionList.size() - 1);
+        assertThat(testTransaction.getTitle()).isEqualTo(DEFAULT_TITLE);
+        assertThat(testTransaction.getEventId()).isEqualTo(null);
+        assertThat(testTransaction.getTransactionType()).isEqualTo(DEFAULT_TRANSACTION_TYPE);
+        assertThat(testTransaction.getTransactionAmount()).isEqualTo(DEFAULT_AMOUNT.setScale(2, RoundingMode.HALF_UP));
+        assertThat(testTransaction.getDescription()).isEqualTo(DEFAULT_DESCRIPTION);
+        assertThat(testTransaction.getTransactionStatus()).isEqualTo(DEFAULT_TRANSACTION_STATUS);
+        assertThat(testTransaction.getTransactionDate()).isEqualTo(DEFAULT_TRANSACTION_DATE);
+        assertThat(testTransaction.getImageLink()).isEqualTo(DEFAULT_IMAGE_LINK);
     }
 
-//    @Test
-    public void updateTransaction_CancelledTransaction_ShouldThrow400() throws Exception {
+    @Test
+    @WithNormalUser
+    public void createNullEventTransactionPendingIncome_UserIsUser_ShouldThrow403() throws Exception {
         // Initialize the database
-        Event savedEvent = initEventDB();
-        transaction.setEventId(savedEvent.getId());
-        transaction.setTransactionStatus(TransactionStatus.CANCELLED);
-        Transaction savedTransaction = initTransactionDB();
+        int databaseSizeBeforeCreate = transactionRepository.findAll().size();
 
-        int databaseSizeBeforeUpdate = transactionRepository.findAll().size();
+        // Create the Transaction
+        restTransactionMockMvc.perform(multipart("/api/transactions")
+            .file(MOCK_MULTIPART_FILE)
+            .param("title", DEFAULT_TITLE)
+            .param("eventId", "")
+            .param("transactionType", DEFAULT_TRANSACTION_TYPE.name())
+            .param("transactionAmount", DEFAULT_AMOUNT.toString())
+            .param("description", DEFAULT_DESCRIPTION)
+            .param("transactionStatus", DEFAULT_TRANSACTION_STATUS.name())
+            .param("transactionDate", DEFAULT_TRANSACTION_DATE.toString())
+        ).andExpect(status().isForbidden());
 
-        Transaction updatedTransaction = transactionRepository.findById(savedTransaction.getId()).get();
-        // Disconnect from session so that the updates on updatedTransaction are not directly saved in db
-        em.detach(updatedTransaction);
-        updatedTransaction
-            .transactionType(UPDATED_TYPE)
-            .transactionAmount(UPDATED_AMOUNT)
-            .description(UPDATED_DETAILS)
-            .transactionStatus(TransactionStatus.SUCCESS);
-        TransactionDTO transactionDTO = transactionMapper.toDto(updatedTransaction);
+        // Validate the Transaction not in the database
+        List<Transaction> transactionList = transactionRepository.findAll();
+        assertThat(transactionList).hasSize(databaseSizeBeforeCreate);
+    }
 
-        restTransactionMockMvc.perform(put("/api/transactions")
-            .contentType(TestUtil.APPLICATION_JSON_UTF8)
-            .content(TestUtil.convertObjectToJsonBytes(transactionDTO)))
-            .andExpect(status().isBadRequest());
+    @Test
+    @WithEventCrew
+    public void createNullEventTransactionPendingIncome_UserIsEventCrew_ShouldThrow403() throws Exception {
+        // Initialize the database
+        int databaseSizeBeforeCreate = transactionRepository.findAll().size();
+
+        // Create the Transaction
+        restTransactionMockMvc.perform(multipart("/api/transactions")
+            .file(MOCK_MULTIPART_FILE)
+            .param("title", DEFAULT_TITLE)
+            .param("eventId", "")
+            .param("transactionType", DEFAULT_TRANSACTION_TYPE.name())
+            .param("transactionAmount", DEFAULT_AMOUNT.toString())
+            .param("description", DEFAULT_DESCRIPTION)
+            .param("transactionStatus", DEFAULT_TRANSACTION_STATUS.name())
+            .param("transactionDate", DEFAULT_TRANSACTION_DATE.toString())
+        ).andExpect(status().isForbidden());
+
+        // Validate the Transaction not in the database
+        List<Transaction> transactionList = transactionRepository.findAll();
+        assertThat(transactionList).hasSize(databaseSizeBeforeCreate);
+    }
+
+    @Test
+    @WithCurrentCCAdministrator
+    public void createNullEventTransactionPendingIncome_UserIsCCAdmin_ShouldSuccess() throws Exception {
+        // Initialize the database
+        int databaseSizeBeforeCreate = transactionRepository.findAll().size();
+
+        // Create the Transaction
+        restTransactionMockMvc.perform(multipart("/api/transactions")
+            .file(MOCK_MULTIPART_FILE)
+            .param("title", DEFAULT_TITLE)
+            .param("eventId", "")
+            .param("transactionType", DEFAULT_TRANSACTION_TYPE.name())
+            .param("transactionAmount", DEFAULT_AMOUNT.toString())
+            .param("description", DEFAULT_DESCRIPTION)
+            .param("transactionStatus", DEFAULT_TRANSACTION_STATUS.name())
+            .param("transactionDate", DEFAULT_TRANSACTION_DATE.toString())
+        ).andExpect(status().isCreated());
 
         // Validate the Transaction in the database
         List<Transaction> transactionList = transactionRepository.findAll();
-        assertThat(transactionList).hasSize(databaseSizeBeforeUpdate);
+        assertThat(transactionList).hasSize(databaseSizeBeforeCreate + 1);
+
+        // Validate the saved Transaction
+        Transaction testTransaction = transactionList.get(transactionList.size() - 1);
+        assertThat(testTransaction.getTitle()).isEqualTo(DEFAULT_TITLE);
+        assertThat(testTransaction.getEventId()).isEqualTo(null);
+        assertThat(testTransaction.getTransactionType()).isEqualTo(DEFAULT_TRANSACTION_TYPE);
+        assertThat(testTransaction.getTransactionAmount()).isEqualTo(DEFAULT_AMOUNT.setScale(2, RoundingMode.HALF_UP));
+        assertThat(testTransaction.getDescription()).isEqualTo(DEFAULT_DESCRIPTION);
+        assertThat(testTransaction.getTransactionStatus()).isEqualTo(DEFAULT_TRANSACTION_STATUS);
+        assertThat(testTransaction.getTransactionDate()).isEqualTo(DEFAULT_TRANSACTION_DATE);
+        assertThat(testTransaction.getImageLink()).isEqualTo(DEFAULT_IMAGE_LINK);
     }
 
-//    @Test
-    @WithCurrentCCAdministrator
-    public void getTotalTransactionByEventId_WithCurrentCCAdministrator() throws Exception {
-        this.event = createEventEntity();
+    @Test
+    public void createEventTransactionPendingIncome_UserIsAdmin_ShouldSuccess() throws Exception {
+        // Initialise event
         Event savedEvent = initEventDB();
-        EventBudgetTotalDTO eventBudgetTotalDTO = new EventBudgetTotalDTO();
-        for (int i = 0; i < 2; i ++) {
-            Transaction transaction = createTransactionEntity();
-            transaction.setEventId(savedEvent.getId());
-            Transaction savedTransaction = transactionRepository.save(transaction);
-            eventBudgetTotalDTO.addTotalIncome(savedTransaction.getTransactionAmount());
-        }
-        for (int i = 0; i < 2; i ++) {
-            Transaction transaction = createTransactionEntity();
-            transaction.setEventId(savedEvent.getId());
-            transaction.setTransactionType(UPDATED_TYPE);
-            Transaction savedTransaction = transactionRepository.save(transaction);
-            eventBudgetTotalDTO.addTotalExpense(savedTransaction.getTransactionAmount());
-        }
+        // Initialize the database
+        int databaseSizeBeforeCreate = transactionRepository.findAll().size();
 
-        restTransactionMockMvc.perform(get("/api/transactions/event/{eventId}/total", savedEvent.getId()))
-            .andExpect(status().isOk())
-            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
-            .andExpect(jsonPath("$.totalExpense").value(eventBudgetTotalDTO.getTotalExpense().setScale(1)))
-            .andExpect(jsonPath("$.totalIncome").value(eventBudgetTotalDTO.getTotalIncome().setScale(1)));
+        // Create the Transaction
+        restTransactionMockMvc.perform(multipart("/api/transactions")
+            .file(MOCK_MULTIPART_FILE)
+            .param("title", DEFAULT_TITLE)
+            .param("eventId", savedEvent.getId().toString())
+            .param("transactionType", DEFAULT_TRANSACTION_TYPE.name())
+            .param("transactionAmount", DEFAULT_AMOUNT.toString())
+            .param("description", DEFAULT_DESCRIPTION)
+            .param("transactionStatus", DEFAULT_TRANSACTION_STATUS.name())
+            .param("transactionDate", DEFAULT_TRANSACTION_DATE.toString())
+        ).andExpect(status().isCreated());
+
+        // Validate the Transaction in the database
+        List<Transaction> transactionList = transactionRepository.findAll();
+        assertThat(transactionList).hasSize(databaseSizeBeforeCreate + 1);
+
+        // Validate the saved Transaction
+        Transaction testTransaction = transactionList.get(transactionList.size() - 1);
+        assertThat(testTransaction.getTitle()).isEqualTo(DEFAULT_TITLE);
+        assertThat(testTransaction.getEventId()).isEqualTo(savedEvent.getId());
+        assertThat(testTransaction.getTransactionType()).isEqualTo(DEFAULT_TRANSACTION_TYPE);
+        assertThat(testTransaction.getTransactionAmount()).isEqualTo(DEFAULT_AMOUNT.setScale(2, RoundingMode.HALF_UP));
+        assertThat(testTransaction.getDescription()).isEqualTo(DEFAULT_DESCRIPTION);
+        assertThat(testTransaction.getTransactionStatus()).isEqualTo(DEFAULT_TRANSACTION_STATUS);
+        assertThat(testTransaction.getTransactionDate()).isEqualTo(DEFAULT_TRANSACTION_DATE);
+        assertThat(testTransaction.getImageLink()).isEqualTo(DEFAULT_IMAGE_LINK);
     }
 
-//    @Test
+    @Test
+    @WithNormalUser
+    public void createEventTransactionPendingIncome_UserIsNormalUser_ShouldThrow403() throws Exception {
+        // Initialise event
+        Event savedEvent = initEventDB();
+        // Initialize the database
+        int databaseSizeBeforeCreate = transactionRepository.findAll().size();
+
+        // Create the Transaction
+        restTransactionMockMvc.perform(multipart("/api/transactions")
+            .file(MOCK_MULTIPART_FILE)
+            .param("title", DEFAULT_TITLE)
+            .param("eventId", savedEvent.getId().toString())
+            .param("transactionType", DEFAULT_TRANSACTION_TYPE.name())
+            .param("transactionAmount", DEFAULT_AMOUNT.toString())
+            .param("description", DEFAULT_DESCRIPTION)
+            .param("transactionStatus", DEFAULT_TRANSACTION_STATUS.name())
+            .param("transactionDate", DEFAULT_TRANSACTION_DATE.toString())
+        ).andExpect(status().isForbidden());
+
+        // Validate the Transaction not in the database
+        List<Transaction> transactionList = transactionRepository.findAll();
+        assertThat(transactionList).hasSize(databaseSizeBeforeCreate);
+    }
+
+    @Test
     @WithEventCrew
-    public void getTotalBudgetByEventId_WithEventCrew() throws Exception {
-        EventCrew savedEventCrew = getEventCrewByCurrentLoginUser();
-        EventBudgetTotalDTO eventBudgetTotalDTO = new EventBudgetTotalDTO();
-        for (int i = 0; i < 2; i ++) {
-            Transaction transaction = createTransactionEntity();
-            transaction.setEventId(savedEventCrew.getEventId());
-            Transaction savedTransaction = transactionRepository.save(transaction);
-            eventBudgetTotalDTO.addTotalIncome(savedTransaction.getTransactionAmount());
-        }
-        for (int i = 0; i < 2; i ++) {
-            Transaction transaction = createTransactionEntity();
-            transaction.setEventId(savedEventCrew.getEventId());
-            transaction.setTransactionType(UPDATED_TYPE);
-            Transaction savedTransaction = transactionRepository.save(transaction);
-            eventBudgetTotalDTO.addTotalExpense(savedTransaction.getTransactionAmount());
-        }
+    public void createEventTransactionPendingIncome_UserIsEventCrew_ShouldThrow403() throws Exception {
+        // Initialise event
+        Event savedEvent = initEventDB();
+        // Initialize the database
+        int databaseSizeBeforeCreate = transactionRepository.findAll().size();
 
-        restTransactionMockMvc.perform(get("/api/transactions/event/{eventId}/total", savedEventCrew.getEventId()))
-            .andExpect(status().isOk())
-            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
-            .andExpect(jsonPath("$.totalExpense").value(eventBudgetTotalDTO.getTotalExpense().setScale(1)))
-            .andExpect(jsonPath("$.totalIncome").value(eventBudgetTotalDTO.getTotalIncome().setScale(1)));
+        // Create the Transaction
+        restTransactionMockMvc.perform(multipart("/api/transactions")
+            .file(MOCK_MULTIPART_FILE)
+            .param("title", DEFAULT_TITLE)
+            .param("eventId", savedEvent.getId().toString())
+            .param("transactionType", DEFAULT_TRANSACTION_TYPE.name())
+            .param("transactionAmount", DEFAULT_AMOUNT.toString())
+            .param("description", DEFAULT_DESCRIPTION)
+            .param("transactionStatus", DEFAULT_TRANSACTION_STATUS.name())
+            .param("transactionDate", DEFAULT_TRANSACTION_DATE.toString())
+        ).andExpect(status().isForbidden());
+
+        // Validate the Transaction not in the database
+        List<Transaction> transactionList = transactionRepository.findAll();
+        assertThat(transactionList).hasSize(databaseSizeBeforeCreate);
     }
+
+    @Test
+    public void updateNullEventTransactionPendingIncome_ToCompleted_UserIsAdmin_ShouldSuccess() throws Exception {
+        // Create Transaction
+        transactionRepository.saveAndFlush(transaction);
+        // Get Database size after creating transaction
+        int databaseSizeAfterCreate = transactionRepository.findAll().size();
+        // find created transaction
+        Transaction createdTransaction = transactionRepository.findById(transaction.getId()).get();
+
+        // Update the transaction
+        restTransactionMockMvc.perform(putMultipartRequestBuilder
+            .file(MOCK_MULTIPART_FILE)
+            .param("id", createdTransaction.getId().toString())
+            .param("title", createdTransaction.getTitle())
+            .param("eventId", "")
+            .param("transactionType", createdTransaction.getTransactionType().name())
+            .param("transactionAmount", createdTransaction.getTransactionAmount().toString())
+            .param("description", createdTransaction.getDescription())
+            .param("transactionStatus", UPDATED_TRANSACTION_STATUS.name())
+            .param("transactionDate", createdTransaction.getTransactionDate().toString())
+        ).andExpect(status().isOk());
+
+        List<Transaction> transactionList = transactionRepository.findAll();
+        Transaction updatedTransaction = transactionList.get(transactionList.size() - 1);
+
+        // Validate the Transaction count stays the same after creating 1 transaction
+        assertThat(transactionList).hasSize(databaseSizeAfterCreate);
+        assertThat(updatedTransaction.getTransactionStatus()).isEqualTo(UPDATED_TRANSACTION_STATUS);
+    }
+
+    @Test
+    @WithNormalUser
+    public void updateNullEventTransactionPendingIncome_ToCompleted_UserIsNormalUser_ShouldThrow403() throws Exception {
+        // Create Transaction
+        transactionRepository.saveAndFlush(transaction);
+        // Get Database size after creating transaction
+        int databaseSizeAfterCreate = transactionRepository.findAll().size();
+        // find created transaction
+        Transaction createdTransaction = transactionRepository.findById(transaction.getId()).get();
+
+        // Update the transaction
+        restTransactionMockMvc.perform(putMultipartRequestBuilder
+            .file(MOCK_MULTIPART_FILE)
+            .param("id", createdTransaction.getId().toString())
+            .param("title", createdTransaction.getTitle())
+            .param("eventId", "")
+            .param("transactionType", createdTransaction.getTransactionType().name())
+            .param("transactionAmount", createdTransaction.getTransactionAmount().toString())
+            .param("description", createdTransaction.getDescription())
+            .param("transactionStatus", UPDATED_TRANSACTION_STATUS.name())
+            .param("transactionDate", createdTransaction.getTransactionDate().toString())
+        ).andExpect(status().isForbidden());
+
+        List<Transaction> transactionList = transactionRepository.findAll();
+        Transaction updatedTransaction = transactionList.get(transactionList.size() - 1);
+
+        // Validate the Transaction count stays the same after creating 1 transaction
+        assertThat(transactionList).hasSize(databaseSizeAfterCreate);
+        assertThat(updatedTransaction.getTransactionStatus()).isEqualTo(DEFAULT_TRANSACTION_STATUS);
+    }
+
+    @Test
+    @WithEventCrew
+    public void updateNullEventTransactionPendingIncome_ToCompleted_UserIsEventCrew_ShouldThrow403() throws Exception {
+        // Create Transaction
+        transactionRepository.saveAndFlush(transaction);
+        // Get Database size after creating transaction
+        int databaseSizeAfterCreate = transactionRepository.findAll().size();
+        // find created transaction
+        Transaction createdTransaction = transactionRepository.findById(transaction.getId()).get();
+
+        // Update the transaction
+        restTransactionMockMvc.perform(putMultipartRequestBuilder
+            .file(MOCK_MULTIPART_FILE)
+            .param("id", createdTransaction.getId().toString())
+            .param("title", createdTransaction.getTitle())
+            .param("eventId", "")
+            .param("transactionType", createdTransaction.getTransactionType().name())
+            .param("transactionAmount", createdTransaction.getTransactionAmount().toString())
+            .param("description", createdTransaction.getDescription())
+            .param("transactionStatus", UPDATED_TRANSACTION_STATUS.name())
+            .param("transactionDate", createdTransaction.getTransactionDate().toString())
+        ).andExpect(status().isForbidden());
+
+        List<Transaction> transactionList = transactionRepository.findAll();
+        Transaction updatedTransaction = transactionList.get(transactionList.size() - 1);
+
+        // Validate the Transaction count stays the same after creating 1 transaction
+        assertThat(transactionList).hasSize(databaseSizeAfterCreate);
+        assertThat(updatedTransaction.getTransactionStatus()).isEqualTo(DEFAULT_TRANSACTION_STATUS);
+    }
+
+    @Test
+    @WithCurrentCCAdministrator
+    public void updateNullEventTransactionPendingIncome_ToCompleted_UserIsCurrentCCAdmin_ShouldSuccess() throws Exception {
+        // Create Transaction
+        transactionRepository.saveAndFlush(transaction);
+        // Get Database size after creating transaction
+        int databaseSizeAfterCreate = transactionRepository.findAll().size();
+        // find created transaction
+        Transaction createdTransaction = transactionRepository.findById(transaction.getId()).get();
+
+        // Update the transaction
+        restTransactionMockMvc.perform(putMultipartRequestBuilder
+            .file(MOCK_MULTIPART_FILE)
+            .param("id", createdTransaction.getId().toString())
+            .param("title", createdTransaction.getTitle())
+            .param("eventId", "")
+            .param("transactionType", createdTransaction.getTransactionType().name())
+            .param("transactionAmount", createdTransaction.getTransactionAmount().toString())
+            .param("description", createdTransaction.getDescription())
+            .param("transactionStatus", UPDATED_TRANSACTION_STATUS.name())
+            .param("transactionDate", createdTransaction.getTransactionDate().toString())
+        ).andExpect(status().isOk());
+
+        List<Transaction> transactionList = transactionRepository.findAll();
+        Transaction updatedTransaction = transactionList.get(transactionList.size() - 1);
+
+        // Validate the Transaction count stays the same after creating 1 transaction
+        assertThat(transactionList).hasSize(databaseSizeAfterCreate);
+        assertThat(updatedTransaction.getTransactionStatus()).isEqualTo(UPDATED_TRANSACTION_STATUS);
+    }
+
+    @Test
+    public void updateEventTransactionPendingIncome_ToCompleted_UserIsAdmin_ShouldSuccess() throws Exception {
+        // Create Event
+        Event savedEvent = initEventDB();
+        // Create Transaction
+        transactionRepository.saveAndFlush(transaction.eventId(savedEvent.getId()));
+        // Get Database size after creating transaction
+        int databaseSizeAfterCreate = transactionRepository.findAll().size();
+        // find created transaction
+        Transaction createdTransaction = transactionRepository.findById(transaction.getId()).get();
+
+        // Update the transaction
+        restTransactionMockMvc.perform(putMultipartRequestBuilder
+            .file(MOCK_MULTIPART_FILE)
+            .param("id", createdTransaction.getId().toString())
+            .param("title", createdTransaction.getTitle())
+            .param("eventId", createdTransaction.getEventId().toString())
+            .param("transactionType", createdTransaction.getTransactionType().name())
+            .param("transactionAmount", createdTransaction.getTransactionAmount().toString())
+            .param("description", createdTransaction.getDescription())
+            .param("transactionStatus", UPDATED_TRANSACTION_STATUS.name())
+            .param("transactionDate", createdTransaction.getTransactionDate().toString())
+        ).andExpect(status().isOk());
+
+        List<Transaction> transactionList = transactionRepository.findAll();
+        Transaction updatedTransaction = transactionList.get(transactionList.size() - 1);
+
+        // Validate the Transaction count stays the same after creating 1 transaction
+        assertThat(transactionList).hasSize(databaseSizeAfterCreate);
+        assertThat(updatedTransaction.getTransactionStatus()).isEqualTo(UPDATED_TRANSACTION_STATUS);
+    }
+
+    @Test
+    @WithNormalUser
+    public void updateEventTransactionPendingIncome_ToCompleted_UserIsUser_ShouldThrow403() throws Exception {
+        // Create Event
+        Event savedEvent = initEventDB();
+        // Create Transaction
+        transactionRepository.saveAndFlush(transaction.eventId(savedEvent.getId()));
+        // Get Database size after creating transaction
+        int databaseSizeAfterCreate = transactionRepository.findAll().size();
+        // find created transaction
+        Transaction createdTransaction = transactionRepository.findById(transaction.getId()).get();
+
+        // Update the transaction
+        restTransactionMockMvc.perform(putMultipartRequestBuilder
+            .file(MOCK_MULTIPART_FILE)
+            .param("id", createdTransaction.getId().toString())
+            .param("title", createdTransaction.getTitle())
+            .param("eventId", createdTransaction.getEventId().toString())
+            .param("transactionType", createdTransaction.getTransactionType().name())
+            .param("transactionAmount", createdTransaction.getTransactionAmount().toString())
+            .param("description", createdTransaction.getDescription())
+            .param("transactionStatus", UPDATED_TRANSACTION_STATUS.name())
+            .param("transactionDate", createdTransaction.getTransactionDate().toString())
+        ).andExpect(status().isForbidden());
+
+        List<Transaction> transactionList = transactionRepository.findAll();
+        Transaction updatedTransaction = transactionList.get(transactionList.size() - 1);
+
+        // Validate the Transaction count stays the same after creating 1 transaction
+        assertThat(transactionList).hasSize(databaseSizeAfterCreate);
+        assertThat(updatedTransaction.getTransactionStatus()).isEqualTo(DEFAULT_TRANSACTION_STATUS);
+    }
+
+    @Test
+    @WithEventCrew
+    public void updateEventTransactionPendingIncome_ToCompleted_UserIsEventCrew_ShouldSuccess() throws Exception {
+        // Get event id by current event crew
+        EventCrew savedEventCrew = getEventCrewByCurrentLoginUser();
+        // Create Transaction
+        transactionRepository.saveAndFlush(transaction.eventId(savedEventCrew.getEventId()));
+        // Get Database size after creating transaction
+        int databaseSizeAfterCreate = transactionRepository.findAll().size();
+        // find created transaction
+        Transaction createdTransaction = transactionRepository.findById(transaction.getId()).get();
+
+        // Update the transaction
+        restTransactionMockMvc.perform(putMultipartRequestBuilder
+            .file(MOCK_MULTIPART_FILE)
+            .param("id", createdTransaction.getId().toString())
+            .param("title", createdTransaction.getTitle())
+            .param("eventId", createdTransaction.getEventId().toString())
+            .param("transactionType", createdTransaction.getTransactionType().name())
+            .param("transactionAmount", createdTransaction.getTransactionAmount().toString())
+            .param("description", createdTransaction.getDescription())
+            .param("transactionStatus", UPDATED_TRANSACTION_STATUS.name())
+            .param("transactionDate", createdTransaction.getTransactionDate().toString())
+        ).andExpect(status().isOk());
+
+        List<Transaction> transactionList = transactionRepository.findAll();
+        Transaction updatedTransaction = transactionList.get(transactionList.size() - 1);
+
+        // Validate the Transaction count stays the same after creating 1 transaction
+        assertThat(transactionList).hasSize(databaseSizeAfterCreate);
+        assertThat(updatedTransaction.getTransactionStatus()).isEqualTo(UPDATED_TRANSACTION_STATUS);
+    }
+
+    @Test
+    @WithCurrentCCAdministrator
+    public void updateEventTransactionPendingIncome_ToCompleted_UserIsCurrentCCAdmin_ShouldSuccess() throws Exception {
+        // Create Event
+        Event savedEvent = initEventDB();
+        // Create Transaction
+        transactionRepository.saveAndFlush(transaction.eventId(savedEvent.getId()));
+        // Get Database size after creating transaction
+        int databaseSizeAfterCreate = transactionRepository.findAll().size();
+        // find created transaction
+        Transaction createdTransaction = transactionRepository.findById(transaction.getId()).get();
+
+        // Update the transaction
+        restTransactionMockMvc.perform(putMultipartRequestBuilder
+            .file(MOCK_MULTIPART_FILE)
+            .param("id", createdTransaction.getId().toString())
+            .param("title", createdTransaction.getTitle())
+            .param("eventId", createdTransaction.getEventId().toString())
+            .param("transactionType", createdTransaction.getTransactionType().name())
+            .param("transactionAmount", createdTransaction.getTransactionAmount().toString())
+            .param("description", createdTransaction.getDescription())
+            .param("transactionStatus", UPDATED_TRANSACTION_STATUS.name())
+            .param("transactionDate", createdTransaction.getTransactionDate().toString())
+        ).andExpect(status().isOk());
+
+        List<Transaction> transactionList = transactionRepository.findAll();
+        Transaction updatedTransaction = transactionList.get(transactionList.size() - 1);
+
+        // Validate the Transaction count stays the same after creating 1 transaction
+        assertThat(transactionList).hasSize(databaseSizeAfterCreate);
+        assertThat(updatedTransaction.getTransactionStatus()).isEqualTo(UPDATED_TRANSACTION_STATUS);
+    }
+
+
 
     @Test
     @WithEventCrew
@@ -1033,30 +1027,6 @@ public class TransactionResourceIT {
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
             .andExpect(jsonPath("$.totalExpense").value(eventBudgetTotalDTO.getTotalExpense()))
             .andExpect(jsonPath("$.totalIncome").value(eventBudgetTotalDTO.getTotalIncome()));
-    }
-
-//    @Test
-    @WithMockUser
-    public void getTotalBudgetByEventId_WithNormalUser_ShouldThrow403() throws Exception {
-        this.event = createEventEntity();
-        Event savedEvent = initEventDB();
-        EventBudgetTotalDTO eventBudgetTotalDTO = new EventBudgetTotalDTO();
-        for (int i = 0; i < 2; i ++) {
-            Transaction transaction = createTransactionEntity();
-            transaction.setEventId(savedEvent.getId());
-            Transaction savedTransaction = transactionRepository.save(transaction);
-            eventBudgetTotalDTO.addTotalIncome(savedTransaction.getTransactionAmount());
-        }
-        for (int i = 0; i < 2; i ++) {
-            Transaction transaction = createTransactionEntity();
-            transaction.setEventId(savedEvent.getId());
-            transaction.setTransactionType(UPDATED_TYPE);
-            Transaction savedTransaction = transactionRepository.save(transaction);
-            eventBudgetTotalDTO.addTotalExpense(savedTransaction.getTransactionAmount());
-        }
-
-        restTransactionMockMvc.perform(get("/api/transactions/event/{eventId}/total", savedEvent.getId()))
-            .andExpect(status().isForbidden());
     }
 
     @Test

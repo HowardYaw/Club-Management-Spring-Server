@@ -1,5 +1,6 @@
 package com.thirdcc.webapp.web.rest;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.thirdcc.webapp.security.AuthoritiesConstants;
 import com.thirdcc.webapp.service.EventQueryService;
 import com.thirdcc.webapp.service.EventService;
@@ -12,17 +13,20 @@ import io.github.jhipster.web.util.PaginationUtil;
 import io.github.jhipster.web.util.ResponseUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.util.MultiValueMap;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 
@@ -43,6 +47,9 @@ public class EventResource {
     @Value("${jhipster.clientApp.name}")
     private String applicationName;
 
+    @Autowired
+    private ObjectMapper objectMapper;
+
     private final EventService eventService;
 
     private final EventQueryService eventQueryService;
@@ -60,13 +67,13 @@ public class EventResource {
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
     @PostMapping("/events")
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
-    public ResponseEntity<EventDTO> createEvent(@RequestBody EventDTO eventDTO) throws URISyntaxException {
+    @PreAuthorize("@managementTeamSecurityExpression.isCurrentAdministrator()")
+    public ResponseEntity<EventDTO> createEvent(@ModelAttribute EventDTO eventDTO) throws URISyntaxException, IOException {
         log.debug("REST request to save Event : {}", eventDTO);
         if (eventDTO.getId() != null) {
             throw new BadRequestAlertException("A new event cannot already have an ID", ENTITY_NAME, "idexists");
         }
-        EventDTO result = eventService.save(eventDTO);
+        EventDTO result = eventService.save(eventDTO, eventDTO.getMultipartFile());
         return ResponseEntity.created(new URI("/api/events/" + result.getId()))
             .headers(HeaderUtil.createEntityCreationAlert(applicationName, true, ENTITY_NAME, result.getId().toString()))
             .body(result);
@@ -82,13 +89,14 @@ public class EventResource {
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
     @PutMapping("/events")
-    @PreAuthorize("hasRole(\"" + AuthoritiesConstants.ADMIN + "\") || @managementTeamSecurityExpression.isEventHead(#eventDTO.getId()) || @managementTeamSecurityExpression.isCurrentAdministrator()")
-    public ResponseEntity<EventDTO> updateEvent(@RequestBody EventDTO eventDTO) throws URISyntaxException {
+    @PreAuthorize("@managementTeamSecurityExpression.isCurrentAdministrator() || " +
+        "@managementTeamSecurityExpression.isEventHead(#eventDTO.getId())")
+    public ResponseEntity<EventDTO> updateEvent(@ModelAttribute EventDTO eventDTO) throws URISyntaxException, IOException {
         log.debug("REST request to update Event : {}", eventDTO);
         if (eventDTO.getId() == null) {
             throw new BadRequestAlertException("Invalid id", ENTITY_NAME, "idnull");
         }
-        EventDTO result = eventService.save(eventDTO);
+        EventDTO result = eventService.update(eventDTO, eventDTO.getMultipartFile());
         return ResponseEntity.ok()
             .headers(HeaderUtil.createEntityUpdateAlert(applicationName, true, ENTITY_NAME, eventDTO.getId().toString()))
             .body(result);
