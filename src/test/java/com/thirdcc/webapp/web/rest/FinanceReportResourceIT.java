@@ -198,7 +198,7 @@ class FinanceReportResourceIT {
     @Test
     public void getFinanceReportByYearSession() throws Exception {
         //mock createdDate
-        LocalDateTime transactionLocalDateTime =  LocalDateTime.of(LocalDateTime.now().getYear(), 1, 20, 0, 0, 0);
+        LocalDateTime transactionLocalDateTime = LocalDateTime.of(LocalDateTime.now().getYear(), 1, 20, 0, 0, 0);
         Mockito
             .when(dateTimeProvider.getNow())
             .thenReturn(Optional.of(transactionLocalDateTime));
@@ -299,11 +299,11 @@ class FinanceReportResourceIT {
         restFinanceReportMockMvc.perform(get("/api/finance-report/current-year-session-statistic"))
             .andExpect(status().isOk())
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
-            .andExpect(jsonPath("$.realisedIncome").value(BigDecimal.ZERO.doubleValue()))
+            .andExpect(jsonPath("$.realiseIncome").value(BigDecimal.ZERO.doubleValue()))
             .andExpect(jsonPath("$.pendingIncome").value(DEFAULT_TRANSACTION_AMOUNT.doubleValue()))
-            .andExpect(jsonPath("$.realisedExpenses").value(BigDecimal.ZERO.doubleValue()))
-            .andExpect(jsonPath("$.pendingExpenses").value(DEFAULT_TRANSACTION_AMOUNT.doubleValue()))
-            .andExpect(jsonPath("$.invalidExpenses").value(BigDecimal.ZERO.doubleValue()))
+            .andExpect(jsonPath("$.realiseExpense").value(BigDecimal.ZERO.doubleValue()))
+            .andExpect(jsonPath("$.pendingExpense").value(DEFAULT_TRANSACTION_AMOUNT.doubleValue()))
+            .andExpect(jsonPath("$.invalidExpense").value(BigDecimal.ZERO.doubleValue()))
             .andExpect(jsonPath("$.badDebt").value(BigDecimal.ZERO.doubleValue()));
     }
 
@@ -312,11 +312,11 @@ class FinanceReportResourceIT {
         restFinanceReportMockMvc.perform(get("/api/finance-report/current-year-session-statistic"))
             .andExpect(status().isOk())
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
-            .andExpect(jsonPath("$.realisedIncome").value(BigDecimal.ZERO.doubleValue()))
+            .andExpect(jsonPath("$.realiseIncome").value(BigDecimal.ZERO.doubleValue()))
             .andExpect(jsonPath("$.pendingIncome").value(BigDecimal.ZERO.doubleValue()))
-            .andExpect(jsonPath("$.realisedExpenses").value(BigDecimal.ZERO.doubleValue()))
-            .andExpect(jsonPath("$.pendingExpenses").value(BigDecimal.ZERO.doubleValue()))
-            .andExpect(jsonPath("$.invalidExpenses").value(BigDecimal.ZERO.doubleValue()))
+            .andExpect(jsonPath("$.realiseExpense").value(BigDecimal.ZERO.doubleValue()))
+            .andExpect(jsonPath("$.pendingExpense").value(BigDecimal.ZERO.doubleValue()))
+            .andExpect(jsonPath("$.invalidExpense").value(BigDecimal.ZERO.doubleValue()))
             .andExpect(jsonPath("$.badDebt").value(BigDecimal.ZERO.doubleValue()));
     }
     
