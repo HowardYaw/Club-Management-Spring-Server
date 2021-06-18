@@ -109,8 +109,8 @@ public class FinanceReportServiceImpl implements FinanceReportService {
     }
     
     /**
-     * get all transaction of current year session and calculate realisedIncome
-     * pendingIncome, realisedExpense, pendingExpense, invalidExpense and badDebt
+     * get all transaction of current year session and calculate realiseIncome
+     * pendingIncome, realiseExpense, pendingExpense, invalidExpense and badDebt
      * @return FinanceReportStatisticDTO 
      */
     @Override
@@ -127,10 +127,10 @@ public class FinanceReportServiceImpl implements FinanceReportService {
         List<Transaction> transactionList = transactionRepository
             .findAllByCreatedDateGreaterThanEqualAndCreatedDateLessThan(inclusiveFrom, exclusiveTo);
 
-        BigDecimal reliasedExpense = BigDecimal.ZERO;
+        BigDecimal realiseExpense = BigDecimal.ZERO;
         BigDecimal pendingExpense = BigDecimal.ZERO;
         BigDecimal invalidExpense = BigDecimal.ZERO;
-        BigDecimal reliasedIncome = BigDecimal.ZERO;
+        BigDecimal realiseIncome = BigDecimal.ZERO;
         BigDecimal pendingIncome = BigDecimal.ZERO;
         BigDecimal badDebt = BigDecimal.ZERO;
         
@@ -142,7 +142,7 @@ public class FinanceReportServiceImpl implements FinanceReportService {
             switch(transactionType){
                 case INCOME:
                     switch(transactionStatus){
-                        case COMPLETED: reliasedIncome = reliasedIncome.add(transactionAmount);
+                        case COMPLETED: realiseIncome = realiseIncome.add(transactionAmount);
                         break;
                         case PENDING: pendingIncome = pendingIncome.add(transactionAmount);
                         break;
@@ -152,7 +152,7 @@ public class FinanceReportServiceImpl implements FinanceReportService {
                     break;
                 case EXPENSE:
                     switch(transactionStatus){
-                        case COMPLETED: reliasedExpense = reliasedExpense.add(transactionAmount);
+                        case COMPLETED: realiseExpense = realiseExpense.add(transactionAmount);
                         break;
                         case PENDING: pendingExpense = pendingExpense.add(transactionAmount);
                         break;
@@ -163,11 +163,12 @@ public class FinanceReportServiceImpl implements FinanceReportService {
             }
         }
         financeReportStatisticDTO.setBadDebt(badDebt);
-        financeReportStatisticDTO.setInvalidExpenses(invalidExpense);
-        financeReportStatisticDTO.setPendingExpenses(pendingExpense);
+        financeReportStatisticDTO.setInvalidExpense(invalidExpense);
+        financeReportStatisticDTO.setPendingExpense(pendingExpense);
         financeReportStatisticDTO.setPendingIncome(pendingIncome);
-        financeReportStatisticDTO.setRealisedExpenses(reliasedExpense);
-        financeReportStatisticDTO.setRealisedIncome(reliasedIncome);
+        financeReportStatisticDTO.setRealiseExpense(realiseExpense);
+        financeReportStatisticDTO.setRealiseIncome(realiseIncome);
+        log.debug("getCurrentYearSessionFinanceReportStatistic returned: {}", financeReportStatisticDTO);
         
         return financeReportStatisticDTO;
     }

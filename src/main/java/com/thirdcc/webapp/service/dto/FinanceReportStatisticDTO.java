@@ -5,19 +5,19 @@ import java.util.Objects;
 
 public class FinanceReportStatisticDTO {
     
-    private BigDecimal realisedIncome;
+    private BigDecimal realiseIncome;
     private BigDecimal pendingIncome;
-    private BigDecimal realisedExpenses;
-    private BigDecimal pendingExpenses;
-    private BigDecimal invalidExpenses;
+    private BigDecimal realiseExpense;
+    private BigDecimal pendingExpense;
+    private BigDecimal invalidExpense;
     private BigDecimal badDebt;
 
-    public BigDecimal getRealisedIncome() {
-        return realisedIncome;
+    public BigDecimal getRealiseIncome() {
+        return realiseIncome;
     }
 
-    public void setRealisedIncome(BigDecimal realisedIncome) {
-        this.realisedIncome = realisedIncome;
+    public void setRealiseIncome(BigDecimal realiseIncome) {
+        this.realiseIncome = realiseIncome;
     }
 
     public BigDecimal getPendingIncome() {
@@ -28,28 +28,28 @@ public class FinanceReportStatisticDTO {
         this.pendingIncome = pendingIncome;
     }
 
-    public BigDecimal getRealisedExpenses() {
-        return realisedExpenses;
+    public BigDecimal getRealiseExpense() {
+        return realiseExpense;
     }
 
-    public void setRealisedExpenses(BigDecimal realisedExpenses) {
-        this.realisedExpenses = realisedExpenses;
+    public void setRealiseExpense(BigDecimal realisedExpense) {
+        this.realiseExpense = realisedExpense;
     }
 
-    public BigDecimal getPendingExpenses() {
-        return pendingExpenses;
+    public BigDecimal getPendingExpense() {
+        return pendingExpense;
     }
 
-    public void setPendingExpenses(BigDecimal pendingExpenses) {
-        this.pendingExpenses = pendingExpenses;
+    public void setPendingExpense(BigDecimal pendingExpense) {
+        this.pendingExpense = pendingExpense;
     }
 
-    public BigDecimal getInvalidExpenses() {
-        return invalidExpenses;
+    public BigDecimal getInvalidExpense() {
+        return invalidExpense;
     }
 
-    public void setInvalidExpenses(BigDecimal invalidExpenses) {
-        this.invalidExpenses = invalidExpenses;
+    public void setInvalidExpense(BigDecimal invalidExpense) {
+        this.invalidExpense = invalidExpense;
     }
 
     public BigDecimal getBadDebt() {
@@ -65,16 +65,28 @@ public class FinanceReportStatisticDTO {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         FinanceReportStatisticDTO that = (FinanceReportStatisticDTO) o;
-        return Objects.equals(realisedIncome, that.realisedIncome) &&
+        return Objects.equals(realiseIncome, that.realiseIncome) &&
             Objects.equals(pendingIncome, that.pendingIncome) &&
-            Objects.equals(realisedExpenses, that.realisedExpenses) &&
-            Objects.equals(pendingExpenses, that.pendingExpenses) &&
-            Objects.equals(invalidExpenses, that.invalidExpenses) &&
+            Objects.equals(realiseExpense, that.realiseExpense) &&
+            Objects.equals(pendingExpense, that.pendingExpense) &&
+            Objects.equals(invalidExpense, that.invalidExpense) &&
             Objects.equals(badDebt, that.badDebt);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(realisedIncome, pendingIncome, realisedExpenses, pendingExpenses, invalidExpenses, badDebt);
+        return Objects.hash(realiseIncome, pendingIncome, realiseExpense, pendingExpense, invalidExpense, badDebt);
+    }
+    
+    @Override
+    public String toString() {
+        return "FinanceReportStatisticDTO{" +
+            "realisedIncome=" + realiseIncome +
+            ", pendingIncome=" + pendingIncome +
+            ", realisedExpense=" + realiseExpense +
+            ", pendingExpense=" + pendingExpense +
+            ", invalidExpense=" + invalidExpense +
+            ", badDebt=" + badDebt +
+            "}";
     }
 }
