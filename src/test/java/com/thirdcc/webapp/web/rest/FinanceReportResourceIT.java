@@ -199,6 +199,11 @@ class FinanceReportResourceIT {
     public void getFinanceReportByYearSession() throws Exception {
         //mock createdDate
         LocalDateTime transactionLocalDateTime = LocalDateTime.of(LocalDateTime.now().getYear(), 1, 20, 0, 0, 0);
+        // if the month is between September to December, need to add 1 year
+        // so that the transactionDate is within currentYearSession
+        if(YearSessionUtils.isBetweenMonth(LocalDateTime.now().getMonth(), Month.SEPTEMBER, Month.DECEMBER)){
+            transactionLocalDateTime = LocalDateTime.of(LocalDateTime.now().plusYears(1).getYear(), 1, 20, 0, 0, 0);
+        }
         Mockito
             .when(dateTimeProvider.getNow())
             .thenReturn(Optional.of(transactionLocalDateTime));

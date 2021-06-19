@@ -116,10 +116,10 @@ public class FinanceReportServiceImpl implements FinanceReportService {
     @Override
     @Transactional(readOnly = true)
     public FinanceReportStatisticDTO getFinanceReportStatisticOfCurrentYearSession() {
-        ZoneId zoneId = ZoneId.systemDefault();
         String currentYearSession = YearSessionUtils.getCurrentYearSession();
+        String nextYearSession = YearSessionUtils.getNextYearSession();
         Instant inclusiveFrom = YearSessionUtils.getFirstInstantOfYearSession(currentYearSession);
-        Instant exclusiveTo = inclusiveFrom.atZone(zoneId).toLocalDate().plusYears(1).atStartOfDay().atZone(zoneId).toInstant();
+        Instant exclusiveTo = YearSessionUtils.getFirstInstantOfYearSession(nextYearSession);
         log.info("getCurrentYearSessionFinanceReportStatistic inclusiveFrom {} exclusiveTo {}", inclusiveFrom, exclusiveTo);
 
         FinanceReportStatisticDTO financeReportStatisticDTO = new FinanceReportStatisticDTO();

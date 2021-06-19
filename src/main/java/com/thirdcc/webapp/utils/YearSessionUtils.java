@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.Month;
 import java.time.ZoneId;
 import java.util.ArrayList;
@@ -37,6 +38,10 @@ public class YearSessionUtils {
 
     public static String getCurrentYearSession() {
         return toYearSession(Instant.now());
+    }
+    
+    public static String getNextYearSession() {
+        return toYearSession(LocalDateTime.now().plusYears(1).atZone(zoneId).toInstant());
     }
 
     public static String toYearSession(Instant instant) {
@@ -86,6 +91,10 @@ public class YearSessionUtils {
             throw new IllegalArgumentException("invalid yearSession of " + earlierYS + " or " + laterYs);
         }
         return earlierYS.compareTo(laterYs) < 1;
+    }
+    
+    public static boolean isBetweenMonth(Month monthToCheck, Month start, Month end) {
+        return monthToCheck.compareTo(start) >= 0 && monthToCheck.compareTo(end) <= 0;
     }
 
 }
