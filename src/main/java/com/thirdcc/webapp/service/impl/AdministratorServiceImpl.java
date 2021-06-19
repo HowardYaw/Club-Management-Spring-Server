@@ -1,5 +1,7 @@
 package com.thirdcc.webapp.service.impl;
 
+import com.thirdcc.webapp.exception.BadRequestException;
+import com.thirdcc.webapp.repository.UserRepository;
 import com.thirdcc.webapp.service.AdministratorService;
 import com.thirdcc.webapp.domain.Administrator;
 import com.thirdcc.webapp.repository.AdministratorRepository;
@@ -29,9 +31,12 @@ public class AdministratorServiceImpl implements AdministratorService {
 
     private final AdministratorMapper administratorMapper;
 
-    public AdministratorServiceImpl(AdministratorRepository administratorRepository, AdministratorMapper administratorMapper) {
+    private final UserRepository userRepository;
+
+    public AdministratorServiceImpl(AdministratorRepository administratorRepository, AdministratorMapper administratorMapper, UserRepository userRepository) {
         this.administratorRepository = administratorRepository;
         this.administratorMapper = administratorMapper;
+        this.userRepository = userRepository;
     }
 
     /**
@@ -43,6 +48,11 @@ public class AdministratorServiceImpl implements AdministratorService {
     @Override
     public AdministratorDTO save(AdministratorDTO administratorDTO) {
         log.debug("Request to save Administrator : {}", administratorDTO);
+        if (administratorDTO.getUserId() == null || administratorDTO.getRole() == null || administratorDTO.getYearSession() == null) {
+            throw new BadRequestException("Administrator required userId, role and Year Session");
+        }
+        userRepository.findById(administratorDTO.getUserId())
+            .orElseThrow(() -> new BadRequestException("User not found with Id"));
         Administrator administrator = administratorMapper.toEntity(administratorDTO);
         administrator = administratorRepository.save(administrator);
         return administratorMapper.toDto(administrator);
@@ -94,5 +104,15 @@ public class AdministratorServiceImpl implements AdministratorService {
         return administratorRepository.findAllByUserId(userId).stream()
             .map(administratorMapper::toDto)
             .collect(Collectors.toList());
+    }
+
+    @Override
+    public AdministratorDTO mapUserDetails(AdministratorDTO administratorDTO) {
+        userRepository.findById(administratorDTO.getUserId())
+            .ifPresent(user -> {
+                administratorDTO.setFirstName(user.getFirstName());
+                administratorDTO.setLastName(user.getLastName());
+            });
+        return administratorDTO;
     }
 }
