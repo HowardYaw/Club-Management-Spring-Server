@@ -50,4 +50,11 @@ public interface AdministratorService {
      * @return the list of entities
      */
     List<AdministratorDTO> findAllByUserId(Long userId);
+
+    /**
+     * Map Administrator User Details
+     * @param administratorDTO the administratorDTO
+     * @return the Administrator to map
+     */
+    AdministratorDTO mapUserDetails(AdministratorDTO administratorDTO);
 }
