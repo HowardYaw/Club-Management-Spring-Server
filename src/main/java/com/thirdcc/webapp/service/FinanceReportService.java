@@ -2,6 +2,7 @@ package com.thirdcc.webapp.service;
 
 import com.thirdcc.webapp.domain.enumeration.TransactionType;
 import com.thirdcc.webapp.service.dto.FinanceReportDTO;
+import com.thirdcc.webapp.service.dto.FinanceReportStatisticDTO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -17,4 +18,6 @@ public interface FinanceReportService {
     Optional<FinanceReportDTO> findOneByEventId(Long eventId);
 
     Map<TransactionType, Map<Month, BigDecimal>> getFinanceReportByYearSession(String yearSession);
+    
+    FinanceReportStatisticDTO getFinanceReportStatisticOfCurrentYearSession();
 }

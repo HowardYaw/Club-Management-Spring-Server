@@ -4,7 +4,7 @@ import com.thirdcc.webapp.domain.enumeration.TransactionType;
 import com.thirdcc.webapp.service.FinanceReportService;
 import com.thirdcc.webapp.service.YearSessionService;
 import com.thirdcc.webapp.service.dto.FinanceReportDTO;
-import com.thirdcc.webapp.utils.YearSessionUtils;
+import com.thirdcc.webapp.service.dto.FinanceReportStatisticDTO;
 import io.github.jhipster.web.util.PaginationUtil;
 import io.github.jhipster.web.util.ResponseUtil;
 import org.slf4j.Logger;
@@ -23,6 +23,7 @@ import java.time.Month;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 @RestController
 @RequestMapping("/api")
@@ -44,6 +45,7 @@ public class FinanceReportResource {
     }
 
     @GetMapping("/finance-report")
+    @PreAuthorize("@managementTeamSecurityExpression.isCurrentAdministrator()")
     public ResponseEntity<List<FinanceReportDTO>> getAllEventFinanceReport(
         Pageable pageable,
         @RequestParam MultiValueMap<String, String> queryParams,
@@ -56,6 +58,7 @@ public class FinanceReportResource {
     }
 
     @GetMapping("/finance-report/event/{eventId}")
+    @PreAuthorize("@managementTeamSecurityExpression.isCurrentAdministrator()")
     public ResponseEntity<FinanceReportDTO> getFinanceReportByEventId(@PathVariable Long eventId) {
         log.debug("REST request to get FinanceReport by eventId: {}", eventId);
         Optional<FinanceReportDTO> financeReportDTO = financeReportService.findOneByEventId(eventId);
@@ -63,6 +66,7 @@ public class FinanceReportResource {
     }
 
     @GetMapping("/finance-report/year-session")
+    @PreAuthorize("@managementTeamSecurityExpression.isCurrentAdministrator()")
     public ResponseEntity<Map<TransactionType, Map<Month, BigDecimal>>> getFinanceReportByYearSession(
         @RequestParam(required = false) Long yearSessionId
     ) {
@@ -75,5 +79,13 @@ public class FinanceReportResource {
         }
         Map<TransactionType, Map<Month, BigDecimal>> result = financeReportService.getFinanceReportByYearSession(yearSession);
         return ResponseEntity.ok().headers((HttpHeaders) null).body(result);
+    }
+    
+    @GetMapping("/finance-report/current-year-session-statistic")
+    @PreAuthorize("@managementTeamSecurityExpression.isCurrentAdministrator()")
+    public ResponseEntity<FinanceReportStatisticDTO> getFinanceReportStatisticOfCurrentYearSession() {
+        log.debug("REST request to get FinanceReportStatistic by current yearSession");
+        FinanceReportStatisticDTO result = financeReportService.getFinanceReportStatisticOfCurrentYearSession();
+        return ResponseEntity.ok().headers(null).body(result);
     }
 }
