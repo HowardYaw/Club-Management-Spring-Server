@@ -2,6 +2,7 @@ package com.thirdcc.webapp.service.impl;
 
 import com.thirdcc.webapp.domain.Budget;
 import com.thirdcc.webapp.domain.Transaction;
+import com.thirdcc.webapp.domain.enumeration.TransactionStatus;
 import com.thirdcc.webapp.domain.enumeration.TransactionType;
 import com.thirdcc.webapp.repository.BudgetRepository;
 import com.thirdcc.webapp.repository.TransactionRepository;
@@ -9,6 +10,7 @@ import com.thirdcc.webapp.service.EventService;
 import com.thirdcc.webapp.service.FinanceReportService;
 import com.thirdcc.webapp.service.dto.EventDTO;
 import com.thirdcc.webapp.service.dto.FinanceReportDTO;
+import com.thirdcc.webapp.service.dto.FinanceReportStatisticDTO;
 import com.thirdcc.webapp.utils.YearSessionUtils;
 import io.github.jhipster.web.util.PageUtil;
 import org.slf4j.Logger;
@@ -104,6 +106,71 @@ public class FinanceReportServiceImpl implements FinanceReportService {
             result.get(transactionType).put(transactionMonth, currentValue.add(transactionAmount));
         }
         return result;
+    }
+    
+    /**
+     * get all transaction of current year session and calculate realiseIncome
+     * pendingIncome, realiseExpense, pendingExpense, invalidExpense and badDebt
+     * @return FinanceReportStatisticDTO 
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public FinanceReportStatisticDTO getFinanceReportStatisticOfCurrentYearSession() {
+        String currentYearSession = YearSessionUtils.getCurrentYearSession();
+        String nextYearSession = YearSessionUtils.getNextYearSession();
+        Instant inclusiveFrom = YearSessionUtils.getFirstInstantOfYearSession(currentYearSession);
+        Instant exclusiveTo = YearSessionUtils.getFirstInstantOfYearSession(nextYearSession);
+        log.info("getCurrentYearSessionFinanceReportStatistic inclusiveFrom {} exclusiveTo {}", inclusiveFrom, exclusiveTo);
+
+        FinanceReportStatisticDTO financeReportStatisticDTO = new FinanceReportStatisticDTO();
+        
+        List<Transaction> transactionList = transactionRepository
+            .findAllByCreatedDateGreaterThanEqualAndCreatedDateLessThan(inclusiveFrom, exclusiveTo);
+
+        BigDecimal realiseExpense = BigDecimal.ZERO;
+        BigDecimal pendingExpense = BigDecimal.ZERO;
+        BigDecimal invalidExpense = BigDecimal.ZERO;
+        BigDecimal realiseIncome = BigDecimal.ZERO;
+        BigDecimal pendingIncome = BigDecimal.ZERO;
+        BigDecimal badDebt = BigDecimal.ZERO;
+        
+        for (Transaction transaction : transactionList) {
+            TransactionType transactionType = transaction.getTransactionType();
+            TransactionStatus transactionStatus = transaction.getTransactionStatus();
+            BigDecimal transactionAmount = transaction.getTransactionAmount();
+
+            switch(transactionType){
+                case INCOME:
+                    switch(transactionStatus){
+                        case COMPLETED: realiseIncome = realiseIncome.add(transactionAmount);
+                        break;
+                        case PENDING: pendingIncome = pendingIncome.add(transactionAmount);
+                        break;
+                        case INVALID: badDebt = badDebt.add(transactionAmount);
+                        break;
+                    }
+                    break;
+                case EXPENSE:
+                    switch(transactionStatus){
+                        case COMPLETED: realiseExpense = realiseExpense.add(transactionAmount);
+                        break;
+                        case PENDING: pendingExpense = pendingExpense.add(transactionAmount);
+                        break;
+                        case INVALID: invalidExpense = invalidExpense.add(transactionAmount);
+                        break;
+                    }
+                    break;
+            }
+        }
+        financeReportStatisticDTO.setBadDebt(badDebt);
+        financeReportStatisticDTO.setInvalidExpense(invalidExpense);
+        financeReportStatisticDTO.setPendingExpense(pendingExpense);
+        financeReportStatisticDTO.setPendingIncome(pendingIncome);
+        financeReportStatisticDTO.setRealiseExpense(realiseExpense);
+        financeReportStatisticDTO.setRealiseIncome(realiseIncome);
+        log.debug("getCurrentYearSessionFinanceReportStatistic returned: {}", financeReportStatisticDTO);
+        
+        return financeReportStatisticDTO;
     }
 
     private FinanceReportDTO toFinanceReportDTO(EventDTO eventDTO) {
