@@ -39,6 +39,10 @@ public class UserCCInfo implements Serializable {
     @JoinColumn(name = "user_id", referencedColumnName = "id", insertable = false, updatable = false)
     private User user;
 
+    @OneToOne
+    @JoinColumn(name = "user_id", referencedColumnName = "user_id", insertable = false, updatable = false)
+    private UserUniInfo userUniInfo;
+
     // jhipster-needle-entity-add-field - JHipster will add fields here, do not remove
     public Long getId() {
         return id;
@@ -134,5 +138,13 @@ public class UserCCInfo implements Serializable {
 
     public void setUser(User user) {
         this.user = user;
+    }
+
+    public UserUniInfo getUserUniInfo() {
+        return userUniInfo;
+    }
+
+    public void setUserUniInfo(UserUniInfo userUniInfo) {
+        this.userUniInfo = userUniInfo;
     }
 }

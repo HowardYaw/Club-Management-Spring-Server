@@ -1,6 +1,7 @@
 package com.thirdcc.webapp.web.rest;
 
 import com.thirdcc.webapp.domain.User;
+import com.thirdcc.webapp.domain.UserCCInfo;
 import com.thirdcc.webapp.exception.BadRequestException;
 import com.thirdcc.webapp.security.SecurityUtils;
 import com.thirdcc.webapp.service.UserCCInfoQueryService;
@@ -162,5 +163,12 @@ public class UserCCInfoResource {
         log.debug("REST request to delete UserCCInfo : {}", id);
         userCCInfoService.delete(id);
         return ResponseEntity.noContent().headers(HeaderUtil.createEntityDeletionAlert(applicationName, true, ENTITY_NAME, id.toString())).build();
+    }
+
+    @GetMapping("/members")
+    public ResponseEntity<List<UserCCInfo>> getCcMembersList(UserCCInfoCriteria criteria) {
+        log.debug("REST request to get Members by criteria: {}", criteria);
+        List<UserCCInfo> entityList = userCCInfoQueryService.findMembersByCriteria(criteria);
+        return ResponseEntity.ok().body(entityList);
     }
 }
