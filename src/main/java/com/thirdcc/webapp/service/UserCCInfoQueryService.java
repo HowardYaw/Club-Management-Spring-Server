@@ -7,7 +7,6 @@ import com.thirdcc.webapp.service.criteria.UserCCInfoCriteria;
 import com.thirdcc.webapp.service.dto.UserCCInfoDTO;
 import com.thirdcc.webapp.service.mapper.UserCCInfoMapper;
 import java.util.List;
-import javax.persistence.criteria.JoinType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
@@ -56,10 +55,10 @@ public class UserCCInfoQueryService extends QueryService<UserCCInfo> {
      * @return the matching entities.
      */
     @Transactional(readOnly = true)
-    public List<UserCCInfo> findMembersByCriteria(UserCCInfoCriteria criteria) {
+    public Page<UserCCInfo> findMembersByCriteria(UserCCInfoCriteria criteria, Pageable page) {
         log.debug("find by criteria : {}", criteria);
         final Specification<UserCCInfo> specification = createSpecification(criteria);
-        return userCCInfoRepository.findAll(specification);
+        return userCCInfoRepository.findAll(specification, page);
     }
 
   /**

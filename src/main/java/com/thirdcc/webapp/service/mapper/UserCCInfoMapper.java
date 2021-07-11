@@ -8,14 +8,8 @@ import org.mapstruct.*;
 /**
  * Mapper for the entity {@link UserCCInfo} and its DTO {@link UserCCInfoDTO}.
  */
-@Mapper(componentModel = "spring", uses = {UserMapper.class})
+@Mapper(componentModel = "spring", uses = {})
 public interface UserCCInfoMapper extends EntityMapper<UserCCInfoDTO, UserCCInfo> {
-
-//    @Mapping(source = "user", target = "user")
-    UserCCInfoDTO toDto(UserCCInfo userCcInfo);
-
-    @Mapping(source = "userId", target = "user")
-    UserCCInfo toEntity(UserCCInfoDTO userCcInfoDTO);
 
 
     default UserCCInfo fromId(Long id) {
