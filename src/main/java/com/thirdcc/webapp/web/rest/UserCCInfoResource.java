@@ -176,7 +176,7 @@ public class UserCCInfoResource {
      * @param pageable Pagination Info
      * @return Page of User Full Info: UserCCInfo, User, UserUniInfo
      */
-    @GetMapping("/members")
+    @GetMapping("/cc-members")
     public ResponseEntity<List<UserCCInfo>> getCcMembers(UserCCInfoCriteria criteria, Pageable pageable) {
         log.debug("REST request to get Members by criteria: {}", criteria);
         Page<UserCCInfo> page = userCCInfoQueryService.findMembersByCriteria(criteria, pageable);
