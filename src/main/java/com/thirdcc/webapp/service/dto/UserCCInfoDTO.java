@@ -3,6 +3,7 @@ package com.thirdcc.webapp.service.dto;
 import java.io.Serializable;
 import java.util.Objects;
 
+import com.thirdcc.webapp.domain.User;
 import com.thirdcc.webapp.domain.enumeration.ClubFamilyRole;
 
 /**
@@ -23,6 +24,18 @@ public class UserCCInfoDTO implements Serializable {
         this.clubFamilySlogan = clubFamilySlogan;
     }
 
+    public UserCCInfoDTO(Long id, Long userId, Long clubFamilyId, ClubFamilyRole familyRole, String yearSession, String fishLevel, String clubFamilyName, String clubFamilySlogan, User user) {
+        this.id = id;
+        this.userId = userId;
+        this.clubFamilyId = clubFamilyId;
+        this.familyRole = familyRole;
+        this.yearSession = yearSession;
+        this.fishLevel = fishLevel;
+        this.clubFamilyName = clubFamilyName;
+        this.clubFamilySlogan = clubFamilySlogan;
+        this.user = user;
+    }
+
     private Long id;
 
     private Long userId;
@@ -39,6 +52,7 @@ public class UserCCInfoDTO implements Serializable {
 
     private String clubFamilySlogan;
 
+    private User user;
 
     public Long getId() {
         return id;
@@ -144,6 +158,14 @@ public class UserCCInfoDTO implements Serializable {
         return new Builder();
     }
 
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
+    }
+
     public static class Builder {
 
         private Long id;
@@ -154,6 +176,7 @@ public class UserCCInfoDTO implements Serializable {
         private String fishLevel;
         private String clubFamilyName;
         private String clubFamilySlogan;
+        private User user;
 
         public Builder id(Long id) {
             this.id = id;
@@ -192,6 +215,11 @@ public class UserCCInfoDTO implements Serializable {
 
         public Builder clubFamilySlogan(String clubFamilySlogan) {
             this.clubFamilySlogan = clubFamilySlogan;
+            return this;
+        }
+
+        public Builder setUser(User user) {
+            this.user = user;
             return this;
         }
 
