@@ -1042,7 +1042,6 @@ public class UserCCInfoResourceIT {
             .andExpect(content().contentType(TestUtil.APPLICATION_JSON_UTF8))
             .andExpect(jsonPath("$.[*].id").value(hasItem(userCCInfo.getId().intValue())))
             .andExpect(jsonPath("$.[*].userId").value(hasItem(DEFAULT_USER_ID.intValue())))
-            .andExpect(jsonPath("$.[*].clubFamilyId").value(hasItem(DEFAULT_CLUB_FAMILY_ID.intValue())))
             .andExpect(jsonPath("$.[*].familyRole").value(hasItem(DEFAULT_FAMILY_ROLE.toString())))
             .andExpect(jsonPath("$.[*].yearSession").value(hasItem(DEFAULT_YEAR_SESSION)));
             // TODO: Solve userUniInfo is null
